@@ -26,6 +26,7 @@
 
 # bkit
 .bkit/
+.conductor/
 
 # debug
 npm-debug.log*
