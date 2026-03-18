@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { Map, useMap } from "@vis.gl/react-google-maps";
 import { Crosshair, ZoomIn, ZoomOut, Layers, Maximize2 } from "lucide-react";
 import type { DrawingMode, PolygonArea, PlacedPanel, LatLng } from "../types";
@@ -83,6 +83,7 @@ function CenterUpdater({ center }: { center: { lat: number; lng: number } }) {
       return;
     }
     map.panTo(center);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- center object reference changes on every render; lat/lng are stable
   }, [map, center.lat, center.lng]);
 
   return null;
@@ -104,7 +105,9 @@ function DrawingOverlay({
   const polygonsRef = useRef<Map<string, google.maps.Polygon>>(new globalThis.Map());
 
   const areasRef = useRef(areas);
-  areasRef.current = areas;
+  useEffect(() => {
+    areasRef.current = areas;
+  }, [areas]);
 
   // Stable key: only changes when areas are added or removed, not when paths change from editing
   const areaIds = areas.map((a) => a.id).join(",");
@@ -155,14 +158,14 @@ function DrawingOverlay({
       polygonsRef.current.set(area.id, polygon);
     });
 
+    const currentPolygons = polygonsRef.current;
     return () => {
-      polygonsRef.current.forEach((poly) => {
+      currentPolygons.forEach((poly) => {
         google.maps.event.clearInstanceListeners(poly);
         poly.setMap(null);
       });
-      polygonsRef.current.clear();
+      currentPolygons.clear();
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, areaIds, onAreasChange]);
 
   // Drawing manager
