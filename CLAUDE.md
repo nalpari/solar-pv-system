@@ -15,12 +15,38 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **React 19** with React Compiler enabled (`reactCompiler: true` in next.config.ts)
 - **TypeScript** (strict mode)
 - **Tailwind CSS v4** via `@tailwindcss/postcss`
+- **Google Maps** via `@vis.gl/react-google-maps` (requires `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`)
+- **lucide-react** for icons
 - Path alias: `@/*` maps to `./src/*`
 - Fonts: Geist Sans + Geist Mono (via `next/font/google`)
 
 ## Architecture
 
-This is a fresh Next.js App Router project. All pages/layouts live under `src/app/`. There are no API routes, additional pages, or shared components yet.
+Solar PV rooftop panel layout planner — single-page app with a left sidebar + Google Maps main area.
+
+### Page structure
+
+`page.tsx` is a `"use client"` component that owns all application state (areas, panel config, placed panels) and passes it down to child components. No server components beyond `layout.tsx`.
+
+### Key components (`src/app/components/`)
+
+- **MapView** — Google Maps with satellite imagery, polygon drawing (install/exclude areas), and panel overlay rendering
+- **AddressSearch** — Places autocomplete to navigate the map
+- **DrawingToolbar** — Toggle install/exclude polygon drawing modes
+- **PanelConfig** — Panel size (mm), orientation, gap, and margin controls
+- **ResultsPanel** — Displays panel count and area calculations
+
+### Core logic (`src/app/utils/`)
+
+- **panelPlacement.ts** — Computational geometry engine: converts lat/lng to local meter coordinates, insets polygons by margin, aligns panel grid to the longest polygon edge, checks point-in-polygon containment, and excludes panels overlapping exclusion zones. All dimensions are in mm (user input) converted to meters internally.
+
+### Types (`src/app/types/index.ts`)
+
+Domain types: `LatLng`, `PanelSize`, `PanelOrientation`, `DrawingMode`, `PolygonArea`, `PlacedPanel`.
+
+### Styling
+
+CSS custom properties defined in `globals.css` (e.g., `--bg-primary`, `--text-primary`, `--accent-blue`). Components use inline styles with these variables — not Tailwind utility classes.
 
 ## Memo
 
