@@ -21,5 +21,5 @@ export interface PolygonArea {
 
 export interface PlacedPanel {
   id: string;
-  corners: LatLng[];
+  corners: [LatLng, LatLng, LatLng, LatLng];
 }

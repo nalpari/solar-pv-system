@@ -24,6 +24,7 @@ const DEFAULT_CENTER = { lat: 47.6062, lng: -122.3321 }; // Seattle
 
 function computePolygonAreaM2(paths: { lat: number; lng: number }[]): number {
   if (paths.length < 3) return 0;
+  if (typeof google === "undefined" || !google.maps?.geometry?.spherical) return 0;
   return Math.abs(
     google.maps.geometry.spherical.computeArea(
       paths.map((p) => new google.maps.LatLng(p.lat, p.lng))
@@ -88,15 +89,20 @@ export default function Home() {
   }
 
   function handlePlacePanels() {
-    const panels = placePanels(
-      installAreas,
-      excludeAreas,
-      panelSize,
-      orientation,
-      gap,
-      margin,
-    );
-    setPlacedPanelsList(panels);
+    try {
+      const panels = placePanels(
+        installAreas,
+        excludeAreas,
+        panelSize,
+        orientation,
+        gap,
+        margin,
+      );
+      setPlacedPanelsList(panels);
+    } catch (e) {
+      console.error("Panel placement failed:", e);
+      setPlacedPanelsList([]);
+    }
   }
 
   const canPlace = installAreas.length > 0;

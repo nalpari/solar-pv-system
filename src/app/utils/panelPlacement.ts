@@ -119,13 +119,19 @@ export function placePanels(
   gap: number,
   margin: number,
 ): PlacedPanel[] {
+  if (panelSize.width <= 0 || panelSize.height <= 0) return [];
+
   const allPanels: PlacedPanel[] = [];
 
-  // Panel dimensions in meters
+  // Convert panel dimensions from mm to meters; swap width/height for landscape orientation
   const pw = (orientation === "landscape" ? panelSize.height : panelSize.width) / 1000;
   const ph = (orientation === "landscape" ? panelSize.width : panelSize.height) / 1000;
   const gapM = gap / 1000;
   const marginM = margin / 1000;
+
+  const stepX = pw + gapM;
+  const stepY = ph + gapM;
+  if (stepX <= 0 || stepY <= 0) return [];
 
   // Convert exclude areas to local coords for point-in-polygon checks
   for (const area of installAreas) {
@@ -171,10 +177,7 @@ export function placePanels(
       maxY = Math.max(maxY, p.y);
     }
 
-    // Place panels in a grid
-    const stepX = pw + gapM;
-    const stepY = ph + gapM;
-
+    // Place panels in a grid aligned to the longest edge
     for (let x = minX + pw / 2; x <= maxX - pw / 2; x += stepX) {
       for (let y = minY + ph / 2; y <= maxY - ph / 2; y += stepY) {
         const corners: Point[] = [
@@ -188,14 +191,17 @@ export function placePanels(
         const allInside = corners.every((c) => isPointInPolygon(c, rotatedInset));
         if (!allInside) continue;
 
-        // No corner inside any exclude area
+        // Check overlap with exclude areas (bidirectional: panel corners in exclude, and exclude vertices in panel)
         const inExclude = rotatedExcludes.some((exPoly) =>
-          corners.some((c) => isPointInPolygon(c, exPoly))
+          exPoly.length >= 3 && (
+            corners.some((c) => isPointInPolygon(c, exPoly)) ||
+            exPoly.some((ep) => isPointInPolygon(ep, corners))
+          )
         );
         if (inExclude) continue;
 
         // Rotate corners back and convert to lat/lng
-        const latLngCorners = corners.map((c) => toLatLng(origin, rotate(c, angle)));
+        const latLngCorners = corners.map((c) => toLatLng(origin, rotate(c, angle))) as [LatLng, LatLng, LatLng, LatLng];
 
         allPanels.push({
           id: crypto.randomUUID(),

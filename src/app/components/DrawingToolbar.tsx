@@ -51,7 +51,7 @@ export default function DrawingToolbar({
 
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
         <button
-          onClick={() => onModeChange(mode === null ? null : null)}
+          onClick={() => onModeChange(null)}
           style={{
             ...toolButtonStyle(mode === null, "var(--text-secondary)"),
           }}

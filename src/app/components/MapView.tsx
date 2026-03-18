@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { Map, useMap } from "@vis.gl/react-google-maps";
 import { Crosshair, ZoomIn, ZoomOut, Layers, Maximize2 } from "lucide-react";
 import type { DrawingMode, PolygonArea, PlacedPanel, LatLng } from "../types";
@@ -104,6 +104,9 @@ function DrawingOverlay({
   const drawingManagerRef = useRef<google.maps.drawing.DrawingManager | null>(null);
   const polygonsRef = useRef<Map<string, google.maps.Polygon>>(new globalThis.Map());
 
+  const areasRef = useRef(areas);
+  areasRef.current = areas;
+
   // Render existing polygons
   useEffect(() => {
     if (!map) return;
@@ -125,7 +128,7 @@ function DrawingOverlay({
         map,
       });
 
-      // Track path changes
+      // Track path changes — use ref to avoid stale closure over areas
       const updatePaths = () => {
         const path = polygon.getPath();
         const newPaths: LatLng[] = [];
@@ -133,7 +136,7 @@ function DrawingOverlay({
           const point = path.getAt(i);
           newPaths.push({ lat: point.lat(), lng: point.lng() });
         }
-        const updated = areas.map((a) =>
+        const updated = areasRef.current.map((a) =>
           a.id === area.id ? { ...a, paths: newPaths } : a
         );
         onAreasChange(updated);

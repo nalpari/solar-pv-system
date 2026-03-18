@@ -87,6 +87,8 @@ export default function AddressSearch({ onPlaceSelect }: AddressSearchProps) {
             lng: place.geometry.location.lng(),
             address: place.formatted_address || prediction.description,
           });
+        } else {
+          console.error("Places getDetails failed:", status);
         }
       }
     );
