@@ -52,14 +52,14 @@ export default function Home() {
   const installAreaM2 = installAreas.reduce(
     (sum, a) => {
       try { return sum + computePolygonAreaM2(a.paths); }
-      catch { return sum; }
+      catch (e) { console.error(`Area calc failed for ${a.id}:`, e); return sum; }
     },
     0
   );
   const excludeAreaM2 = excludeAreas.reduce(
     (sum, a) => {
       try { return sum + computePolygonAreaM2(a.paths); }
-      catch { return sum; }
+      catch (e) { console.error(`Area calc failed for ${a.id}:`, e); return sum; }
     },
     0
   );
@@ -75,12 +75,14 @@ export default function Home() {
   const handleAreaComplete = useCallback(
     (area: PolygonArea) => {
       setAreas((prev) => [...prev, area]);
+      setPlacedPanelsList([]);
     },
     []
   );
 
   const handleAreasChange = useCallback((newAreas: PolygonArea[]) => {
     setAreas(newAreas);
+    setPlacedPanelsList([]);
   }, []);
 
   function handleClearAll() {

@@ -22,7 +22,7 @@ export default function ResultsPanel({
   const panelH = orientation === "landscape" ? panelSize.width : panelSize.height;
   const panelAreaM2 = (panelW * panelH) / 1_000_000;
   const totalPanelArea = panelCount * panelAreaM2;
-  const netArea = installAreaM2 - excludeAreaM2;
+  const netArea = Math.max(installAreaM2 - excludeAreaM2, 0);
   const coveragePercent = netArea > 0 ? ((totalPanelArea / netArea) * 100).toFixed(1) : "0.0";
 
   const stats = [

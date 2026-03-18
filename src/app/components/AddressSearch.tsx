@@ -62,6 +62,9 @@ export default function AddressSearch({ onPlaceSelect }: AddressSearchProps) {
           setIsOpen(true);
         } else {
           setPredictions([]);
+          if (status !== google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
+            console.error("Places autocomplete failed:", status);
+          }
         }
       }
     );
@@ -97,6 +100,7 @@ export default function AddressSearch({ onPlaceSelect }: AddressSearchProps) {
   return (
     <div ref={containerRef} style={{ position: "relative" }}>
       <label
+        htmlFor="address-search-input"
         style={{
           display: "block",
           fontSize: 11,
@@ -122,6 +126,7 @@ export default function AddressSearch({ onPlaceSelect }: AddressSearchProps) {
           }}
         />
         <input
+          id="address-search-input"
           type="text"
           value={query}
           onChange={(e) => handleInputChange(e.target.value)}

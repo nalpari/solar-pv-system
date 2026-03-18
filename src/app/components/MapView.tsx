@@ -16,14 +16,13 @@ interface MapViewProps {
 
 const MAP_ID = "solar-pv-map";
 
-function MapControls() {
+function MapControls({ center }: { center: { lat: number; lng: number } }) {
   const map = useMap(MAP_ID);
 
   const handleZoomIn = () => map?.setZoom((map.getZoom() || 18) + 1);
   const handleZoomOut = () => map?.setZoom((map.getZoom() || 18) - 1);
   const handleRecenter = () => {
-    const center = map?.getCenter();
-    if (center) map?.panTo(center);
+    if (map) map.panTo(center);
   };
   const handleSatellite = () => {
     const current = map?.getMapTypeId();
@@ -107,15 +106,21 @@ function DrawingOverlay({
   const areasRef = useRef(areas);
   areasRef.current = areas;
 
-  // Render existing polygons
+  // Stable key: only changes when areas are added or removed, not when paths change from editing
+  const areaIds = areas.map((a) => a.id).join(",");
+
+  // Render polygons — only recreate when area set changes (add/remove), not on path edits
   useEffect(() => {
     if (!map) return;
 
-    // Clear old polygons
-    polygonsRef.current.forEach((poly) => poly.setMap(null));
+    // Clear old polygons and their listeners
+    polygonsRef.current.forEach((poly) => {
+      google.maps.event.clearInstanceListeners(poly);
+      poly.setMap(null);
+    });
     polygonsRef.current.clear();
 
-    areas.forEach((area) => {
+    areasRef.current.forEach((area) => {
       const polygon = new google.maps.Polygon({
         paths: area.paths,
         strokeColor: area.type === "install" ? "#0693E3" : "#CF2E2E",
@@ -144,15 +149,21 @@ function DrawingOverlay({
 
       google.maps.event.addListener(polygon.getPath(), "set_at", updatePaths);
       google.maps.event.addListener(polygon.getPath(), "insert_at", updatePaths);
+      google.maps.event.addListener(polygon.getPath(), "remove_at", updatePaths);
+      google.maps.event.addListener(polygon, "dragend", updatePaths);
 
       polygonsRef.current.set(area.id, polygon);
     });
 
     return () => {
-      polygonsRef.current.forEach((poly) => poly.setMap(null));
+      polygonsRef.current.forEach((poly) => {
+        google.maps.event.clearInstanceListeners(poly);
+        poly.setMap(null);
+      });
       polygonsRef.current.clear();
     };
-  }, [map, areas, onAreasChange]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, areaIds, onAreasChange]);
 
   // Drawing manager
   useEffect(() => {
@@ -274,7 +285,7 @@ export default function MapView({
         <PanelOverlay panels={placedPanels} />
       </Map>
 
-      <MapControls />
+      <MapControls center={center} />
 
       {/* Drawing mode indicator */}
       {drawingMode && (
