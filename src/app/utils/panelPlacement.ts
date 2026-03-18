@@ -1,0 +1,209 @@
+import type { LatLng, PanelSize, PanelOrientation, PlacedPanel, PolygonArea } from "../types";
+
+interface Point {
+  x: number;
+  y: number;
+}
+
+const METERS_PER_LAT = 111320;
+
+function metersPerLng(lat: number): number {
+  return 111320 * Math.cos((lat * Math.PI) / 180);
+}
+
+function toLocal(origin: LatLng, p: LatLng): Point {
+  return {
+    x: (p.lng - origin.lng) * metersPerLng(origin.lat),
+    y: (p.lat - origin.lat) * METERS_PER_LAT,
+  };
+}
+
+function toLatLng(origin: LatLng, p: Point): LatLng {
+  return {
+    lat: origin.lat + p.y / METERS_PER_LAT,
+    lng: origin.lng + p.x / metersPerLng(origin.lat),
+  };
+}
+
+function signedArea(pts: Point[]): number {
+  let area = 0;
+  for (let i = 0; i < pts.length; i++) {
+    const j = (i + 1) % pts.length;
+    area += pts[i].x * pts[j].y - pts[j].x * pts[i].y;
+  }
+  return area / 2;
+}
+
+function ensureCCW(pts: Point[]): Point[] {
+  return signedArea(pts) < 0 ? [...pts].reverse() : pts;
+}
+
+function lineIntersection(
+  a1: Point, a2: Point,
+  b1: Point, b2: Point,
+): Point | null {
+  const dx1 = a2.x - a1.x, dy1 = a2.y - a1.y;
+  const dx2 = b2.x - b1.x, dy2 = b2.y - b1.y;
+  const denom = dx1 * dy2 - dy1 * dx2;
+  if (Math.abs(denom) < 1e-12) return null;
+  const t = ((b1.x - a1.x) * dy2 - (b1.y - a1.y) * dx2) / denom;
+  return { x: a1.x + t * dx1, y: a1.y + t * dy1 };
+}
+
+function insetPolygon(pts: Point[], distance: number): Point[] {
+  const n = pts.length;
+  if (n < 3) return [];
+
+  const ccw = ensureCCW(pts);
+
+  const offsetEdges: { p1: Point; p2: Point }[] = [];
+  for (let i = 0; i < n; i++) {
+    const j = (i + 1) % n;
+    const dx = ccw[j].x - ccw[i].x;
+    const dy = ccw[j].y - ccw[i].y;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    if (len === 0) continue;
+    // Inward normal for CCW polygon: (dy, -dx) normalized
+    const nx = (dy / len) * distance;
+    const ny = (-dx / len) * distance;
+    offsetEdges.push({
+      p1: { x: ccw[i].x + nx, y: ccw[i].y + ny },
+      p2: { x: ccw[j].x + nx, y: ccw[j].y + ny },
+    });
+  }
+
+  const result: Point[] = [];
+  for (let i = 0; i < offsetEdges.length; i++) {
+    const j = (i + 1) % offsetEdges.length;
+    const pt = lineIntersection(
+      offsetEdges[i].p1, offsetEdges[i].p2,
+      offsetEdges[j].p1, offsetEdges[j].p2,
+    );
+    if (pt) result.push(pt);
+  }
+
+  if (result.length < 3) return [];
+
+  // Validate that inset polygon hasn't self-intersected (area should be positive)
+  if (signedArea(result) <= 0) return [];
+
+  return result;
+}
+
+function isPointInPolygon(pt: Point, polygon: Point[]): boolean {
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i].x, yi = polygon[i].y;
+    const xj = polygon[j].x, yj = polygon[j].y;
+    if (
+      yi > pt.y !== yj > pt.y &&
+      pt.x < ((xj - xi) * (pt.y - yi)) / (yj - yi) + xi
+    ) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+function rotate(pt: Point, angle: number): Point {
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+  return { x: pt.x * cos - pt.y * sin, y: pt.x * sin + pt.y * cos };
+}
+
+export function placePanels(
+  installAreas: PolygonArea[],
+  excludeAreas: PolygonArea[],
+  panelSize: PanelSize,
+  orientation: PanelOrientation,
+  gap: number,
+  margin: number,
+): PlacedPanel[] {
+  const allPanels: PlacedPanel[] = [];
+
+  // Panel dimensions in meters
+  const pw = (orientation === "landscape" ? panelSize.height : panelSize.width) / 1000;
+  const ph = (orientation === "landscape" ? panelSize.width : panelSize.height) / 1000;
+  const gapM = gap / 1000;
+  const marginM = margin / 1000;
+
+  // Convert exclude areas to local coords for point-in-polygon checks
+  for (const area of installAreas) {
+    if (area.paths.length < 3) continue;
+
+    const origin = area.paths[0];
+    const localPoly = area.paths.map((p) => toLocal(origin, p));
+
+    // Inset by margin
+    const inset = insetPolygon(localPoly, marginM);
+    if (inset.length < 3) continue;
+
+    // Find longest edge of the ORIGINAL polygon for alignment
+    let maxLen = 0;
+    let angle = 0;
+    for (let i = 0; i < localPoly.length; i++) {
+      const j = (i + 1) % localPoly.length;
+      const dx = localPoly[j].x - localPoly[i].x;
+      const dy = localPoly[j].y - localPoly[i].y;
+      const len = Math.sqrt(dx * dx + dy * dy);
+      if (len > maxLen) {
+        maxLen = len;
+        angle = Math.atan2(dy, dx);
+      }
+    }
+
+    // Rotate inset polygon so longest edge is horizontal
+    const negAngle = -angle;
+    const rotatedInset = inset.map((p) => rotate(p, negAngle));
+
+    // Also rotate exclude areas to same coordinate system
+    const rotatedExcludes: Point[][] = excludeAreas.map((ex) =>
+      ex.paths.map((p) => rotate(toLocal(origin, p), negAngle))
+    );
+
+    // Bounding box of rotated inset polygon
+    let minX = Infinity, maxX = -Infinity;
+    let minY = Infinity, maxY = -Infinity;
+    for (const p of rotatedInset) {
+      minX = Math.min(minX, p.x);
+      maxX = Math.max(maxX, p.x);
+      minY = Math.min(minY, p.y);
+      maxY = Math.max(maxY, p.y);
+    }
+
+    // Place panels in a grid
+    const stepX = pw + gapM;
+    const stepY = ph + gapM;
+
+    for (let x = minX + pw / 2; x <= maxX - pw / 2; x += stepX) {
+      for (let y = minY + ph / 2; y <= maxY - ph / 2; y += stepY) {
+        const corners: Point[] = [
+          { x: x - pw / 2, y: y - ph / 2 },
+          { x: x + pw / 2, y: y - ph / 2 },
+          { x: x + pw / 2, y: y + ph / 2 },
+          { x: x - pw / 2, y: y + ph / 2 },
+        ];
+
+        // All corners must be inside the inset polygon
+        const allInside = corners.every((c) => isPointInPolygon(c, rotatedInset));
+        if (!allInside) continue;
+
+        // No corner inside any exclude area
+        const inExclude = rotatedExcludes.some((exPoly) =>
+          corners.some((c) => isPointInPolygon(c, exPoly))
+        );
+        if (inExclude) continue;
+
+        // Rotate corners back and convert to lat/lng
+        const latLngCorners = corners.map((c) => toLatLng(origin, rotate(c, angle)));
+
+        allPanels.push({
+          id: crypto.randomUUID(),
+          corners: latLngCorners,
+        });
+      }
+    }
+  }
+
+  return allPanels;
+}

@@ -4,10 +4,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
-- `npm run dev` — Start dev server (Next.js)
-- `npm run build` — Production build
-- `npm run start` — Serve production build
-- `npm run lint` — Run ESLint (flat config, core-web-vitals + typescript rules)
+- `pnpm dev` — Start dev server (Next.js)
+- `pnpm build` — Production build
+- `pnpm start` — Serve production build
+- `pnpm lint` — Run ESLint (flat config, core-web-vitals + typescript rules)
 
 ## Tech Stack
 
