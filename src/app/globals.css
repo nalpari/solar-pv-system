@@ -1,26 +1,125 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Background — Q-Cells white corporate */
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #F7F8FA;
+  --bg-surface: #F0F2F5;
+  --bg-surface-hover: #E8EAEF;
+  --bg-elevated: #FFFFFF;
+
+  /* Text */
+  --text-primary: #1A1A2E;
+  --text-secondary: #555555;
+  --text-tertiary: #8C8C8C;
+  --text-inverse: #FFFFFF;
+
+  /* Accent — Q-Cells brand palette */
+  --accent-blue: #0693E3;
+  --accent-blue-hover: #0580C9;
+  --accent-blue-muted: rgba(6, 147, 227, 0.08);
+  --accent-orange: #FCB900;
+  --accent-orange-hover: #E5A800;
+  --accent-orange-muted: rgba(252, 185, 0, 0.10);
+  --accent-green: #00D084;
+  --accent-green-hover: #00B872;
+  --accent-green-muted: rgba(0, 208, 132, 0.08);
+  --accent-red: #CF2E2E;
+  --accent-red-hover: #B52525;
+  --accent-red-muted: rgba(207, 46, 46, 0.08);
+
+  /* Border */
+  --border-primary: rgba(0, 0, 0, 0.10);
+  --border-secondary: rgba(0, 0, 0, 0.05);
+  --border-focus: #0693E3;
+
+  /* Misc */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: var(--bg-primary);
+  --color-foreground: var(--text-primary);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-primary);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* Focus visible */
+:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+/* Input base styles */
+input[type="text"],
+input[type="number"],
+input[type="search"],
+select {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 14px;
+  padding: 8px 12px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+input:focus,
+select:focus {
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 3px var(--accent-blue-muted);
+  outline: none;
+}
+
+input::placeholder {
+  color: var(--text-tertiary);
+}
+
+/* Button base */
+button {
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+@keyframes spin {
+  to { transform: translateY(-50%) rotate(360deg); }
 }
