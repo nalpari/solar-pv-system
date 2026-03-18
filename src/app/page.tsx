@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { APIProvider } from "@vis.gl/react-google-maps";
 import { Play, Globe } from "lucide-react";
 import Header from "./components/Header";
@@ -36,6 +36,11 @@ function computePolygonAreaM2(paths: { lat: number; lng: number }[]): number {
 
 export default function Home() {
   const [lang, setLang] = useState<Lang>("ja");
+
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
+
   const [center, setCenter] = useState(DEFAULT_CENTER);
   const [drawingMode, setDrawingMode] = useState<DrawingMode>(null);
   const [areas, setAreas] = useState<PolygonArea[]>([]);

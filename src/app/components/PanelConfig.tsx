@@ -395,7 +395,7 @@ export default function PanelConfig({
         >
           {t(orientation === "portrait" ? "portrait" : "landscape", lang)}
           &middot;{" "}
-          {t("perPanel", lang)} {((displayW * displayH) / 1_000_000).toFixed(2)} m&sup2;
+          {t("perPanelPrefix", lang)}{((displayW * displayH) / 1_000_000).toFixed(2)} m&sup2;{t("perPanelSuffix", lang)}
         </div>
       </div>
     </div>

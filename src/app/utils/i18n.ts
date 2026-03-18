@@ -22,7 +22,8 @@ const translations = {
   landscape: { ja: "横置き", en: "Landscape" },
   panelGap: { ja: "パネル間隔", en: "Panel Gap" },
   edgeMargin: { ja: "端部マージン", en: "Edge Margin" },
-  perPanel: { ja: "パネル1枚あたり", en: "per panel" },
+  perPanelPrefix: { ja: "パネル1枚あたり ", en: "" },
+  perPanelSuffix: { ja: "", en: " per panel" },
 
   // PanelConfig presets
   preset60Cell: { ja: "標準 60セル", en: "Standard 60-Cell" },
