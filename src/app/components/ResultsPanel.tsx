@@ -1,6 +1,8 @@
 "use client";
 
 import { Zap, LayoutGrid, Ruler, ArrowRight } from "lucide-react";
+import { t } from "../utils/i18n";
+import type { Lang } from "../utils/i18n";
 import type { PanelSize, PanelOrientation } from "../types";
 
 interface ResultsPanelProps {
@@ -9,6 +11,7 @@ interface ResultsPanelProps {
   excludeAreaM2: number;
   panelSize: PanelSize;
   orientation: PanelOrientation;
+  lang: Lang;
 }
 
 export default function ResultsPanel({
@@ -17,6 +20,7 @@ export default function ResultsPanel({
   excludeAreaM2,
   panelSize,
   orientation,
+  lang,
 }: ResultsPanelProps) {
   const panelW = orientation === "landscape" ? panelSize.height : panelSize.width;
   const panelH = orientation === "landscape" ? panelSize.width : panelSize.height;
@@ -27,21 +31,21 @@ export default function ResultsPanel({
 
   const stats = [
     {
-      label: "Total Panels",
+      label: t("totalPanels", lang),
       value: panelCount.toLocaleString(),
       icon: LayoutGrid,
       color: "var(--accent-blue)",
       bgColor: "var(--accent-blue-muted)",
     },
     {
-      label: "Panel Coverage",
+      label: t("panelCoverage", lang),
       value: `${totalPanelArea.toFixed(1)} m²`,
       icon: Ruler,
       color: "var(--accent-green)",
       bgColor: "var(--accent-green-muted)",
     },
     {
-      label: "Coverage Rate",
+      label: t("coverageRate", lang),
       value: `${coveragePercent}%`,
       icon: Zap,
       color: "var(--accent-orange)",
@@ -62,7 +66,7 @@ export default function ResultsPanel({
           marginBottom: 10,
         }}
       >
-        Layout Results
+        {t("layoutResults", lang)}
       </label>
 
       {panelCount === 0 ? (
@@ -80,7 +84,7 @@ export default function ResultsPanel({
             color="var(--text-tertiary)"
             style={{ margin: "0 auto 8px", opacity: 0.5 }}
           />
-          Draw an installation area on the map to see panel layout results.
+          {t("drawPrompt", lang)}
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -154,7 +158,7 @@ export default function ResultsPanel({
                 color: "var(--text-secondary)",
               }}
             >
-              <span>Install Area</span>
+              <span>{t("installArea", lang)}</span>
               <span style={{ fontFamily: "var(--font-geist-mono)" }}>
                 {installAreaM2.toFixed(1)} m²
               </span>
@@ -168,7 +172,7 @@ export default function ResultsPanel({
                   color: "var(--accent-red)",
                 }}
               >
-                <span>Exclusion Zone</span>
+                <span>{t("exclusionZoneResult", lang)}</span>
                 <span style={{ fontFamily: "var(--font-geist-mono)" }}>
                   -{excludeAreaM2.toFixed(1)} m²
                 </span>
@@ -184,7 +188,7 @@ export default function ResultsPanel({
                 fontWeight: 500,
               }}
             >
-              <span>Net Available</span>
+              <span>{t("netAvailable", lang)}</span>
               <span style={{ fontFamily: "var(--font-geist-mono)" }}>
                 {netArea.toFixed(1)} m²
               </span>
@@ -211,7 +215,7 @@ export default function ResultsPanel({
             }}
           >
             <Zap size={14} />
-            Estimate Power Generation
+            {t("estimatePower", lang)}
             <ArrowRight size={14} style={{ marginLeft: "auto" }} />
           </button>
           <div
@@ -222,7 +226,7 @@ export default function ResultsPanel({
               fontStyle: "italic",
             }}
           >
-            Power estimation — coming soon
+            {t("powerComingSoon", lang)}
           </div>
         </div>
       )}

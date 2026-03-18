@@ -2,14 +2,18 @@
 
 import { useState } from "react";
 import { RotateCw, RectangleHorizontal, RectangleVertical, Settings2 } from "lucide-react";
+import { t } from "../utils/i18n";
+import type { Lang } from "../utils/i18n";
 import type { PanelSize, PanelOrientation } from "../types";
 
-const PRESET_SIZES: PanelSize[] = [
-  { label: "Standard 60-Cell", width: 991, height: 1650 },
-  { label: "Standard 72-Cell", width: 991, height: 1960 },
-  { label: "Large Format", width: 1134, height: 2278 },
-  { label: "Custom", width: 1000, height: 3000 },
-];
+function getPresetSizes(lang: Lang): PanelSize[] {
+  return [
+    { label: t("preset60Cell", lang), width: 991, height: 1650 },
+    { label: t("preset72Cell", lang), width: 991, height: 1960 },
+    { label: t("presetLarge", lang), width: 1134, height: 2278 },
+    { label: t("presetCustom", lang), width: 1000, height: 3000 },
+  ];
+}
 
 interface PanelConfigProps {
   panelSize: PanelSize;
@@ -20,6 +24,7 @@ interface PanelConfigProps {
   onOrientationChange: (orientation: PanelOrientation) => void;
   onGapChange: (gap: number) => void;
   onMarginChange: (margin: number) => void;
+  lang: Lang;
 }
 
 export default function PanelConfig({
@@ -31,13 +36,15 @@ export default function PanelConfig({
   onOrientationChange,
   onGapChange,
   onMarginChange,
+  lang,
 }: PanelConfigProps) {
   const [selectedPreset, setSelectedPreset] = useState(3); // Custom default
   const isCustom = selectedPreset === 3;
+  const presetSizes = getPresetSizes(lang);
 
   function handlePresetChange(index: number) {
     setSelectedPreset(index);
-    onPanelSizeChange({ ...PRESET_SIZES[index] });
+    onPanelSizeChange({ ...presetSizes[index] });
   }
 
   const displayW = orientation === "landscape" ? panelSize.height : panelSize.width;
@@ -63,7 +70,7 @@ export default function PanelConfig({
             letterSpacing: "0.05em",
           }}
         >
-          Panel Configuration
+          {t("panelConfig", lang)}
         </label>
       </div>
 
@@ -76,7 +83,7 @@ export default function PanelConfig({
             marginBottom: 6,
           }}
         >
-          Panel Type
+          {t("panelType", lang)}
         </div>
         <div
           style={{
@@ -85,9 +92,9 @@ export default function PanelConfig({
             gap: 4,
           }}
         >
-          {PRESET_SIZES.map((preset, i) => (
+          {presetSizes.map((preset, i) => (
             <button
-              key={preset.label}
+              key={i}
               onClick={() => handlePresetChange(i)}
               style={{
                 padding: "6px 8px",
@@ -140,7 +147,7 @@ export default function PanelConfig({
                   marginBottom: 4,
                 }}
               >
-                Width (mm)
+                {t("widthMm", lang)}
               </label>
               <input
                 type="number"
@@ -166,7 +173,7 @@ export default function PanelConfig({
                   marginBottom: 4,
                 }}
               >
-                Height (mm)
+                {t("heightMm", lang)}
               </label>
               <input
                 type="number"
@@ -196,7 +203,7 @@ export default function PanelConfig({
             marginBottom: 6,
           }}
         >
-          Orientation
+          {t("orientation", lang)}
         </div>
         <div style={{ display: "flex", gap: 4 }}>
           <button
@@ -227,7 +234,7 @@ export default function PanelConfig({
             }}
           >
             <RectangleVertical size={14} />
-            Portrait
+            {t("portrait", lang)}
           </button>
           <button
             onClick={() => onOrientationChange("landscape")}
@@ -257,7 +264,7 @@ export default function PanelConfig({
             }}
           >
             <RectangleHorizontal size={14} />
-            Landscape
+            {t("landscape", lang)}
           </button>
         </div>
       </div>
@@ -273,7 +280,7 @@ export default function PanelConfig({
           }}
         >
           <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-            Panel Gap
+            {t("panelGap", lang)}
           </span>
           <span
             style={{
@@ -312,7 +319,7 @@ export default function PanelConfig({
           }}
         >
           <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-            Edge Margin
+            {t("edgeMargin", lang)}
           </span>
           <span
             style={{
@@ -386,9 +393,9 @@ export default function PanelConfig({
             textAlign: "center",
           }}
         >
-          {orientation === "portrait" ? "Portrait" : "Landscape"} orientation
+          {t(orientation === "portrait" ? "portrait" : "landscape", lang)}
           &middot;{" "}
-          {((displayW * displayH) / 1_000_000).toFixed(2)} m&sup2; per panel
+          {t("perPanel", lang)} {((displayW * displayH) / 1_000_000).toFixed(2)} m&sup2;
         </div>
       </div>
     </div>

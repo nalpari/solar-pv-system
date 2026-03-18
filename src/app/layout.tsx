@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Solar PV Planner - Rooftop Panel Layout Designer",
+  title: "Solar PV Planner - 屋上パネルレイアウト設計ツール",
   description:
-    "Design solar panel layouts on building rooftops using satellite imagery. Calculate panel counts and estimate power generation.",
+    "衛星画像を使用して建物の屋上にソーラーパネルのレイアウトを設計します。パネル数の計算と発電量の見積もりが可能です。",
 };
 
 export default function RootLayout({
@@ -24,7 +24,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="ja">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

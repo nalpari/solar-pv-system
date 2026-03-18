@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { APIProvider } from "@vis.gl/react-google-maps";
-import { Play } from "lucide-react";
+import { Play, Globe } from "lucide-react";
 import Header from "./components/Header";
 import AddressSearch from "./components/AddressSearch";
 import DrawingToolbar from "./components/DrawingToolbar";
@@ -10,6 +10,8 @@ import PanelConfig from "./components/PanelConfig";
 import ResultsPanel from "./components/ResultsPanel";
 import MapView from "./components/MapView";
 import { placePanels } from "./utils/panelPlacement";
+import { t } from "./utils/i18n";
+import type { Lang } from "./utils/i18n";
 import type {
   PanelSize,
   PanelOrientation,
@@ -33,6 +35,7 @@ function computePolygonAreaM2(paths: { lat: number; lng: number }[]): number {
 }
 
 export default function Home() {
+  const [lang, setLang] = useState<Lang>("ja");
   const [center, setCenter] = useState(DEFAULT_CENTER);
   const [drawingMode, setDrawingMode] = useState<DrawingMode>(null);
   const [areas, setAreas] = useState<PolygonArea[]>([]);
@@ -147,7 +150,7 @@ export default function Home() {
                 gap: 20,
               }}
             >
-              <AddressSearch onPlaceSelect={handlePlaceSelect} />
+              <AddressSearch onPlaceSelect={handlePlaceSelect} lang={lang} />
 
               <div
                 style={{
@@ -162,6 +165,7 @@ export default function Home() {
                 onClearAll={handleClearAll}
                 installCount={installAreas.length}
                 excludeCount={excludeAreas.length}
+                lang={lang}
               />
 
               <div
@@ -180,6 +184,7 @@ export default function Home() {
                 onOrientationChange={setOrientation}
                 onGapChange={setGap}
                 onMarginChange={setMargin}
+                lang={lang}
               />
 
               {/* Place Panels Button */}
@@ -204,7 +209,7 @@ export default function Home() {
                 }}
               >
                 <Play size={16} />
-                Place Panels
+                {t("placePanels", lang)}
               </button>
 
               <div
@@ -220,6 +225,7 @@ export default function Home() {
                 excludeAreaM2={excludeAreaM2}
                 panelSize={panelSize}
                 orientation={orientation}
+                lang={lang}
               />
             </div>
 
@@ -230,10 +236,41 @@ export default function Home() {
                 borderTop: "1px solid var(--border-primary)",
                 fontSize: 11,
                 color: "var(--text-tertiary)",
-                textAlign: "center",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
               }}
             >
-              Solar PV Planner v0.1.0
+              <span>Hanwha Japan PV Simulation v0.1.0</span>
+              <button
+                onClick={() => setLang(lang === "ja" ? "en" : "ja")}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 4,
+                  padding: "2px 8px",
+                  borderRadius: 10,
+                  border: "1px solid var(--border-primary)",
+                  background: "var(--bg-surface)",
+                  color: "var(--text-secondary)",
+                  fontSize: 10,
+                  fontWeight: 500,
+                  cursor: "pointer",
+                  transition: "all 0.15s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = "var(--accent-blue)";
+                  e.currentTarget.style.color = "var(--accent-blue)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "var(--border-primary)";
+                  e.currentTarget.style.color = "var(--text-secondary)";
+                }}
+              >
+                <Globe size={10} />
+                {lang === "ja" ? "EN" : "JA"}
+              </button>
             </div>
           </aside>
 
@@ -247,6 +284,7 @@ export default function Home() {
                 placedPanels={placedPanelsList}
                 onAreaComplete={handleAreaComplete}
                 onAreasChange={handleAreasChange}
+                lang={lang}
               />
             ) : (
               <div
@@ -304,7 +342,7 @@ export default function Home() {
                       marginBottom: 8,
                     }}
                   >
-                    Google Maps API Key Required
+                    {t("apiKeyRequired", lang)}
                   </h2>
                   <p
                     style={{
@@ -314,8 +352,7 @@ export default function Home() {
                       marginBottom: 20,
                     }}
                   >
-                    Set your API key as an environment variable to enable the
-                    interactive map.
+                    {t("apiKeyDescription", lang)}
                   </p>
                   <code
                     style={{
@@ -340,7 +377,7 @@ export default function Home() {
                       marginTop: 12,
                     }}
                   >
-                    Required APIs: Maps JavaScript, Places, Drawing, Geometry
+                    {t("requiredApis", lang)}
                   </p>
                 </div>
               </div>

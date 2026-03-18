@@ -1,6 +1,8 @@
 "use client";
 
 import { PenTool, Ban, MousePointer, Trash2 } from "lucide-react";
+import { t } from "../utils/i18n";
+import type { Lang } from "../utils/i18n";
 import type { DrawingMode } from "../types";
 
 interface DrawingToolbarProps {
@@ -9,6 +11,7 @@ interface DrawingToolbarProps {
   onClearAll: () => void;
   installCount: number;
   excludeCount: number;
+  lang: Lang;
 }
 
 const toolButtonStyle = (isActive: boolean, color: string) => ({
@@ -32,6 +35,7 @@ export default function DrawingToolbar({
   onClearAll,
   installCount,
   excludeCount,
+  lang,
 }: DrawingToolbarProps) {
   return (
     <div>
@@ -46,7 +50,7 @@ export default function DrawingToolbar({
           marginBottom: 8,
         }}
       >
-        Drawing Tools
+        {t("drawingTools", lang)}
       </label>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -63,7 +67,7 @@ export default function DrawingToolbar({
           }}
         >
           <MousePointer size={15} />
-          <span>Select / Move</span>
+          <span>{t("selectMove", lang)}</span>
         </button>
 
         <button
@@ -79,7 +83,7 @@ export default function DrawingToolbar({
           }}
         >
           <PenTool size={15} />
-          <span style={{ flex: 1, textAlign: "left" }}>Installation Area</span>
+          <span style={{ flex: 1, textAlign: "left" }}>{t("installationArea", lang)}</span>
           {installCount > 0 && (
             <span
               style={{
@@ -109,7 +113,7 @@ export default function DrawingToolbar({
           }}
         >
           <Ban size={15} />
-          <span style={{ flex: 1, textAlign: "left" }}>Exclusion Zone</span>
+          <span style={{ flex: 1, textAlign: "left" }}>{t("exclusionZone", lang)}</span>
           {excludeCount > 0 && (
             <span
               style={{
@@ -154,7 +158,7 @@ export default function DrawingToolbar({
           }}
         >
           <Trash2 size={13} />
-          Clear All Areas
+          {t("clearAll", lang)}
         </button>
       )}
     </div>

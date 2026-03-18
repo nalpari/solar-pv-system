@@ -3,6 +3,8 @@
 import { useEffect, useRef } from "react";
 import { Map, useMap } from "@vis.gl/react-google-maps";
 import { Crosshair, ZoomIn, ZoomOut, Layers, Maximize2 } from "lucide-react";
+import { t } from "../utils/i18n";
+import type { Lang } from "../utils/i18n";
 import type { DrawingMode, PolygonArea, PlacedPanel, LatLng } from "../types";
 
 interface MapViewProps {
@@ -12,11 +14,12 @@ interface MapViewProps {
   placedPanels: PlacedPanel[];
   onAreaComplete: (area: PolygonArea) => void;
   onAreasChange: (areas: PolygonArea[]) => void;
+  lang: Lang;
 }
 
 const MAP_ID = "solar-pv-map";
 
-function MapControls({ center }: { center: { lat: number; lng: number } }) {
+function MapControls({ center, lang }: { center: { lat: number; lng: number }; lang: Lang }) {
   const map = useMap(MAP_ID);
 
   const handleZoomIn = () => map?.setZoom((map.getZoom() || 18) + 1);
@@ -56,16 +59,16 @@ function MapControls({ center }: { center: { lat: number; lng: number } }) {
         zIndex: 10,
       }}
     >
-      <button onClick={handleZoomIn} style={btnStyle} aria-label="Zoom in">
+      <button onClick={handleZoomIn} style={btnStyle} aria-label={t("zoomIn", lang)}>
         <ZoomIn size={16} />
       </button>
-      <button onClick={handleZoomOut} style={btnStyle} aria-label="Zoom out">
+      <button onClick={handleZoomOut} style={btnStyle} aria-label={t("zoomOut", lang)}>
         <ZoomOut size={16} />
       </button>
-      <button onClick={handleSatellite} style={btnStyle} aria-label="Toggle satellite view">
+      <button onClick={handleSatellite} style={btnStyle} aria-label={t("toggleSatellite", lang)}>
         <Layers size={16} />
       </button>
-      <button onClick={handleRecenter} style={btnStyle} aria-label="Recenter map">
+      <button onClick={handleRecenter} style={btnStyle} aria-label={t("recenterMap", lang)}>
         <Maximize2 size={16} />
       </button>
     </div>
@@ -265,6 +268,7 @@ export default function MapView({
   placedPanels,
   onAreaComplete,
   onAreasChange,
+  lang,
 }: MapViewProps) {
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
@@ -288,7 +292,7 @@ export default function MapView({
         <PanelOverlay panels={placedPanels} />
       </Map>
 
-      <MapControls center={center} />
+      <MapControls center={center} lang={lang} />
 
       {/* Drawing mode indicator */}
       {drawingMode && (
@@ -314,8 +318,8 @@ export default function MapView({
         >
           <Crosshair size={14} />
           {drawingMode === "install"
-            ? "Click to draw installation area"
-            : "Click to draw exclusion zone"}
+            ? t("drawInstall", lang)
+            : t("drawExclude", lang)}
         </div>
       )}
 

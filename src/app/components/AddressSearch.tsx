@@ -2,12 +2,15 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Search, MapPin, Loader2 } from "lucide-react";
+import { t } from "../utils/i18n";
+import type { Lang } from "../utils/i18n";
 
 interface AddressSearchProps {
   onPlaceSelect: (location: { lat: number; lng: number; address: string }) => void;
+  lang: Lang;
 }
 
-export default function AddressSearch({ onPlaceSelect }: AddressSearchProps) {
+export default function AddressSearch({ onPlaceSelect, lang }: AddressSearchProps) {
   const [query, setQuery] = useState("");
   const [predictions, setPredictions] = useState<google.maps.places.AutocompletePrediction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -111,7 +114,7 @@ export default function AddressSearch({ onPlaceSelect }: AddressSearchProps) {
           marginBottom: 6,
         }}
       >
-        Search Address
+        {t("searchAddress", lang)}
       </label>
       <div style={{ position: "relative" }}>
         <Search
@@ -131,7 +134,7 @@ export default function AddressSearch({ onPlaceSelect }: AddressSearchProps) {
           value={query}
           onChange={(e) => handleInputChange(e.target.value)}
           onFocus={() => predictions.length > 0 && setIsOpen(true)}
-          placeholder="Enter building address..."
+          placeholder={t("addressPlaceholder", lang)}
           style={{
             width: "100%",
             paddingLeft: 34,
