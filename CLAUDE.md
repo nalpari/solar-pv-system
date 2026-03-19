@@ -8,6 +8,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `pnpm build` — Production build
 - `pnpm start` — Serve production build
 - `pnpm lint` — Run ESLint (flat config, core-web-vitals + typescript rules)
+- `docker compose up --build` — Docker 컨테이너 빌드 및 실행
+- `docker compose down` — Docker 컨테이너 중지
 
 ## Tech Stack
 
@@ -17,6 +19,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Tailwind CSS v4** via `@tailwindcss/postcss`
 - **Google Maps** via `@vis.gl/react-google-maps` (requires `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`)
 - **lucide-react** for icons
+- **Docker** — Multi-stage build with standalone output for production deployment
 - Path alias: `@/*` maps to `./src/*`
 - Fonts: Geist Sans + Geist Mono (via `next/font/google`)
 

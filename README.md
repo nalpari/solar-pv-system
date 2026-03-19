@@ -64,6 +64,28 @@ pnpm start
 pnpm lint
 ```
 
+### Docker 배포
+
+`.env` 파일에 Google Maps API 키를 설정한 후 실행합니다:
+
+```bash
+# 빌드 및 실행
+docker compose up --build
+
+# 백그라운드 실행
+docker compose up --build -d
+
+# 중지
+docker compose down
+```
+
+Docker 단독 빌드:
+
+```bash
+docker build --build-arg NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_api_key_here -t solar-pv-system .
+docker run -p 3000:3000 solar-pv-system
+```
+
 ## 아키텍처
 
 싱글 페이지 앱(SPA) 구조로, 왼쪽 사이드바와 Google Maps 메인 영역으로 구성됩니다.
