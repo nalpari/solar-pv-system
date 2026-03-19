@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solar PV Planner — Code Map</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: #0f1117; color: #e0e0e0; height: 100vh; overflow: hidden; }
+
+.layout { display: flex; height: 100vh; }
+.sidebar { width: 300px; flex-shrink: 0; background: #161822; border-right: 1px solid #2a2d3a; display: flex; flex-direction: column; overflow: hidden; }
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.canvas-area { flex: 1; position: relative; overflow: hidden; }
+.prompt-area { border-top: 1px solid #2a2d3a; background: #161822; padding: 16px; max-height: 200px; overflow-y: auto; }
+
+.sidebar-section { padding: 16px; border-bottom: 1px solid #2a2d3a; }
+.sidebar-section h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #888; margin-bottom: 10px; font-weight: 600; }
+.sidebar-scroll { flex: 1; overflow-y: auto; }
+
+.preset-btn { display: block; width: 100%; padding: 8px 12px; margin-bottom: 4px; border: 1px solid #2a2d3a; border-radius: 6px; background: transparent; color: #ccc; font-size: 12px; text-align: left; cursor: pointer; transition: all 0.15s; }
+.preset-btn:hover { background: #1e2130; border-color: #3b82f6; }
+.preset-btn.active { background: rgba(59,130,246,0.12); border-color: #3b82f6; color: #60a5fa; }
+
+.layer-toggle { display: flex; align-items: center; gap: 8px; padding: 6px 0; cursor: pointer; font-size: 12px; }
+.layer-toggle input { display: none; }
+.layer-dot { width: 12px; height: 12px; border-radius: 3px; border: 2px solid; transition: all 0.15s; }
+.layer-toggle input:checked + .layer-dot { opacity: 1; }
+.layer-toggle input:not(:checked) + .layer-dot { opacity: 0.3; }
+.layer-toggle span { flex: 1; }
+.layer-count { font-size: 10px; color: #666; font-family: 'SF Mono', 'Fira Code', monospace; }
+
+.conn-toggle { display: flex; align-items: center; gap: 8px; padding: 5px 0; cursor: pointer; font-size: 12px; }
+.conn-toggle input { display: none; }
+.conn-line { width: 20px; height: 2px; border-radius: 1px; transition: opacity 0.15s; }
+.conn-toggle input:checked + .conn-line { opacity: 1; }
+.conn-toggle input:not(:checked) + .conn-line { opacity: 0.25; }
+
+.zoom-controls { position: absolute; bottom: 12px; right: 12px; display: flex; gap: 4px; z-index: 10; }
+.zoom-btn { width: 32px; height: 32px; border: 1px solid #2a2d3a; border-radius: 6px; background: #161822; color: #ccc; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.zoom-btn:hover { background: #1e2130; border-color: #3b82f6; }
+
+.comment-item { padding: 10px; margin-bottom: 6px; background: #1a1d2e; border-radius: 6px; border: 1px solid #2a2d3a; position: relative; }
+.comment-item .target { font-size: 11px; color: #60a5fa; font-weight: 600; margin-bottom: 2px; }
+.comment-item .file { font-size: 10px; color: #666; font-family: 'SF Mono', monospace; margin-bottom: 4px; }
+.comment-item .text { font-size: 12px; color: #bbb; line-height: 1.4; }
+.comment-del { position: absolute; top: 8px; right: 8px; width: 18px; height: 18px; border: none; border-radius: 4px; background: transparent; color: #666; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; }
+.comment-del:hover { background: rgba(239,68,68,0.15); color: #ef4444; }
+
+.prompt-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.prompt-header h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #888; font-weight: 600; }
+.copy-btn { padding: 4px 10px; border: 1px solid #2a2d3a; border-radius: 4px; background: transparent; color: #ccc; font-size: 11px; cursor: pointer; transition: all 0.15s; }
+.copy-btn:hover { border-color: #3b82f6; color: #60a5fa; }
+.copy-btn.copied { border-color: #10b981; color: #10b981; }
+#prompt-text { font-size: 12px; line-height: 1.6; color: #aaa; font-family: 'SF Mono', monospace; white-space: pre-wrap; }
+
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; display: none; align-items: center; justify-content: center; }
+.modal-overlay.show { display: flex; }
+.modal { background: #1a1d2e; border: 1px solid #2a2d3a; border-radius: 10px; padding: 20px; width: 400px; max-width: 90vw; }
+.modal h3 { font-size: 14px; margin-bottom: 4px; color: #e0e0e0; }
+.modal .modal-file { font-size: 11px; color: #666; font-family: 'SF Mono', monospace; margin-bottom: 12px; }
+.modal textarea { width: 100%; height: 80px; background: #0f1117; border: 1px solid #2a2d3a; border-radius: 6px; color: #e0e0e0; padding: 10px; font-size: 13px; resize: vertical; font-family: inherit; }
+.modal textarea:focus { outline: none; border-color: #3b82f6; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+.modal-actions button { padding: 6px 16px; border-radius: 6px; font-size: 12px; cursor: pointer; border: 1px solid #2a2d3a; }
+.modal-cancel { background: transparent; color: #aaa; }
+.modal-save { background: #3b82f6; color: #fff; border-color: #3b82f6 !important; }
+
+svg text { user-select: none; }
+.legend { position: absolute; bottom: 12px; left: 12px; background: rgba(22,24,34,0.9); border: 1px solid #2a2d3a; border-radius: 8px; padding: 10px 14px; z-index: 10; }
+.legend-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: #666; margin-bottom: 6px; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #999; margin-bottom: 3px; }
+.legend-item:last-child { margin-bottom: 0; }
+.empty-comments { font-size: 11px; color: #555; padding: 8px 0; }
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <h3>Views</h3>
+      <div id="presets"></div>
+    </div>
+    <div class="sidebar-section">
+      <h3>Layers</h3>
+      <div id="layers"></div>
+    </div>
+    <div class="sidebar-section">
+      <h3>Connections</h3>
+      <div id="connections"></div>
+    </div>
+    <div class="sidebar-scroll">
+      <div class="sidebar-section" style="border-bottom:none;">
+        <h3>Comments (<span id="comment-count">0</span>)</h3>
+        <div id="comments"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="canvas-area" id="canvas-area">
+      <svg id="diagram" width="100%" height="100%"></svg>
+      <div class="legend" id="legend-container">
+        <div class="legend-title">Connection Types</div>
+        <div id="legend-items"></div>
+      </div>
+      <div class="zoom-controls">
+        <button class="zoom-btn" id="zoom-in">+</button>
+        <button class="zoom-btn" id="zoom-out">&minus;</button>
+        <button class="zoom-btn" id="zoom-reset" style="font-size:11px;">&#8962;</button>
+      </div>
+    </div>
+    <div class="prompt-area">
+      <div class="prompt-header">
+        <h3>Generated Prompt</h3>
+        <button class="copy-btn" id="copy-btn">Copy</button>
+      </div>
+      <div id="prompt-text"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h3 id="modal-title"></h3>
+    <div class="modal-file" id="modal-file"></div>
+    <textarea id="modal-input" placeholder="이 컴포넌트에 대한 의견을 작성하세요..."></textarea>
+    <div class="modal-actions">
+      <button class="modal-cancel" id="modal-cancel-btn">취소</button>
+      <button class="modal-save" id="modal-save-btn">저장</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const LAYERS = {
+  framework: { label: 'Framework', color: '#f59e0b', desc: 'Next.js / React' },
+  page:      { label: 'Page & State', color: '#3b82f6', desc: '페이지 & 상태 관리' },
+  ui:        { label: 'UI Components', color: '#8b5cf6', desc: 'UI 컴포넌트' },
+  map:       { label: 'Map System', color: '#10b981', desc: 'Google Maps 연동' },
+  logic:     { label: 'Core Logic', color: '#ef4444', desc: '비즈니스 로직' },
+  types:     { label: 'Types & i18n', color: '#ec4899', desc: '타입 & 다국어' },
+  external:  { label: 'External APIs', color: '#6b7280', desc: '외부 서비스' },
+};
+
+const CONN_TYPES = {
+  'data-flow':  { label: 'Data Flow (Props)', color: '#3b82f6', dash: '' },
+  'callback':   { label: 'Callback (Events)', color: '#10b981', dash: '6,3' },
+  'api-call':   { label: 'API Call', color: '#f59e0b', dash: '8,4' },
+  'import':     { label: 'Import / Uses', color: '#6b7280', dash: '3,3' },
+};
+
+const nodes = [
+  { id: 'layout', label: 'RootLayout', subtitle: 'src/app/layout.tsx', x: 420, y: 30, w: 150, h: 44, layer: 'framework' },
+  { id: 'api-provider', label: 'APIProvider', subtitle: '@vis.gl/react-google-maps', x: 420, y: 100, w: 150, h: 44, layer: 'framework' },
+  { id: 'home', label: 'Home (page.tsx)', subtitle: 'src/app/page.tsx', x: 420, y: 185, w: 170, h: 50, layer: 'page' },
+  { id: 'header', label: 'Header', subtitle: 'components/Header.tsx', x: 60, y: 300, w: 130, h: 44, layer: 'ui' },
+  { id: 'address-search', label: 'AddressSearch', subtitle: 'components/AddressSearch.tsx', x: 220, y: 300, w: 150, h: 44, layer: 'ui' },
+  { id: 'drawing-toolbar', label: 'DrawingToolbar', subtitle: 'components/DrawingToolbar.tsx', x: 400, y: 300, w: 155, h: 44, layer: 'ui' },
+  { id: 'panel-config', label: 'PanelConfig', subtitle: 'components/PanelConfig.tsx', x: 585, y: 300, w: 140, h: 44, layer: 'ui' },
+  { id: 'results-panel', label: 'ResultsPanel', subtitle: 'components/ResultsPanel.tsx', x: 755, y: 300, w: 145, h: 44, layer: 'ui' },
+  { id: 'map-view', label: 'MapView', subtitle: 'components/MapView.tsx', x: 250, y: 415, w: 140, h: 44, layer: 'map' },
+  { id: 'center-updater', label: 'CenterUpdater', subtitle: 'MapView 내부', x: 80, y: 500, w: 150, h: 44, layer: 'map' },
+  { id: 'drawing-overlay', label: 'DrawingOverlay', subtitle: 'MapView 내부', x: 270, y: 500, w: 155, h: 44, layer: 'map' },
+  { id: 'panel-overlay', label: 'PanelOverlay', subtitle: 'MapView 내부', x: 465, y: 500, w: 150, h: 44, layer: 'map' },
+  { id: 'map-controls', label: 'MapControls', subtitle: 'MapView 내부', x: 655, y: 500, w: 145, h: 44, layer: 'map' },
+  { id: 'place-panels', label: 'placePanels()', subtitle: 'utils/panelPlacement.ts', x: 600, y: 415, w: 150, h: 44, layer: 'logic' },
+  { id: 'inset-polygon', label: 'insetPolygon()', subtitle: '폴리곤 마진 계산', x: 530, y: 600, w: 150, h: 44, layer: 'logic' },
+  { id: 'point-in-polygon', label: 'isPointInPolygon()', subtitle: '점-폴리곤 포함 검사', x: 720, y: 600, w: 160, h: 44, layer: 'logic' },
+  { id: 'coord-transform', label: 'toLocal / toLatLng', subtitle: '좌표 변환 (lat/lng ↔ m)', x: 340, y: 600, w: 160, h: 44, layer: 'logic' },
+  { id: 'types', label: 'Domain Types', subtitle: 'types/index.ts', x: 800, y: 185, w: 135, h: 44, layer: 'types' },
+  { id: 'i18n', label: 'i18n (t())', subtitle: 'utils/i18n.ts — ja/en', x: 60, y: 185, w: 130, h: 44, layer: 'types' },
+  { id: 'maps-api', label: 'Maps JS API', subtitle: 'Google Maps Platform', x: 80, y: 610, w: 135, h: 44, layer: 'external' },
+  { id: 'places-api', label: 'Places API', subtitle: 'Google Maps Platform', x: 80, y: 420, w: 130, h: 44, layer: 'external' },
+  { id: 'geometry-api', label: 'Geometry API', subtitle: 'spherical.computeArea', x: 800, y: 300, w: 145, h: 44, layer: 'external' },
+];
+
+const connections = [
+  { from: 'layout', to: 'api-provider', type: 'data-flow', label: 'children' },
+  { from: 'api-provider', to: 'home', type: 'data-flow', label: 'Maps context' },
+  { from: 'home', to: 'header', type: 'data-flow' },
+  { from: 'home', to: 'address-search', type: 'data-flow', label: 'lang' },
+  { from: 'home', to: 'drawing-toolbar', type: 'data-flow', label: 'mode, counts' },
+  { from: 'home', to: 'panel-config', type: 'data-flow', label: 'size, gap, margin' },
+  { from: 'home', to: 'results-panel', type: 'data-flow', label: 'count, areas' },
+  { from: 'home', to: 'map-view', type: 'data-flow', label: 'center, areas, panels' },
+  { from: 'address-search', to: 'home', type: 'callback', label: 'onPlaceSelect' },
+  { from: 'drawing-toolbar', to: 'home', type: 'callback', label: 'onModeChange' },
+  { from: 'panel-config', to: 'home', type: 'callback', label: 'onChange*' },
+  { from: 'map-view', to: 'home', type: 'callback', label: 'onAreaComplete' },
+  { from: 'map-view', to: 'center-updater', type: 'data-flow', label: 'center' },
+  { from: 'map-view', to: 'drawing-overlay', type: 'data-flow', label: 'mode, areas' },
+  { from: 'map-view', to: 'panel-overlay', type: 'data-flow', label: 'panels' },
+  { from: 'map-view', to: 'map-controls', type: 'data-flow', label: 'center' },
+  { from: 'drawing-overlay', to: 'map-view', type: 'callback', label: 'onAreaComplete' },
+  { from: 'home', to: 'place-panels', type: 'api-call', label: 'handlePlacePanels()' },
+  { from: 'place-panels', to: 'inset-polygon', type: 'import' },
+  { from: 'place-panels', to: 'point-in-polygon', type: 'import' },
+  { from: 'place-panels', to: 'coord-transform', type: 'import' },
+  { from: 'address-search', to: 'places-api', type: 'api-call', label: 'autocomplete' },
+  { from: 'center-updater', to: 'maps-api', type: 'api-call', label: 'panTo()' },
+  { from: 'drawing-overlay', to: 'maps-api', type: 'api-call', label: 'DrawingManager' },
+  { from: 'panel-overlay', to: 'maps-api', type: 'api-call', label: 'Polygon[]' },
+  { from: 'home', to: 'geometry-api', type: 'api-call', label: 'computeArea' },
+  { from: 'home', to: 'types', type: 'import' },
+  { from: 'home', to: 'i18n', type: 'import', label: 't()' },
+  { from: 'address-search', to: 'i18n', type: 'import' },
+  { from: 'drawing-toolbar', to: 'i18n', type: 'import' },
+  { from: 'panel-config', to: 'i18n', type: 'import' },
+  { from: 'results-panel', to: 'i18n', type: 'import' },
+  { from: 'map-view', to: 'i18n', type: 'import' },
+];
+
+const PRESETS = [
+  { label: 'Full System', layers: Object.keys(LAYERS), conns: Object.keys(CONN_TYPES) },
+  { label: 'Component Tree', layers: ['framework','page','ui','map'], conns: ['data-flow','callback'] },
+  { label: 'Data Flow', layers: ['page','ui','map','logic'], conns: ['data-flow','callback','api-call'] },
+  { label: 'Map System', layers: ['page','map','logic','external'], conns: ['data-flow','api-call','import'] },
+  { label: 'Core Logic', layers: ['page','logic','types'], conns: ['api-call','import'] },
+];
+
+const state = {
+  activePreset: 0,
+  layers: {},
+  conns: {},
+  comments: [],
+  zoom: 1,
+  panX: 0, panY: 0,
+  modalTarget: null,
+};
+
+Object.keys(LAYERS).forEach(function(k) { state.layers[k] = true; });
+Object.keys(CONN_TYPES).forEach(function(k) { state.conns[k] = true; });
+
+function escapeHtml(str) {
+  var div = document.createElement('div');
+  div.textContent = str;
+  return div.textContent;
+}
+
+function applyPreset(idx) {
+  state.activePreset = idx;
+  var p = PRESETS[idx];
+  Object.keys(LAYERS).forEach(function(k) { state.layers[k] = p.layers.indexOf(k) >= 0; });
+  Object.keys(CONN_TYPES).forEach(function(k) { state.conns[k] = p.conns.indexOf(k) >= 0; });
+  renderControls();
+  renderDiagram();
+  updatePrompt();
+}
+
+function renderControls() {
+  var presetsEl = document.getElementById('presets');
+  while (presetsEl.firstChild) presetsEl.removeChild(presetsEl.firstChild);
+  PRESETS.forEach(function(p, i) {
+    var btn = document.createElement('button');
+    btn.className = 'preset-btn' + (state.activePreset === i ? ' active' : '');
+    btn.textContent = p.label;
+    btn.addEventListener('click', function() { applyPreset(i); });
+    presetsEl.appendChild(btn);
+  });
+
+  var layersEl = document.getElementById('layers');
+  while (layersEl.firstChild) layersEl.removeChild(layersEl.firstChild);
+  Object.keys(LAYERS).forEach(function(k) {
+    var v = LAYERS[k];
+    var count = nodes.filter(function(n) { return n.layer === k; }).length;
+    var label = document.createElement('label');
+    label.className = 'layer-toggle';
+
+    var input = document.createElement('input');
+    input.type = 'checkbox';
+    input.checked = state.layers[k];
+    input.addEventListener('change', function() { toggleLayer(k, this.checked); });
+
+    var dot = document.createElement('span');
+    dot.className = 'layer-dot';
+    dot.style.background = state.layers[k] ? v.color : 'transparent';
+    dot.style.borderColor = v.color;
+
+    var nameSpan = document.createElement('span');
+    nameSpan.textContent = v.label;
+
+    var countSpan = document.createElement('span');
+    countSpan.className = 'layer-count';
+    countSpan.textContent = count;
+
+    label.appendChild(input);
+    label.appendChild(dot);
+    label.appendChild(nameSpan);
+    label.appendChild(countSpan);
+    layersEl.appendChild(label);
+  });
+
+  var connsEl = document.getElementById('connections');
+  while (connsEl.firstChild) connsEl.removeChild(connsEl.firstChild);
+  Object.keys(CONN_TYPES).forEach(function(k) {
+    var v = CONN_TYPES[k];
+    var label = document.createElement('label');
+    label.className = 'conn-toggle';
+
+    var input = document.createElement('input');
+    input.type = 'checkbox';
+    input.checked = state.conns[k];
+    input.addEventListener('change', function() { toggleConn(k, this.checked); });
+
+    var line = document.createElement('span');
+    line.className = 'conn-line';
+    line.style.background = v.color;
+
+    var nameSpan = document.createElement('span');
+    nameSpan.textContent = v.label;
+
+    label.appendChild(input);
+    label.appendChild(line);
+    label.appendChild(nameSpan);
+    connsEl.appendChild(label);
+  });
+
+  renderComments();
+}
+
+function toggleLayer(k, v) { state.layers[k] = v; state.activePreset = -1; renderControls(); renderDiagram(); updatePrompt(); }
+function toggleConn(k, v) { state.conns[k] = v; state.activePreset = -1; renderControls(); renderDiagram(); updatePrompt(); }
+
+function renderComments() {
+  var el = document.getElementById('comments');
+  while (el.firstChild) el.removeChild(el.firstChild);
+  document.getElementById('comment-count').textContent = state.comments.length;
+  if (state.comments.length === 0) {
+    var empty = document.createElement('div');
+    empty.className = 'empty-comments';
+    empty.textContent = '노드를 클릭하여 코멘트를 추가하세요';
+    el.appendChild(empty);
+    return;
+  }
+  state.comments.forEach(function(c, i) {
+    var item = document.createElement('div');
+    item.className = 'comment-item';
+
+    var target = document.createElement('div');
+    target.className = 'target';
+    target.textContent = c.targetLabel;
+
+    var file = document.createElement('div');
+    file.className = 'file';
+    file.textContent = c.targetFile;
+
+    var text = document.createElement('div');
+    text.className = 'text';
+    text.textContent = c.text;
+
+    var del = document.createElement('button');
+    del.className = 'comment-del';
+    del.textContent = '\u2715';
+    del.addEventListener('click', function() { deleteComment(i); });
+
+    item.appendChild(target);
+    item.appendChild(file);
+    item.appendChild(text);
+    item.appendChild(del);
+    el.appendChild(item);
+  });
+}
+
+function deleteComment(i) {
+  state.comments.splice(i, 1);
+  renderComments();
+  renderDiagram();
+  updatePrompt();
+}
+
+function openModal(nodeId) {
+  var node = nodes.find(function(n) { return n.id === nodeId; });
+  if (!node) return;
+  state.modalTarget = node;
+  document.getElementById('modal-title').textContent = node.label;
+  document.getElementById('modal-file').textContent = node.subtitle;
+  document.getElementById('modal-input').value = '';
+  document.getElementById('modal').classList.add('show');
+  setTimeout(function() { document.getElementById('modal-input').focus(); }, 50);
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('show');
+  state.modalTarget = null;
+}
+
+function saveComment() {
+  var text = document.getElementById('modal-input').value.trim();
+  if (!text || !state.modalTarget) return;
+  state.comments.push({
+    id: Date.now(),
+    target: state.modalTarget.id,
+    targetLabel: state.modalTarget.label,
+    targetFile: state.modalTarget.subtitle,
+    text: text,
+  });
+  closeModal();
+  renderComments();
+  renderDiagram();
+  updatePrompt();
+}
+
+function getEdgePoint(node, targetX, targetY) {
+  var cx = node.x + node.w / 2, cy = node.y + node.h / 2;
+  var dx = targetX - cx, dy = targetY - cy;
+  if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return [cx, cy];
+  var scaleX = (node.w / 2) / (Math.abs(dx) || 1);
+  var scaleY = (node.h / 2) / (Math.abs(dy) || 1);
+  var scale = Math.min(scaleX, scaleY);
+  return [cx + dx * scale, cy + dy * scale];
+}
+
+function getNodeFill(color) {
+  var r = parseInt(color.slice(1,3), 16);
+  var g = parseInt(color.slice(3,5), 16);
+  var b = parseInt(color.slice(5,7), 16);
+  return 'rgba(' + r + ',' + g + ',' + b + ',0.08)';
+}
+
+function truncate(s, max) { return s.length > max ? s.slice(0, max-1) + '\u2026' : s; }
+
+function createSvgEl(tag, attrs) {
+  var el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  if (attrs) Object.keys(attrs).forEach(function(k) { el.setAttribute(k, attrs[k]); });
+  return el;
+}
+
+function renderDiagram() {
+  var svg = document.getElementById('diagram');
+  var rect = svg.getBoundingClientRect();
+  var W = rect.width, H = rect.height;
+
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+  // Defs
+  var defs = createSvgEl('defs');
+  Object.keys(CONN_TYPES).forEach(function(k) {
+    var v = CONN_TYPES[k];
+    var marker = createSvgEl('marker', {
+      id: 'arrow-' + k, markerWidth: '8', markerHeight: '6', refX: '7', refY: '3', orient: 'auto'
+    });
+    var poly = createSvgEl('polygon', { points: '0 0, 8 3, 0 6', fill: v.color, opacity: '0.8' });
+    marker.appendChild(poly);
+    defs.appendChild(marker);
+  });
+  svg.appendChild(defs);
+
+  var g = createSvgEl('g', {
+    transform: 'translate(' + (state.panX + W/2 * (1-state.zoom)) + ',' + (state.panY + H/2 * (1-state.zoom)) + ') scale(' + state.zoom + ')'
+  });
+
+  var visibleNodeIds = {};
+  nodes.forEach(function(n) { if (state.layers[n.layer]) visibleNodeIds[n.id] = true; });
+
+  // Draw connections
+  connections.forEach(function(c) {
+    if (!state.conns[c.type]) return;
+    if (!visibleNodeIds[c.from] || !visibleNodeIds[c.to]) return;
+    var fromN = nodes.find(function(n) { return n.id === c.from; });
+    var toN = nodes.find(function(n) { return n.id === c.to; });
+    if (!fromN || !toN) return;
+
+    var x1 = fromN.x + fromN.w / 2, y1 = fromN.y + fromN.h / 2;
+    var x2 = toN.x + toN.w / 2, y2 = toN.y + toN.h / 2;
+    var sp = getEdgePoint(fromN, x2, y2);
+    var ep = getEdgePoint(toN, x1, y1);
+    var ct = CONN_TYPES[c.type];
+    var dy = Math.abs(ep[1] - sp[1]);
+    var cpOff = Math.max(dy * 0.4, 20);
+    var d = 'M' + sp[0] + ',' + sp[1] + ' C' + sp[0] + ',' + (sp[1] + cpOff) + ' ' + ep[0] + ',' + (ep[1] - cpOff) + ' ' + ep[0] + ',' + ep[1];
+
+    var pathAttrs = { d: d, fill: 'none', stroke: ct.color, 'stroke-width': '1.5', opacity: '0.6', 'marker-end': 'url(#arrow-' + c.type + ')' };
+    if (ct.dash) pathAttrs['stroke-dasharray'] = ct.dash;
+    g.appendChild(createSvgEl('path', pathAttrs));
+
+    if (c.label) {
+      var mx = (sp[0] + ep[0]) / 2, my = (sp[1] + ep[1]) / 2;
+      var labelEl = createSvgEl('text', { x: mx, y: my - 4, fill: ct.color, 'font-size': '9', 'text-anchor': 'middle', opacity: '0.7', 'font-family': "'SF Mono',monospace" });
+      labelEl.textContent = c.label;
+      g.appendChild(labelEl);
+    }
+  });
+
+  // Draw nodes
+  nodes.forEach(function(n) {
+    if (!state.layers[n.layer]) return;
+    var layer = LAYERS[n.layer];
+    var hasComment = state.comments.some(function(c) { return c.target === n.id; });
+    var fill = getNodeFill(layer.color);
+    var stroke = hasComment ? '#f59e0b' : layer.color;
+    var strokeW = hasComment ? 2.5 : 1.5;
+
+    var nodeG = createSvgEl('g', { style: 'cursor:pointer' });
+    nodeG.addEventListener('click', function() { openModal(n.id); });
+
+    nodeG.appendChild(createSvgEl('rect', {
+      x: n.x, y: n.y, width: n.w, height: n.h, rx: 8, ry: 8,
+      fill: fill, stroke: stroke, 'stroke-width': strokeW
+    }));
+
+    var title = createSvgEl('text', { x: n.x + n.w/2, y: n.y + 18, fill: '#e0e0e0', 'font-size': '12', 'font-weight': '600', 'text-anchor': 'middle' });
+    title.textContent = n.label;
+    nodeG.appendChild(title);
+
+    var sub = createSvgEl('text', { x: n.x + n.w/2, y: n.y + 32, fill: '#888', 'font-size': '9', 'text-anchor': 'middle', 'font-family': "'SF Mono',monospace" });
+    sub.textContent = truncate(n.subtitle, 28);
+    nodeG.appendChild(sub);
+
+    if (hasComment) {
+      nodeG.appendChild(createSvgEl('circle', { cx: n.x + n.w - 6, cy: n.y + 6, r: 4, fill: '#f59e0b' }));
+    }
+
+    g.appendChild(nodeG);
+  });
+
+  svg.appendChild(g);
+}
+
+function doZoom(delta) {
+  state.zoom = Math.max(0.3, Math.min(3, state.zoom + delta));
+  renderDiagram();
+}
+function resetZoom() { state.zoom = 1; state.panX = 0; state.panY = 0; renderDiagram(); }
+
+document.getElementById('zoom-in').addEventListener('click', function() { doZoom(0.15); });
+document.getElementById('zoom-out').addEventListener('click', function() { doZoom(-0.15); });
+document.getElementById('zoom-reset').addEventListener('click', resetZoom);
+
+// Pan
+var isPanning = false, panStartX = 0, panStartY = 0;
+var canvasArea = document.getElementById('canvas-area');
+canvasArea.addEventListener('mousedown', function(e) {
+  if (e.target.closest('[style*="cursor:pointer"]') || e.target.closest('.zoom-btn') || e.target.closest('.legend')) return;
+  isPanning = true; panStartX = e.clientX - state.panX; panStartY = e.clientY - state.panY;
+});
+window.addEventListener('mousemove', function(e) {
+  if (!isPanning) return;
+  state.panX = e.clientX - panStartX;
+  state.panY = e.clientY - panStartY;
+  renderDiagram();
+});
+window.addEventListener('mouseup', function() { isPanning = false; });
+canvasArea.addEventListener('wheel', function(e) {
+  e.preventDefault();
+  doZoom(e.deltaY > 0 ? -0.08 : 0.08);
+}, { passive: false });
+
+// Prompt
+function updatePrompt() {
+  var visibleLayers = [];
+  Object.keys(state.layers).forEach(function(k) { if (state.layers[k]) visibleLayers.push(LAYERS[k].label); });
+  var allVisible = visibleLayers.length === Object.keys(LAYERS).length;
+
+  var text = 'Solar PV Planner 아키텍처';
+  if (!allVisible) text += ' (표시 레이어: ' + visibleLayers.join(', ') + ')';
+  text += '\n\n';
+
+  if (state.comments.length === 0) {
+    text += '노드를 클릭하여 코드 리뷰 코멘트를 추가하면, 여기에 프롬프트가 생성됩니다.';
+  } else {
+    text += '컴포넌트별 피드백:\n';
+    state.comments.forEach(function(c) {
+      text += '\n**' + c.targetLabel + '** (' + c.targetFile + '):\n' + c.text + '\n';
+    });
+  }
+
+  document.getElementById('prompt-text').textContent = text;
+}
+
+document.getElementById('copy-btn').addEventListener('click', function() {
+  var text = document.getElementById('prompt-text').textContent;
+  navigator.clipboard.writeText(text).then(function() {
+    var btn = document.getElementById('copy-btn');
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(function() { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1500);
+  });
+});
+
+document.getElementById('modal-cancel-btn').addEventListener('click', closeModal);
+document.getElementById('modal-save-btn').addEventListener('click', saveComment);
+
+// Legend
+function renderLegend() {
+  var el = document.getElementById('legend-items');
+  while (el.firstChild) el.removeChild(el.firstChild);
+  Object.keys(CONN_TYPES).forEach(function(k) {
+    var v = CONN_TYPES[k];
+    var item = document.createElement('div');
+    item.className = 'legend-item';
+
+    var svgEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svgEl.setAttribute('width', '20');
+    svgEl.setAttribute('height', '2');
+    var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', '0'); line.setAttribute('y1', '1');
+    line.setAttribute('x2', '20'); line.setAttribute('y2', '1');
+    line.setAttribute('stroke', v.color); line.setAttribute('stroke-width', '2');
+    if (v.dash) line.setAttribute('stroke-dasharray', v.dash);
+    svgEl.appendChild(line);
+
+    var span = document.createElement('span');
+    span.textContent = v.label;
+
+    item.appendChild(svgEl);
+    item.appendChild(span);
+    el.appendChild(item);
+  });
+}
+
+// Keyboard
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeModal();
+  if (e.key === 'Enter' && e.metaKey && document.getElementById('modal').classList.contains('show')) saveComment();
+});
+
+// Init
+renderControls();
+renderLegend();
+renderDiagram();
+updatePrompt();
+window.addEventListener('resize', renderDiagram);
+</script>
+</body>
+</html>
