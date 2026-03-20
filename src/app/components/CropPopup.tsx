@@ -76,21 +76,19 @@ export default function CropPopup({
   const [areas, setAreas] = useState<AreaEntry[]>([]);
   const [currentPoints, setCurrentPoints] = useState<PixelPoint[]>([]);
   const [mousePos, setMousePos] = useState<PixelPoint | null>(null);
-  const [prevDrawingMode, setPrevDrawingMode] = useState<DrawingMode>(drawingMode);
   const [canvasLayout, setCanvasLayout] = useState<{
     w: number; h: number; offsetX: number; offsetY: number;
   } | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
+  const [prevDrawingMode, setPrevDrawingMode] = useState<DrawingMode>(drawingMode);
 
-  // Reset in-progress points when drawing mode changes
+  // Reset in-progress points when drawing mode changes (render-phase state sync)
   if (prevDrawingMode !== drawingMode) {
     setPrevDrawingMode(drawingMode);
-    if (currentPoints.length > 0) {
-      setCurrentPoints([]);
-      setMousePos(null);
-    }
+    setCurrentPoints([]);
+    setMousePos(null);
   }
 
   // Calculate the actual rendered area of img with object-fit: contain

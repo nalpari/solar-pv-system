@@ -185,7 +185,7 @@ export default function Home() {
   return (
     <APIProvider
       apiKey={GOOGLE_MAPS_API_KEY}
-      libraries={["drawing", "places", "geometry"]}
+      libraries={["places", "geometry"]}
     >
       <div
         style={{
