@@ -64,6 +64,12 @@ const translations = {
   // CropPopup save
   cropSave: { ja: "保存", en: "Save" },
 
+  // Polygon edit
+  polygonMove: { ja: "移動", en: "Move" },
+  polygonDelete: { ja: "削除", en: "Delete" },
+  polygonEditVertices: { ja: "頂点編集", en: "Edit Vertices" },
+  undoLastPoint: { ja: "元に戻す", en: "Undo" },
+
   // page.tsx
   placePanels: { ja: "パネル配置", en: "Place Panels" },
   apiKeyRequired: { ja: "Google Maps APIキーが必要です", en: "Google Maps API Key Required" },
