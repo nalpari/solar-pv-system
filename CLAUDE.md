@@ -20,6 +20,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **TypeScript** (strict mode)
 - **Tailwind CSS v4** via `@tailwindcss/postcss`
 - **Google Maps** via `@vis.gl/react-google-maps` (requires `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`)
+- **html2canvas** for map tile capture
 - **lucide-react** for icons
 - **Docker** — Multi-stage build with standalone output for production deployment
 - Path alias: `@/*` maps to `./src/*`
@@ -35,19 +36,23 @@ Solar PV rooftop panel layout planner — single-page app with a left sidebar + 
 
 ### Key components (`src/app/components/`)
 
-- **MapView** — Google Maps with satellite imagery, polygon drawing (install/exclude areas), and panel overlay rendering
+- **MapView** — Google Maps with satellite imagery and crop area selection overlay (html2canvas capture)
+- **CropPopup** — Cropped image popup with Canvas-based polygon editor and panel rendering. Supports image save (PNG download)
 - **AddressSearch** — Places autocomplete to navigate the map
-- **DrawingToolbar** — Toggle install/exclude polygon drawing modes
-- **PanelConfig** — Panel size (mm), orientation, gap, and margin controls
+- **DrawingToolbar** — Crop mode toggle (before crop) / polygon drawing mode controls (after crop)
+- **PanelConfig** — Panel size (mm), orientation, gap (cm), and margin (cm) controls
 - **ResultsPanel** — Displays panel count and area calculations
 
 ### Core logic (`src/app/utils/`)
 
-- **panelPlacement.ts** — Computational geometry engine: converts lat/lng to local meter coordinates, insets polygons by margin, aligns panel grid to the longest polygon edge, checks point-in-polygon containment, and excludes panels overlapping exclusion zones. All dimensions are in mm (user input) converted to meters internally.
+- **panelPlacement.ts** — Computational geometry engine with placement functions:
+  - `placePanels` — lat/lng-based (mm 단위): converts to local meters, grid-aligns to longest edge, validates containment
+  - `placePanelsOnCanvas` — pixel-based (mm 단위): uses metersPerPixel scale factor, flips Y-axis for canvas coordinates
+  - `placePanelsOnCanvasCm` — pixel-based (cm 단위): UI에서 사용, 내부적으로 mm 버전 호출
 
 ### Types (`src/app/types/index.ts`)
 
-Domain types: `LatLng`, `PanelSize`, `PanelOrientation`, `DrawingMode`, `PolygonArea`, `PlacedPanel`.
+Domain types: `LatLng`, `PanelSize`, `PanelOrientation`, `DrawingMode`, `PolygonArea`, `PlacedPanel`, `CropData`, `CropBounds`, `PixelPoint`, `PixelPolygon`, `PixelPanel`.
 
 ### Styling
 

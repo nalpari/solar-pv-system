@@ -1,14 +1,17 @@
 "use client";
 
-import { PenTool, Ban, MousePointer, Trash2 } from "lucide-react";
+import { Crop, MousePointer, PenTool, Ban, Trash2 } from "lucide-react";
 import { t } from "../utils/i18n";
 import type { Lang } from "../utils/i18n";
 import type { DrawingMode } from "../types";
 
 interface DrawingToolbarProps {
-  mode: DrawingMode;
-  onModeChange: (mode: DrawingMode) => void;
+  cropMode: boolean;
+  onCropModeChange: (active: boolean) => void;
   onClearAll: () => void;
+  hasCropData: boolean;
+  drawingMode: DrawingMode;
+  onDrawingModeChange: (mode: DrawingMode) => void;
   installCount: number;
   excludeCount: number;
   lang: Lang;
@@ -30,9 +33,12 @@ const toolButtonStyle = (isActive: boolean, color: string) => ({
 });
 
 export default function DrawingToolbar({
-  mode,
-  onModeChange,
+  cropMode,
+  onCropModeChange,
   onClearAll,
+  hasCropData,
+  drawingMode,
+  onDrawingModeChange,
   installCount,
   excludeCount,
   lang,
@@ -50,88 +56,127 @@ export default function DrawingToolbar({
           marginBottom: 8,
         }}
       >
-        {t("drawingTools", lang)}
+        {t("cropTools", lang)}
       </label>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        <button
-          onClick={() => onModeChange(null)}
-          style={{
-            ...toolButtonStyle(mode === null, "var(--text-secondary)"),
-          }}
-          onMouseEnter={(e) => {
-            if (mode !== null) e.currentTarget.style.background = "var(--bg-surface-hover)";
-          }}
-          onMouseLeave={(e) => {
-            if (mode !== null) e.currentTarget.style.background = "var(--bg-surface)";
-          }}
-        >
-          <MousePointer size={15} />
-          <span>{t("selectMove", lang)}</span>
-        </button>
-
-        <button
-          onClick={() => onModeChange(mode === "install" ? null : "install")}
-          style={toolButtonStyle(mode === "install", "var(--accent-blue)")}
-          onMouseEnter={(e) => {
-            if (mode !== "install")
-              e.currentTarget.style.background = "var(--bg-surface-hover)";
-          }}
-          onMouseLeave={(e) => {
-            if (mode !== "install")
-              e.currentTarget.style.background = "var(--bg-surface)";
-          }}
-        >
-          <PenTool size={15} />
-          <span style={{ flex: 1, textAlign: "left" }}>{t("installationArea", lang)}</span>
-          {installCount > 0 && (
-            <span
-              style={{
-                fontSize: 11,
-                background: "var(--accent-blue-muted)",
-                color: "var(--accent-blue)",
-                padding: "2px 6px",
-                borderRadius: 10,
-                fontWeight: 600,
+        {/* Crop mode button — show when no crop data yet */}
+        {!hasCropData && (
+          <>
+            <button
+              onClick={() => onCropModeChange(!cropMode)}
+              style={toolButtonStyle(cropMode, "var(--accent-blue)")}
+              onMouseEnter={(e) => {
+                if (!cropMode)
+                  e.currentTarget.style.background = "var(--bg-surface-hover)";
+              }}
+              onMouseLeave={(e) => {
+                if (!cropMode)
+                  e.currentTarget.style.background = "var(--bg-surface)";
               }}
             >
-              {installCount}
-            </span>
-          )}
-        </button>
+              <Crop size={15} />
+              <span>{t("cropMode", lang)}</span>
+            </button>
 
-        <button
-          onClick={() => onModeChange(mode === "exclude" ? null : "exclude")}
-          style={toolButtonStyle(mode === "exclude", "var(--accent-red)")}
-          onMouseEnter={(e) => {
-            if (mode !== "exclude")
-              e.currentTarget.style.background = "var(--bg-surface-hover)";
-          }}
-          onMouseLeave={(e) => {
-            if (mode !== "exclude")
-              e.currentTarget.style.background = "var(--bg-surface)";
-          }}
-        >
-          <Ban size={15} />
-          <span style={{ flex: 1, textAlign: "left" }}>{t("exclusionZone", lang)}</span>
-          {excludeCount > 0 && (
-            <span
-              style={{
-                fontSize: 11,
-                background: "var(--accent-red-muted)",
-                color: "var(--accent-red)",
-                padding: "2px 6px",
-                borderRadius: 10,
-                fontWeight: 600,
+            {cropMode && (
+              <p
+                style={{
+                  fontSize: 11,
+                  color: "var(--text-tertiary)",
+                  margin: "2px 0 0 0",
+                  padding: "0 4px",
+                }}
+              >
+                {t("cropModeActive", lang)}
+              </p>
+            )}
+          </>
+        )}
+
+        {/* Polygon drawing mode buttons — show when crop data exists */}
+        {hasCropData && (
+          <>
+            <button
+              onClick={() => onDrawingModeChange(null)}
+              style={toolButtonStyle(drawingMode === null, "var(--text-secondary)")}
+              onMouseEnter={(e) => {
+                if (drawingMode !== null)
+                  e.currentTarget.style.background = "var(--bg-surface-hover)";
+              }}
+              onMouseLeave={(e) => {
+                if (drawingMode !== null)
+                  e.currentTarget.style.background = "var(--bg-surface)";
               }}
             >
-              {excludeCount}
-            </span>
-          )}
-        </button>
+              <MousePointer size={15} />
+              <span>{t("cropSelectMove", lang)}</span>
+            </button>
+
+            <button
+              onClick={() => onDrawingModeChange(drawingMode === "install" ? null : "install")}
+              style={toolButtonStyle(drawingMode === "install", "var(--accent-blue)")}
+              onMouseEnter={(e) => {
+                if (drawingMode !== "install")
+                  e.currentTarget.style.background = "var(--bg-surface-hover)";
+              }}
+              onMouseLeave={(e) => {
+                if (drawingMode !== "install")
+                  e.currentTarget.style.background = "var(--bg-surface)";
+              }}
+            >
+              <PenTool size={15} />
+              <span style={{ flex: 1, textAlign: "left" }}>{t("cropInstallArea", lang)}</span>
+              {installCount > 0 && (
+                <span
+                  style={{
+                    fontSize: 11,
+                    background: "var(--accent-blue-muted)",
+                    color: "var(--accent-blue)",
+                    padding: "2px 6px",
+                    borderRadius: 10,
+                    fontWeight: 600,
+                  }}
+                >
+                  {installCount}
+                </span>
+              )}
+            </button>
+
+            <button
+              onClick={() => onDrawingModeChange(drawingMode === "exclude" ? null : "exclude")}
+              style={toolButtonStyle(drawingMode === "exclude", "var(--accent-red)")}
+              onMouseEnter={(e) => {
+                if (drawingMode !== "exclude")
+                  e.currentTarget.style.background = "var(--bg-surface-hover)";
+              }}
+              onMouseLeave={(e) => {
+                if (drawingMode !== "exclude")
+                  e.currentTarget.style.background = "var(--bg-surface)";
+              }}
+            >
+              <Ban size={15} />
+              <span style={{ flex: 1, textAlign: "left" }}>{t("cropExcludeZone", lang)}</span>
+              {excludeCount > 0 && (
+                <span
+                  style={{
+                    fontSize: 11,
+                    background: "var(--accent-red-muted)",
+                    color: "var(--accent-red)",
+                    padding: "2px 6px",
+                    borderRadius: 10,
+                    fontWeight: 600,
+                  }}
+                >
+                  {excludeCount}
+                </span>
+              )}
+            </button>
+          </>
+        )}
       </div>
 
-      {(installCount > 0 || excludeCount > 0) && (
+      {(hasCropData || installCount > 0 || excludeCount > 0) && (
         <button
           onClick={onClearAll}
           style={{

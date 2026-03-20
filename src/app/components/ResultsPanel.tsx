@@ -84,7 +84,7 @@ export default function ResultsPanel({
             color="var(--text-tertiary)"
             style={{ margin: "0 auto 8px", opacity: 0.5 }}
           />
-          {t("drawPrompt", lang)}
+          {t("cropDrawPrompt", lang)}
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>

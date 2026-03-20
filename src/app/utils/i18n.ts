@@ -6,10 +6,6 @@ const translations = {
   addressPlaceholder: { ja: "建物の住所を入力...", en: "Enter building address..." },
 
   // DrawingToolbar
-  drawingTools: { ja: "描画ツール", en: "Drawing Tools" },
-  selectMove: { ja: "選択 / 移動", en: "Select / Move" },
-  installationArea: { ja: "設置エリア", en: "Installation Area" },
-  exclusionZone: { ja: "除外ゾーン", en: "Exclusion Zone" },
   clearAll: { ja: "すべてクリア", en: "Clear All Areas" },
 
   // PanelConfig
@@ -36,10 +32,6 @@ const translations = {
   totalPanels: { ja: "総パネル数", en: "Total Panels" },
   panelCoverage: { ja: "パネル面積", en: "Panel Coverage" },
   coverageRate: { ja: "カバー率", en: "Coverage Rate" },
-  drawPrompt: {
-    ja: "地図上に設置エリアを描画すると、パネルレイアウトの結果が表示されます。",
-    en: "Draw an installation area on the map to see panel layout results.",
-  },
   installArea: { ja: "設置面積", en: "Install Area" },
   exclusionZoneResult: { ja: "除外ゾーン", en: "Exclusion Zone" },
   netAvailable: { ja: "有効面積", en: "Net Available" },
@@ -51,8 +43,26 @@ const translations = {
   zoomOut: { ja: "縮小", en: "Zoom out" },
   toggleSatellite: { ja: "衛星写真切替", en: "Toggle satellite view" },
   recenterMap: { ja: "地図を中央に戻す", en: "Recenter map" },
-  drawInstall: { ja: "クリックして設置エリアを描画", en: "Click to draw installation area" },
-  drawExclude: { ja: "クリックして除外ゾーンを描画", en: "Click to draw exclusion zone" },
+
+  // CropToolbar
+  cropTools: { ja: "屋根選択", en: "Roof Selection" },
+  cropMode: { ja: "範囲選択", en: "Select Area" },
+  cropModeActive: { ja: "地図上でドラッグして範囲を選択", en: "Drag on map to select area" },
+
+  // CropPopup
+  cropEditor: { ja: "屋根エディタ", en: "Roof Editor" },
+  cropInstallArea: { ja: "設置エリア", en: "Installation Area" },
+  cropExcludeZone: { ja: "除外ゾーン", en: "Exclusion Zone" },
+  cropConfirm: { ja: "確定", en: "Confirm" },
+  cropCancel: { ja: "キャンセル", en: "Cancel" },
+  cropSelectMove: { ja: "選択 / 移動", en: "Select / Move" },
+  cropDrawPrompt: {
+    ja: "範囲を選択すると屋根エディタが表示されます。",
+    en: "Select an area on the map to open the roof editor.",
+  },
+
+  // CropPopup save
+  cropSave: { ja: "保存", en: "Save" },
 
   // page.tsx
   placePanels: { ja: "パネル配置", en: "Place Panels" },

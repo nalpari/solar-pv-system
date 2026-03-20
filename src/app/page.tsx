@@ -9,15 +9,19 @@ import DrawingToolbar from "./components/DrawingToolbar";
 import PanelConfig from "./components/PanelConfig";
 import ResultsPanel from "./components/ResultsPanel";
 import MapView from "./components/MapView";
-import { placePanels } from "./utils/panelPlacement";
+import { placePanels, placePanelsOnCanvasCm } from "./utils/panelPlacement";
 import { t } from "./utils/i18n";
 import type { Lang } from "./utils/i18n";
+import CropPopup from "./components/CropPopup";
 import type {
   PanelSize,
   PanelOrientation,
   DrawingMode,
+  CropData,
   PolygonArea,
   PlacedPanel,
+  PixelPanel,
+  PixelPolygon,
 } from "./types";
 
 const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
@@ -42,6 +46,9 @@ export default function Home() {
   }, [lang]);
 
   const [center, setCenter] = useState(DEFAULT_CENTER);
+  const [cropMode, setCropMode] = useState(false);
+  const [cropData, setCropData] = useState<CropData | null>(null);
+  const [address, setAddress] = useState("");
   const [drawingMode, setDrawingMode] = useState<DrawingMode>(null);
   const [areas, setAreas] = useState<PolygonArea[]>([]);
   const [panelSize, setPanelSize] = useState<PanelSize>({
@@ -50,9 +57,11 @@ export default function Home() {
     height: 3000,
   });
   const [orientation, setOrientation] = useState<PanelOrientation>("portrait");
-  const [gap, setGap] = useState(20);
-  const [margin, setMargin] = useState(200);
+  const [gapCm, setGapCm] = useState(2);      // cm 단위 (기존 20mm = 2cm)
+  const [marginCm, setMarginCm] = useState(20); // cm 단위 (기존 200mm = 20cm)
   const [placedPanelsList, setPlacedPanelsList] = useState<PlacedPanel[]>([]);
+  const [pixelAreas, setPixelAreas] = useState<{ areas: PixelPolygon[]; metersPerPixel: number } | null>(null);
+  const [placedPixelPanels, setPlacedPixelPanels] = useState<PixelPanel[]>([]);
 
   const installAreas = areas.filter((a) => a.type === "install");
   const excludeAreas = areas.filter((a) => a.type === "exclude");
@@ -78,44 +87,100 @@ export default function Home() {
     address: string;
   }) {
     setCenter({ lat: location.lat, lng: location.lng });
+    setAddress(location.address);
   }
 
-  const handleAreaComplete = useCallback(
-    (area: PolygonArea) => {
-      setAreas((prev) => [...prev, area]);
-      setPlacedPanelsList([]);
-    },
-    []
-  );
+  const handleCropComplete = useCallback((data: CropData) => {
+    setCropData(data);
+    setCropMode(false);
+  }, []);
 
   const handleAreasChange = useCallback((newAreas: PolygonArea[]) => {
     setAreas(newAreas);
     setPlacedPanelsList([]);
   }, []);
 
+  const handlePixelAreasChange = useCallback((areas: PixelPolygon[], metersPerPixel: number) => {
+    setPixelAreas({ areas, metersPerPixel });
+    setPlacedPixelPanels([]);
+  }, []);
+
+  const handleCropClose = useCallback(() => {
+    setCropData(null);
+    setDrawingMode(null);
+    setAreas([]);
+    setPixelAreas(null);
+    setPlacedPixelPanels([]);
+    setPlacedPanelsList([]);
+  }, []);
+
   function handleClearAll() {
     setAreas([]);
     setPlacedPanelsList([]);
+    setCropData(null);
+    setDrawingMode(null);
+    setPixelAreas(null);
+    setPlacedPixelPanels([]);
   }
 
   function handlePlacePanels() {
-    try {
-      const panels = placePanels(
-        installAreas,
-        excludeAreas,
-        panelSize,
-        orientation,
-        gap,
-        margin,
-      );
-      setPlacedPanelsList(panels);
-    } catch (e) {
-      console.error("Panel placement failed:", e);
-      setPlacedPanelsList([]);
+    if (pixelAreas) {
+      // Use pixel-based placement when crop data is available
+      try {
+        const { areas: pxAreas, metersPerPixel } = pixelAreas;
+        const installPx = pxAreas.filter((a) => a.type === "install");
+        const excludePx = pxAreas.filter((a) => a.type === "exclude");
+        const panels = placePanelsOnCanvasCm(
+          installPx,
+          excludePx,
+          panelSize.width,
+          panelSize.height,
+          orientation,
+          gapCm,
+          marginCm,
+          metersPerPixel,
+        );
+        setPlacedPixelPanels(panels);
+
+        // Console log results
+        const panelAreaM2 = (panelSize.width * panelSize.height) / 1_000_000;
+        const totalPanelArea = panels.length * panelAreaM2;
+        console.log("=== Panel Placement Results ===");
+        console.log(`Total panels: ${panels.length}`);
+        console.log(`Panel size: ${panelSize.width}mm × ${panelSize.height}mm (${panelAreaM2.toFixed(3)} m²)`);
+        console.log(`Total panel area: ${totalPanelArea.toFixed(2)} m²`);
+        console.log(`Orientation: ${orientation}`);
+        console.log(`Gap: ${gapCm}cm, Margin: ${marginCm}cm`);
+        console.log(`Scale: ${metersPerPixel.toFixed(6)} m/px`);
+        console.log(`Panel in pixels: ${(panelSize.width / 1000 / metersPerPixel).toFixed(1)}px × ${(panelSize.height / 1000 / metersPerPixel).toFixed(1)}px`);
+        console.log(`Gap in pixels: ${(gapCm / 100 / metersPerPixel).toFixed(1)}px`);
+        console.log(`Margin in pixels: ${(marginCm / 100 / metersPerPixel).toFixed(1)}px`);
+      } catch (e) {
+        console.error("Panel placement failed:", e);
+        setPlacedPixelPanels([]);
+      }
+    } else {
+      // Fallback to lat/lng placement
+      try {
+        const panels = placePanels(
+          installAreas,
+          excludeAreas,
+          panelSize,
+          orientation,
+          gapCm * 10,   // cm → mm for lat/lng version
+          marginCm * 10, // cm → mm for lat/lng version
+        );
+        setPlacedPanelsList(panels);
+      } catch (e) {
+        console.error("Panel placement failed:", e);
+        setPlacedPanelsList([]);
+      }
     }
   }
 
-  const canPlace = installAreas.length > 0;
+  const canPlace = cropData !== null
+    ? pixelAreas !== null && pixelAreas.areas.some((a) => a.type === "install")
+    : installAreas.length > 0;
 
   return (
     <APIProvider
@@ -165,9 +230,12 @@ export default function Home() {
               />
 
               <DrawingToolbar
-                mode={drawingMode}
-                onModeChange={setDrawingMode}
+                cropMode={cropMode}
+                onCropModeChange={setCropMode}
                 onClearAll={handleClearAll}
+                hasCropData={cropData !== null}
+                drawingMode={drawingMode}
+                onDrawingModeChange={setDrawingMode}
                 installCount={installAreas.length}
                 excludeCount={excludeAreas.length}
                 lang={lang}
@@ -183,12 +251,12 @@ export default function Home() {
               <PanelConfig
                 panelSize={panelSize}
                 orientation={orientation}
-                gap={gap}
-                margin={margin}
+                panelGap={gapCm}
+                edgeMargin={marginCm}
                 onPanelSizeChange={setPanelSize}
                 onOrientationChange={setOrientation}
-                onGapChange={setGap}
-                onMarginChange={setMargin}
+                onGapChange={setGapCm}
+                onMarginChange={setMarginCm}
                 lang={lang}
               />
 
@@ -225,7 +293,7 @@ export default function Home() {
               />
 
               <ResultsPanel
-                panelCount={placedPanelsList.length}
+                panelCount={placedPixelPanels.length || placedPanelsList.length}
                 installAreaM2={installAreaM2}
                 excludeAreaM2={excludeAreaM2}
                 panelSize={panelSize}
@@ -284,11 +352,10 @@ export default function Home() {
             {GOOGLE_MAPS_API_KEY ? (
               <MapView
                 center={center}
-                drawingMode={drawingMode}
-                areas={areas}
-                placedPanels={placedPanelsList}
-                onAreaComplete={handleAreaComplete}
-                onAreasChange={handleAreasChange}
+                cropMode={cropMode}
+                locked={cropData !== null}
+                onCropComplete={handleCropComplete}
+                address={address}
                 lang={lang}
               />
             ) : (
@@ -386,6 +453,17 @@ export default function Home() {
                   </p>
                 </div>
               </div>
+            )}
+            {cropData && (
+              <CropPopup
+                cropData={cropData}
+                drawingMode={drawingMode}
+                onAreasChange={handleAreasChange}
+                onPixelAreasChange={handlePixelAreasChange}
+                placedPanels={placedPixelPanels}
+                onClose={handleCropClose}
+                lang={lang}
+              />
             )}
           </main>
         </div>

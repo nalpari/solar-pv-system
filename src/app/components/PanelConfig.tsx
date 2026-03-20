@@ -18,8 +18,8 @@ function getPresetSizes(lang: Lang): PanelSize[] {
 interface PanelConfigProps {
   panelSize: PanelSize;
   orientation: PanelOrientation;
-  gap: number;
-  margin: number;
+  panelGap: number;
+  edgeMargin: number;
   onPanelSizeChange: (size: PanelSize) => void;
   onOrientationChange: (orientation: PanelOrientation) => void;
   onGapChange: (gap: number) => void;
@@ -30,8 +30,8 @@ interface PanelConfigProps {
 export default function PanelConfig({
   panelSize,
   orientation,
-  gap,
-  margin,
+  panelGap,
+  edgeMargin,
   onPanelSizeChange,
   onOrientationChange,
   onGapChange,
@@ -269,7 +269,7 @@ export default function PanelConfig({
         </div>
       </div>
 
-      {/* Gap control */}
+      {/* Gap control (display cm, internal mm) */}
       <div style={{ marginBottom: 12 }}>
         <div
           style={{
@@ -290,15 +290,15 @@ export default function PanelConfig({
               fontWeight: 500,
             }}
           >
-            {gap} mm
+            {panelGap} cm
           </span>
         </div>
         <input
           type="range"
           min={0}
-          max={100}
-          step={5}
-          value={gap}
+          max={10}
+          step={0.5}
+          value={panelGap}
           onChange={(e) => onGapChange(Number(e.target.value))}
           style={{
             width: "100%",
@@ -308,7 +308,7 @@ export default function PanelConfig({
         />
       </div>
 
-      {/* Edge Margin */}
+      {/* Edge Margin (display cm, internal mm) */}
       <div style={{ marginBottom: 12 }}>
         <div
           style={{
@@ -329,15 +329,15 @@ export default function PanelConfig({
               fontWeight: 500,
             }}
           >
-            {margin} mm
+            {edgeMargin} cm
           </span>
         </div>
         <input
           type="range"
           min={0}
-          max={1000}
-          step={50}
-          value={margin}
+          max={100}
+          step={5}
+          value={edgeMargin}
           onChange={(e) => onMarginChange(Number(e.target.value))}
           style={{
             width: "100%",
