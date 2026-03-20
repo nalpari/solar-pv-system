@@ -1,19 +1,19 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Map, useMap } from "@vis.gl/react-google-maps";
-import { Crosshair, ZoomIn, ZoomOut, Layers, Maximize2 } from "lucide-react";
+import html2canvas from "html2canvas";
+import { ZoomIn, ZoomOut, Layers, Maximize2 } from "lucide-react";
 import { t } from "../utils/i18n";
 import type { Lang } from "../utils/i18n";
-import type { DrawingMode, PolygonArea, PlacedPanel, LatLng } from "../types";
+import type { CropData } from "../types";
 
 interface MapViewProps {
   center: { lat: number; lng: number };
-  drawingMode: DrawingMode;
-  areas: PolygonArea[];
-  placedPanels: PlacedPanel[];
-  onAreaComplete: (area: PolygonArea) => void;
-  onAreasChange: (areas: PolygonArea[]) => void;
+  cropMode: boolean;
+  locked: boolean;
+  onCropComplete: (cropData: CropData) => void;
+  address: string;
   lang: Lang;
 }
 
@@ -92,182 +92,236 @@ function CenterUpdater({ center }: { center: { lat: number; lng: number } }) {
   return null;
 }
 
-function DrawingOverlay({
-  drawingMode,
-  areas,
-  onAreaComplete,
-  onAreasChange,
+function CropOverlay({
+  active,
+  onCropComplete,
+  address,
 }: {
-  drawingMode: DrawingMode;
-  areas: PolygonArea[];
-  onAreaComplete: (area: PolygonArea) => void;
-  onAreasChange: (areas: PolygonArea[]) => void;
+  active: boolean;
+  onCropComplete: (cropData: CropData) => void;
+  address: string;
 }) {
   const map = useMap(MAP_ID);
-  const drawingManagerRef = useRef<google.maps.drawing.DrawingManager | null>(null);
-  const polygonsRef = useRef<Map<string, google.maps.Polygon>>(new globalThis.Map());
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const [dragging, setDragging] = useState(false);
+  const [startPos, setStartPos] = useState<{ x: number; y: number } | null>(null);
+  const [currentPos, setCurrentPos] = useState<{ x: number; y: number } | null>(null);
 
-  const areasRef = useRef(areas);
-  useEffect(() => {
-    areasRef.current = areas;
-  }, [areas]);
+  const handlePointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    setStartPos({ x, y });
+    setCurrentPos({ x, y });
+    setDragging(true);
+  }, []);
 
-  // Stable key: only changes when areas are added or removed, not when paths change from editing
-  const areaIds = areas.map((a) => a.id).join(",");
+  const handlePointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    if (!dragging) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    setCurrentPos({ x, y });
+  }, [dragging]);
 
-  // Render polygons — only recreate when area set changes (add/remove), not on path edits
-  useEffect(() => {
-    if (!map) return;
-
-    // Clear old polygons and their listeners
-    polygonsRef.current.forEach((poly) => {
-      google.maps.event.clearInstanceListeners(poly);
-      poly.setMap(null);
-    });
-    polygonsRef.current.clear();
-
-    areasRef.current.forEach((area) => {
-      const polygon = new google.maps.Polygon({
-        paths: area.paths,
-        strokeColor: area.type === "install" ? "#0693E3" : "#CF2E2E",
-        strokeOpacity: 0.9,
-        strokeWeight: 2,
-        fillColor: area.type === "install" ? "#0693E3" : "#CF2E2E",
-        fillOpacity: area.type === "install" ? 0.2 : 0.3,
-        editable: true,
-        draggable: true,
-        map,
-      });
-
-      // Track path changes — use ref to avoid stale closure over areas
-      const updatePaths = () => {
-        const path = polygon.getPath();
-        const newPaths: LatLng[] = [];
-        for (let i = 0; i < path.getLength(); i++) {
-          const point = path.getAt(i);
-          newPaths.push({ lat: point.lat(), lng: point.lng() });
-        }
-        const updated = areasRef.current.map((a) =>
-          a.id === area.id ? { ...a, paths: newPaths } : a
-        );
-        onAreasChange(updated);
-      };
-
-      google.maps.event.addListener(polygon.getPath(), "set_at", updatePaths);
-      google.maps.event.addListener(polygon.getPath(), "insert_at", updatePaths);
-      google.maps.event.addListener(polygon.getPath(), "remove_at", updatePaths);
-      google.maps.event.addListener(polygon, "dragend", updatePaths);
-
-      polygonsRef.current.set(area.id, polygon);
-    });
-
-    const currentPolygons = polygonsRef.current;
-    return () => {
-      currentPolygons.forEach((poly) => {
-        google.maps.event.clearInstanceListeners(poly);
-        poly.setMap(null);
-      });
-      currentPolygons.clear();
-    };
-  }, [map, areaIds, onAreasChange]);
-
-  // Drawing manager
-  useEffect(() => {
-    if (!map) return;
-
-    if (drawingManagerRef.current) {
-      drawingManagerRef.current.setMap(null);
-      drawingManagerRef.current = null;
+  const handlePointerUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    if (!dragging || !startPos || !currentPos || !map || !overlayRef.current) {
+      setDragging(false);
+      setStartPos(null);
+      setCurrentPos(null);
+      return;
     }
 
-    if (!drawingMode) return;
+    const dx = Math.abs(currentPos.x - startPos.x);
+    const dy = Math.abs(currentPos.y - startPos.y);
 
-    const color = drawingMode === "install" ? "#0693E3" : "#CF2E2E";
+    // Ignore drags smaller than 20px
+    if (dx < 20 || dy < 20) {
+      setDragging(false);
+      setStartPos(null);
+      setCurrentPos(null);
+      return;
+    }
 
-    const dm = new google.maps.drawing.DrawingManager({
-      drawingMode: google.maps.drawing.OverlayType.POLYGON,
-      drawingControl: false,
-      polygonOptions: {
-        strokeColor: color,
-        strokeOpacity: 0.9,
-        strokeWeight: 2,
-        fillColor: color,
-        fillOpacity: drawingMode === "install" ? 0.2 : 0.3,
-        editable: true,
-        draggable: true,
-      },
-    });
+    const bounds = map.getBounds();
+    if (!bounds) {
+      setDragging(false);
+      setStartPos(null);
+      setCurrentPos(null);
+      return;
+    }
 
-    dm.setMap(map);
-    drawingManagerRef.current = dm;
+    const containerWidth = overlayRef.current.clientWidth;
+    const containerHeight = overlayRef.current.clientHeight;
 
-    google.maps.event.addListener(dm, "polygoncomplete", (polygon: google.maps.Polygon) => {
-      const path = polygon.getPath();
-      const paths: LatLng[] = [];
-      for (let i = 0; i < path.getLength(); i++) {
-        const point = path.getAt(i);
-        paths.push({ lat: point.lat(), lng: point.lng() });
+    const ne = bounds.getNorthEast();
+    const sw = bounds.getSouthWest();
+
+    const minX = Math.min(startPos.x, currentPos.x);
+    const maxX = Math.max(startPos.x, currentPos.x);
+    const minY = Math.min(startPos.y, currentPos.y);
+    const maxY = Math.max(startPos.y, currentPos.y);
+
+    // Interpolate pixel position to lat/lng
+    // X maps to lng, Y maps to lat (top = north, bottom = south)
+    const cropSw = {
+      lat: ne.lat() - (maxY / containerHeight) * (ne.lat() - sw.lat()),
+      lng: sw.lng() + (minX / containerWidth) * (ne.lng() - sw.lng()),
+    };
+    const cropNe = {
+      lat: ne.lat() - (minY / containerHeight) * (ne.lat() - sw.lat()),
+      lng: sw.lng() + (maxX / containerWidth) * (ne.lng() - sw.lng()),
+    };
+
+    const zoom = map.getZoom() || 19;
+
+    // Calculate real-world size in meters
+    const latDiff = cropNe.lat - cropSw.lat;
+    const lngDiff = cropNe.lng - cropSw.lng;
+    const avgLat = (cropSw.lat + cropNe.lat) / 2;
+    const heightMeters = latDiff * 111320;
+    const widthMeters = lngDiff * 111320 * Math.cos((avgLat * Math.PI) / 180);
+
+    const cropW = Math.round(maxX - minX);
+    const cropH = Math.round(maxY - minY);
+
+    // Capture the map DOM using html2canvas, then crop the selected region
+    const mapContainer = overlayRef.current.parentElement;
+    if (!mapContainer) {
+      setDragging(false);
+      setStartPos(null);
+      setCurrentPos(null);
+      return;
+    }
+
+    // Hide the crop overlay during capture
+    overlayRef.current.style.display = "none";
+
+    html2canvas(mapContainer, {
+      useCORS: true,
+      allowTaint: true,
+      scale: window.devicePixelRatio || 1,
+    })
+      .then((fullCanvas) => {
+        // Crop the selected region from the full capture
+        const scale = fullCanvas.width / containerWidth;
+        const croppedCanvas = document.createElement("canvas");
+        croppedCanvas.width = Math.round(cropW * scale);
+        croppedCanvas.height = Math.round(cropH * scale);
+        const ctx = croppedCanvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(
+            fullCanvas,
+            Math.round(minX * scale),
+            Math.round(minY * scale),
+            Math.round(cropW * scale),
+            Math.round(cropH * scale),
+            0,
+            0,
+            croppedCanvas.width,
+            croppedCanvas.height,
+          );
+        }
+        return croppedCanvas.toDataURL("image/png");
+      })
+      .catch(() => {
+        // Fallback: gray canvas with coordinates text
+        const fallback = document.createElement("canvas");
+        fallback.width = cropW;
+        fallback.height = cropH;
+        const ctx = fallback.getContext("2d");
+        if (ctx) {
+          ctx.fillStyle = "#6B7280";
+          ctx.fillRect(0, 0, cropW, cropH);
+          ctx.fillStyle = "#FFFFFF";
+          ctx.font = "14px sans-serif";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText("Satellite Image", cropW / 2, cropH / 2 - 10);
+          ctx.font = "11px sans-serif";
+          ctx.fillText(
+            `${cropSw.lat.toFixed(6)}, ${cropSw.lng.toFixed(6)}`,
+            cropW / 2,
+            cropH / 2 + 10,
+          );
+        }
+        return fallback.toDataURL("image/png");
+      })
+      .then((imageDataUrl) => {
+        onCropComplete({
+          imageDataUrl,
+          bounds: { sw: cropSw, ne: cropNe },
+          address,
+          zoom,
+          sizeMeters: { width: widthMeters, height: heightMeters },
+        });
+      })
+      .finally(() => {
+        // Always restore overlay visibility
+        if (overlayRef.current) {
+          overlayRef.current.style.display = "";
+        }
+      });
+
+    setDragging(false);
+    setStartPos(null);
+    setCurrentPos(null);
+  }, [dragging, startPos, currentPos, map, address, onCropComplete]);
+
+  if (!active) return null;
+
+  // Calculate selection rectangle
+  const selectionRect = startPos && currentPos && dragging
+    ? {
+        left: Math.min(startPos.x, currentPos.x),
+        top: Math.min(startPos.y, currentPos.y),
+        width: Math.abs(currentPos.x - startPos.x),
+        height: Math.abs(currentPos.y - startPos.y),
       }
+    : null;
 
-      // Remove the drawn polygon (we manage our own)
-      polygon.setMap(null);
-
-      onAreaComplete({
-        id: crypto.randomUUID(),
-        type: drawingMode,
-        paths,
-      });
-    });
-
-    return () => {
-      dm.setMap(null);
-    };
-  }, [map, drawingMode, onAreaComplete]);
-
-  return null;
-}
-
-function PanelOverlay({ panels }: { panels: PlacedPanel[] }) {
-  const map = useMap(MAP_ID);
-  const polygonsRef = useRef<google.maps.Polygon[]>([]);
-
-  useEffect(() => {
-    if (!map) return;
-
-    // Clear previous panels
-    polygonsRef.current.forEach((p) => p.setMap(null));
-    polygonsRef.current = [];
-
-    panels.forEach((panel) => {
-      const polygon = new google.maps.Polygon({
-        paths: panel.corners,
-        strokeColor: "#0693E3",
-        strokeOpacity: 0.9,
-        strokeWeight: 1,
-        fillColor: "#0693E3",
-        fillOpacity: 0.5,
-        clickable: false,
-        map,
-      });
-      polygonsRef.current.push(polygon);
-    });
-
-    return () => {
-      polygonsRef.current.forEach((p) => p.setMap(null));
-      polygonsRef.current = [];
-    };
-  }, [map, panels]);
-
-  return null;
+  return (
+    <div
+      ref={overlayRef}
+      style={{
+        position: "absolute",
+        inset: 0,
+        cursor: "crosshair",
+        touchAction: "none",
+        zIndex: 20,
+      }}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+    >
+      {selectionRect && (
+        <div
+          style={{
+            position: "absolute",
+            left: selectionRect.left,
+            top: selectionRect.top,
+            width: selectionRect.width,
+            height: selectionRect.height,
+            background: "rgba(6, 147, 227, 0.2)",
+            border: "2px solid #0693E3",
+            pointerEvents: "none",
+          }}
+        />
+      )}
+    </div>
+  );
 }
 
 export default function MapView({
   center,
-  drawingMode,
-  areas,
-  placedPanels,
-  onAreaComplete,
-  onAreasChange,
+  cropMode,
+  locked,
+  onCropComplete,
+  address,
   lang,
 }: MapViewProps) {
   return (
@@ -279,49 +333,19 @@ export default function MapView({
         mapTypeId="satellite"
         tilt={0}
         disableDefaultUI
-        gestureHandling="greedy"
+        gestureHandling={locked ? "none" : "greedy"}
         style={{ width: "100%", height: "100%" }}
       >
         <CenterUpdater center={center} />
-        <DrawingOverlay
-          drawingMode={drawingMode}
-          areas={areas}
-          onAreaComplete={onAreaComplete}
-          onAreasChange={onAreasChange}
-        />
-        <PanelOverlay panels={placedPanels} />
       </Map>
 
       <MapControls center={center} lang={lang} />
 
-      {/* Drawing mode indicator */}
-      {drawingMode && (
-        <div
-          style={{
-            position: "absolute",
-            top: 12,
-            left: "50%",
-            transform: "translateX(-50%)",
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            padding: "8px 16px",
-            background: drawingMode === "install" ? "rgba(6, 147, 227, 0.9)" : "rgba(207, 46, 46, 0.9)",
-            borderRadius: 20,
-            color: "white",
-            fontSize: 13,
-            fontWeight: 500,
-            zIndex: 10,
-            backdropFilter: "blur(8px)",
-            boxShadow: "var(--shadow-md)",
-          }}
-        >
-          <Crosshair size={14} />
-          {drawingMode === "install"
-            ? t("drawInstall", lang)
-            : t("drawExclude", lang)}
-        </div>
-      )}
+      <CropOverlay
+        active={cropMode}
+        onCropComplete={onCropComplete}
+        address={address}
+      />
 
       {/* Coordinates display */}
       <div

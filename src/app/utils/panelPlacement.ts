@@ -1,4 +1,4 @@
-import type { LatLng, PanelSize, PanelOrientation, PlacedPanel, PolygonArea } from "../types";
+import type { LatLng, PanelSize, PanelOrientation, PlacedPanel, PolygonArea, PixelPanel, PixelPolygon } from "../types";
 
 interface Point {
   x: number;
@@ -34,10 +34,6 @@ function signedArea(pts: Point[]): number {
   return area / 2;
 }
 
-function ensureCCW(pts: Point[]): Point[] {
-  return signedArea(pts) < 0 ? [...pts].reverse() : pts;
-}
-
 function lineIntersection(
   a1: Point, a2: Point,
   b1: Point, b2: Point,
@@ -50,6 +46,12 @@ function lineIntersection(
   return { x: a1.x + t * dx1, y: a1.y + t * dy1 };
 }
 
+function ensureCCW(pts: Point[]): Point[] {
+  return signedArea(pts) < 0 ? [...pts].reverse() : pts;
+}
+
+// Insets a polygon inward by `distance`. Assumes math coordinate system (Y up).
+// For canvas coordinates (Y down), flip Y before calling and flip back after.
 function insetPolygon(pts: Point[], distance: number): Point[] {
   const n = pts.length;
   if (n < 3) return [];
@@ -63,9 +65,9 @@ function insetPolygon(pts: Point[], distance: number): Point[] {
     const dy = ccw[j].y - ccw[i].y;
     const len = Math.sqrt(dx * dx + dy * dy);
     if (len === 0) continue;
-    // Inward normal for CCW polygon: (dy, -dx) normalized
-    const nx = (dy / len) * distance;
-    const ny = (-dx / len) * distance;
+    // Inward normal for CCW polygon: (-dy, dx) normalized
+    const nx = (-dy / len) * distance;
+    const ny = (dx / len) * distance;
     offsetEdges.push({
       p1: { x: ccw[i].x + nx, y: ccw[i].y + ny },
       p2: { x: ccw[j].x + nx, y: ccw[j].y + ny },
@@ -212,4 +214,144 @@ export function placePanels(
   }
 
   return allPanels;
+}
+
+// mm 단위 버전 — 패널 크기(mm), 간격(mm), 마진(mm) 입력
+// 현재 UI는 cm 단위로 전환했지만, mm 버전도 향후 단위 선택 기능 등을 위해 유지한다.
+// (2026-03-20 논의: 단위를 cm로 바꿔줘 → cm 버전 추가, mm 버전 유지)
+export function placePanelsOnCanvas(
+  installAreas: PixelPolygon[],
+  excludeAreas: PixelPolygon[],
+  panelWidthMm: number,
+  panelHeightMm: number,
+  orientation: "portrait" | "landscape",
+  gapMm: number,
+  marginMm: number,
+  metersPerPixel: number,
+): PixelPanel[] {
+  if (panelWidthMm <= 0 || panelHeightMm <= 0 || metersPerPixel <= 0) return [];
+
+  // Convert mm → meters → pixels
+  const pw = (orientation === "landscape" ? panelHeightMm : panelWidthMm) / 1000 / metersPerPixel;
+  const ph = (orientation === "landscape" ? panelWidthMm : panelHeightMm) / 1000 / metersPerPixel;
+  const gapPx = gapMm / 1000 / metersPerPixel;
+  const marginPx = marginMm / 1000 / metersPerPixel;
+
+  const stepX = pw + gapPx;
+  const stepY = ph + gapPx;
+  if (stepX <= 0 || stepY <= 0) return [];
+
+  const allPanels: PixelPanel[] = [];
+
+  // Canvas has Y increasing downward, but geometry helpers (ensureCCW, insetPolygon)
+  // assume math coordinates (Y up). Flip Y for all geometry, flip back for output.
+  const flipY = (p: Point): Point => ({ x: p.x, y: -p.y });
+
+  const excludePolys: Point[][] = excludeAreas
+    .filter((ex) => ex.points.length >= 3)
+    .map((ex) => ex.points.map(flipY));
+
+  for (const area of installAreas) {
+    if (area.points.length < 3) continue;
+
+    const localPoly: Point[] = area.points.map(flipY);
+
+    // Inset by margin (works correctly in math coords)
+    const inset = insetPolygon(localPoly, marginPx);
+    if (inset.length < 3) continue;
+
+    // Find longest edge of the original polygon for alignment
+    let maxLen = 0;
+    let angle = 0;
+    for (let i = 0; i < localPoly.length; i++) {
+      const j = (i + 1) % localPoly.length;
+      const dx = localPoly[j].x - localPoly[i].x;
+      const dy = localPoly[j].y - localPoly[i].y;
+      const len = Math.sqrt(dx * dx + dy * dy);
+      if (len > maxLen) {
+        maxLen = len;
+        angle = Math.atan2(dy, dx);
+      }
+    }
+
+    // Rotate inset polygon so longest edge is horizontal
+    const negAngle = -angle;
+    const rotatedInset = inset.map((p) => rotate(p, negAngle));
+
+    // Rotate exclude areas to same coordinate system
+    const rotatedExcludes: Point[][] = excludePolys.map((exPoly) =>
+      exPoly.map((p) => rotate(p, negAngle)),
+    );
+
+    // Bounding box of rotated inset polygon
+    let minX = Infinity, maxX = -Infinity;
+    let minY = Infinity, maxY = -Infinity;
+    for (const p of rotatedInset) {
+      minX = Math.min(minX, p.x);
+      maxX = Math.max(maxX, p.x);
+      minY = Math.min(minY, p.y);
+      maxY = Math.max(maxY, p.y);
+    }
+
+    // Place panels in a grid aligned to the longest edge
+    for (let x = minX + pw / 2; x <= maxX - pw / 2; x += stepX) {
+      for (let y = minY + ph / 2; y <= maxY - ph / 2; y += stepY) {
+        const corners: Point[] = [
+          { x: x - pw / 2, y: y - ph / 2 },
+          { x: x + pw / 2, y: y - ph / 2 },
+          { x: x + pw / 2, y: y + ph / 2 },
+          { x: x - pw / 2, y: y + ph / 2 },
+        ];
+
+        // All corners must be inside the inset polygon
+        const allInside = corners.every((c) => isPointInPolygon(c, rotatedInset));
+        if (!allInside) continue;
+
+        // Check overlap with exclude areas
+        const inExclude = rotatedExcludes.some((exPoly) =>
+          exPoly.length >= 3 && (
+            corners.some((c) => isPointInPolygon(c, exPoly)) ||
+            exPoly.some((ep) => isPointInPolygon(ep, corners))
+          ),
+        );
+        if (inExclude) continue;
+
+        // Rotate back to math coords, then flip Y to canvas coords
+        const pixelCorners = corners.map((c) => flipY(rotate(c, angle))) as [Point, Point, Point, Point];
+
+        allPanels.push({
+          id: crypto.randomUUID(),
+          corners: pixelCorners,
+        });
+      }
+    }
+  }
+
+  return allPanels;
+}
+
+// cm 단위 버전 — 패널 크기(mm), 간격(cm), 마진(cm) 입력
+// UI에서 간격/마진을 cm로 표시하므로 이 함수를 사용한다.
+// (2026-03-20 논의: 단위를 cm로 바꿔줘 → cm 버전 추가, mm 버전 유지)
+export function placePanelsOnCanvasCm(
+  installAreas: PixelPolygon[],
+  excludeAreas: PixelPolygon[],
+  panelWidthMm: number,
+  panelHeightMm: number,
+  orientation: "portrait" | "landscape",
+  gapCm: number,
+  marginCm: number,
+  metersPerPixel: number,
+): PixelPanel[] {
+  // cm → mm 변환 후 mm 버전 호출
+  return placePanelsOnCanvas(
+    installAreas,
+    excludeAreas,
+    panelWidthMm,
+    panelHeightMm,
+    orientation,
+    gapCm * 10,
+    marginCm * 10,
+    metersPerPixel,
+  );
 }
