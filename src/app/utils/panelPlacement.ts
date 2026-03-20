@@ -279,6 +279,7 @@ export function placePanelsOnCanvas(
     const rotatedInset = inset.map((p) => rotate(p, negAngle));
 
     // Rotate exclude areas to same coordinate system
+    // Both install inset and excludes rotate around (0,0), preserving relative positions
     const rotatedExcludes: Point[][] = excludePolys.map((exPoly) =>
       exPoly.map((p) => rotate(p, negAngle)),
     );
