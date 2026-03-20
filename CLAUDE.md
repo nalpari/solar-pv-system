@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+> **Note:** AI 에이전트 공통 가이드는 [AGENTS.md](./AGENTS.md)를 참조하세요. 이 문서는 Claude Code 전용 설정을 포함합니다.
+
 ## Commands
 
 - `pnpm dev` — Start dev server (Next.js)
@@ -13,7 +15,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Tech Stack
 
-- **Next.js 16** with App Router (`src/app/`)
+- **Next.js 16.2** with App Router (`src/app/`)
 - **React 19** with React Compiler enabled (`reactCompiler: true` in next.config.ts)
 - **TypeScript** (strict mode)
 - **Tailwind CSS v4** via `@tailwindcss/postcss`

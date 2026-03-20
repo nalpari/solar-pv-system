@@ -15,8 +15,8 @@
 
 | 기술 | 버전 | 용도 |
 |------|------|------|
-| Next.js | 16.1.7 | App Router 기반 프레임워크 |
-| React | 19.2.3 | React Compiler 활성화 |
+| Next.js | 16.2.0 | App Router 기반 프레임워크 |
+| React | 19.2.4 | React Compiler 활성화 |
 | TypeScript | ^5 | strict mode |
 | Tailwind CSS | v4 | `@tailwindcss/postcss` 기반 |
 | @vis.gl/react-google-maps | ^1.7.1 | Google Maps 통합 |
