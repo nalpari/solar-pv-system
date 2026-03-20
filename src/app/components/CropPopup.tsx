@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { X, Download } from "lucide-react";
+import { X, Download, Undo2 } from "lucide-react";
 import type { CropData, CropBounds, DrawingMode, LatLng, PolygonArea, PixelPanel, PixelPolygon, PixelPoint } from "../types";
 import type { Lang } from "../utils/i18n";
 import { t } from "../utils/i18n";
@@ -302,6 +302,28 @@ export default function CropPopup({
     setCurrentPoints((prev) => [...prev, pt]);
   }
 
+  function handleContextMenu(e: React.MouseEvent<HTMLCanvasElement>) {
+    e.preventDefault();
+    if (drawingMode !== "install" && drawingMode !== "exclude") return;
+    if (currentPoints.length >= 1) {
+      setCurrentPoints((prev) => {
+        const next = prev.slice(0, -1);
+        if (next.length === 0) setMousePos(null);
+        return next;
+      });
+    }
+  }
+
+  function handleUndo() {
+    if (currentPoints.length >= 1) {
+      setCurrentPoints((prev) => {
+        const next = prev.slice(0, -1);
+        if (next.length === 0) setMousePos(null);
+        return next;
+      });
+    }
+  }
+
   function handlePointerMove(e: React.PointerEvent<HTMLCanvasElement>) {
     if (drawingMode !== "install" && drawingMode !== "exclude") return;
     if (currentPoints.length === 0) return;
@@ -463,8 +485,38 @@ export default function CropPopup({
             }}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
+            onContextMenu={handleContextMenu}
           />
+
         </div>
+
+        {/* Floating Undo button — bottom-right of popup card */}
+        {(drawingMode === "install" || drawingMode === "exclude") &&
+          currentPoints.length > 0 && (
+            <button
+              onClick={handleUndo}
+              title="Undo"
+              style={{
+                position: "absolute",
+                bottom: 16,
+                right: 16,
+                zIndex: 10,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 32,
+                height: 32,
+                border: "1px solid var(--border-primary)",
+                background: "rgba(255, 255, 255, 0.9)",
+                color: "var(--text-secondary)",
+                borderRadius: "var(--radius-md)",
+                cursor: "pointer",
+                backdropFilter: "blur(8px)",
+              }}
+            >
+              <Undo2 size={16} />
+            </button>
+          )}
       </div>
     </div>
   );
