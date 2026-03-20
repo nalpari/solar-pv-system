@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { X, Download, Undo2 } from "lucide-react";
-import type { CropData, CropBounds, DrawingMode, LatLng, PolygonArea, PixelPanel, PixelPolygon, PixelPoint } from "../types";
+import type { CropData, CropBounds, DrawingMode, LatLng, PolygonArea, PixelPanel, PixelPolygon, PixelPoint, PolygonSubMode } from "../types";
 import type { Lang } from "../utils/i18n";
 import { t } from "../utils/i18n";
 
@@ -64,6 +64,47 @@ function convertToPixelPolygons(entries: AreaEntry[]): PixelPolygon[] {
     }));
 }
 
+function TooltipButton({ label, color, onClick }: { label: string; color?: string; onClick: () => void }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: "block",
+        width: "100%",
+        padding: "4px 8px",
+        border: "none",
+        background: hovered ? "var(--border-primary)" : "transparent",
+        color: color ?? "var(--text-primary)",
+        fontSize: 13,
+        textAlign: "left",
+        cursor: "pointer",
+        borderRadius: 4,
+        whiteSpace: "nowrap",
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
+const HANDLE_RADIUS = 12;
+const HANDLE_VISUAL_RADIUS = 6;
+
+function isPointInPolygon(pt: PixelPoint, polygon: PixelPoint[]): boolean {
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i].x, yi = polygon[i].y;
+    const xj = polygon[j].x, yj = polygon[j].y;
+    const intersect = ((yi > pt.y) !== (yj > pt.y))
+      && (pt.x < (xj - xi) * (pt.y - yi) / (yj - yi) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
 export default function CropPopup({
   cropData,
   drawingMode,
@@ -79,6 +120,25 @@ export default function CropPopup({
   const [canvasLayout, setCanvasLayout] = useState<{
     w: number; h: number; offsetX: number; offsetY: number;
   } | null>(null);
+  const [selectedPolygonId, setSelectedPolygonId] = useState<string | null>(null);
+  const [subMode, setSubMode] = useState<PolygonSubMode>("idle");
+  const [tooltipPos, setTooltipPos] = useState<PixelPoint | null>(null);
+
+  // Polygon drag-move refs
+  const dragStartRef = useRef<PixelPoint | null>(null);
+  const dragOriginalPointsRef = useRef<PixelPoint[] | null>(null);
+
+  // Vertex editing
+  const [draggingVertexIdx, setDraggingVertexIdx] = useState<number | null>(null);
+
+  // Long-press timer for vertex deletion on touch
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Debounce rapid clicks in drawing mode (prevents double-click adding 2 points)
+  const lastPointTimeRef = useRef<number>(0);
+
+  const areasRef = useRef<AreaEntry[]>(areas);
+  areasRef.current = areas;
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
@@ -89,6 +149,9 @@ export default function CropPopup({
     setPrevDrawingMode(drawingMode);
     setCurrentPoints([]);
     setMousePos(null);
+    setSelectedPolygonId(null);
+    setSubMode("idle");
+    setTooltipPos(null);
   }
 
   // Calculate the actual rendered area of img with object-fit: contain
@@ -170,6 +233,27 @@ export default function CropPopup({
     return (mppX + mppY) / 2;
   }, [cropData.sizeMeters]);
 
+  function notifyParent(updatedAreas: AreaEntry[]) {
+    const canvas = canvasRef.current;
+    if (canvas && canvas.width > 0) {
+      onAreasChange(convertAreas(updatedAreas, canvas.width, canvas.height, cropData.bounds));
+      const mpp = computeMetersPerPixel();
+      if (mpp > 0) {
+        onPixelAreasChange(convertToPixelPolygons(updatedAreas), mpp);
+      }
+    }
+  }
+
+  function handleDeletePolygon() {
+    if (!selectedPolygonId) return;
+    const updated = areas.filter((a) => a.id !== selectedPolygonId);
+    setAreas(updated);
+    setSelectedPolygonId(null);
+    setSubMode("idle");
+    setTooltipPos(null);
+    notifyParent(updated);
+  }
+
   // Canvas rendering
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -183,6 +267,7 @@ export default function CropPopup({
     for (const area of areas) {
       if (area.points.length < 3) continue;
       const isInstall = area.type === "install";
+      const isSelected = area.id === selectedPolygonId;
       ctx.beginPath();
       ctx.moveTo(area.points[0].x, area.points[0].y);
       for (let i = 1; i < area.points.length; i++) {
@@ -193,9 +278,50 @@ export default function CropPopup({
         ? "rgba(6, 147, 227, 0.2)"
         : "rgba(207, 46, 46, 0.3)";
       ctx.fill();
-      ctx.strokeStyle = isInstall ? "#0693E3" : "#CF2E2E";
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = isSelected ? "#FFD700" : (isInstall ? "#0693E3" : "#CF2E2E");
+      ctx.lineWidth = isSelected ? 4 : 2;
       ctx.stroke();
+    }
+
+    // Draw vertex handles when editing_vertices
+    if (subMode === "editing_vertices" && selectedPolygonId) {
+      const selArea = areas.find((a) => a.id === selectedPolygonId);
+      if (selArea && selArea.points.length >= 3) {
+        // Draw edge midpoint handles with + sign
+        for (let i = 0; i < selArea.points.length; i++) {
+          const p1 = selArea.points[i];
+          const p2 = selArea.points[(i + 1) % selArea.points.length];
+          const mx = (p1.x + p2.x) / 2;
+          const my = (p1.y + p2.y) / 2;
+          ctx.beginPath();
+          ctx.arc(mx, my, HANDLE_VISUAL_RADIUS, 0, Math.PI * 2);
+          ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+          ctx.fill();
+          ctx.strokeStyle = "#FFD700";
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+          // + sign
+          const s = 3;
+          ctx.beginPath();
+          ctx.moveTo(mx - s, my);
+          ctx.lineTo(mx + s, my);
+          ctx.moveTo(mx, my - s);
+          ctx.lineTo(mx, my + s);
+          ctx.strokeStyle = "#FFD700";
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+        }
+        // Draw vertex handles (gold)
+        for (const pt of selArea.points) {
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, HANDLE_VISUAL_RADIUS, 0, Math.PI * 2);
+          ctx.fillStyle = "#FFD700";
+          ctx.fill();
+          ctx.strokeStyle = "#fff";
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+        }
+      }
     }
 
     // Draw in-progress polygon
@@ -255,7 +381,7 @@ export default function CropPopup({
       ctx.fill();
       ctx.stroke();
     }
-  }, [areas, currentPoints, mousePos, drawingMode, placedPanels]);
+  }, [areas, currentPoints, mousePos, drawingMode, placedPanels, selectedPolygonId, subMode]);
 
   function getCanvasCoords(e: React.PointerEvent<HTMLCanvasElement>): PixelPoint {
     const rect = canvasRef.current!.getBoundingClientRect();
@@ -266,9 +392,103 @@ export default function CropPopup({
   }
 
   function handlePointerDown(e: React.PointerEvent<HTMLCanvasElement>) {
-    if (drawingMode !== "install" && drawingMode !== "exclude") return;
     e.preventDefault();
     const pt = getCanvasCoords(e);
+
+    // Selection / move / vertex editing mode
+    if (drawingMode === null) {
+      if (subMode === "idle") {
+        // Check if click is inside any polygon (last to first for z-order)
+        for (let i = areas.length - 1; i >= 0; i--) {
+          if (areas[i].points.length >= 3 && isPointInPolygon(pt, areas[i].points)) {
+            setSelectedPolygonId(areas[i].id);
+            setSubMode("selected");
+            setTooltipPos(pt);
+            return;
+          }
+        }
+      } else if (subMode === "selected") {
+        // If clicking on the same polygon again, reposition tooltip
+        if (selectedPolygonId) {
+          const selArea = areas.find((a) => a.id === selectedPolygonId);
+          if (selArea && selArea.points.length >= 3 && isPointInPolygon(pt, selArea.points)) {
+            setTooltipPos(pt);
+            return;
+          }
+        }
+        // Clicking outside dismisses selection
+        setSelectedPolygonId(null);
+        setSubMode("idle");
+        setTooltipPos(null);
+      } else if (subMode === "moving") {
+        // Start drag if inside selected polygon
+        if (selectedPolygonId) {
+          const selArea = areas.find((a) => a.id === selectedPolygonId);
+          if (selArea && isPointInPolygon(pt, selArea.points)) {
+            dragStartRef.current = pt;
+            dragOriginalPointsRef.current = selArea.points.map((p) => ({ ...p }));
+          } else {
+            // Click outside: cancel moving
+            dragStartRef.current = null;
+            dragOriginalPointsRef.current = null;
+            setSelectedPolygonId(null);
+            setSubMode("idle");
+          }
+        }
+      } else if (subMode === "editing_vertices") {
+        // Check vertex hit, then midpoint hit, then empty space
+        if (selectedPolygonId) {
+          const selArea = areas.find((a) => a.id === selectedPolygonId);
+          if (selArea) {
+            // Check vertex handles
+            for (let i = 0; i < selArea.points.length; i++) {
+              const vp = selArea.points[i];
+              if (Math.hypot(pt.x - vp.x, pt.y - vp.y) <= HANDLE_RADIUS) {
+                setDraggingVertexIdx(i);
+                // Start long-press timer for vertex deletion
+                longPressTimerRef.current = setTimeout(() => {
+                  longPressTimerRef.current = null;
+                  tryDeleteVertex(i);
+                  setDraggingVertexIdx(null);
+                }, 500);
+                return;
+              }
+            }
+            // Check edge midpoint handles
+            for (let i = 0; i < selArea.points.length; i++) {
+              const p1 = selArea.points[i];
+              const p2 = selArea.points[(i + 1) % selArea.points.length];
+              const mx = (p1.x + p2.x) / 2;
+              const my = (p1.y + p2.y) / 2;
+              if (Math.hypot(pt.x - mx, pt.y - my) <= HANDLE_RADIUS) {
+                // Insert new point at midpoint, start dragging it
+                const insertIdx = i + 1;
+                const newPoints = [...selArea.points];
+                newPoints.splice(insertIdx, 0, { x: mx, y: my });
+                const updated = areas.map((a) =>
+                  a.id === selectedPolygonId ? { ...a, points: newPoints } : a,
+                );
+                setAreas(updated);
+                setDraggingVertexIdx(insertIdx);
+                return;
+              }
+            }
+            // Empty space: exit editing
+            setSelectedPolygonId(null);
+            setSubMode("idle");
+          }
+        }
+      }
+      return;
+    }
+
+    // Drawing mode
+    if (drawingMode !== "install" && drawingMode !== "exclude") return;
+
+    // Prevent double-click from adding two points (300ms debounce)
+    const now = performance.now();
+    if (now - lastPointTimeRef.current < 300) return;
+    lastPointTimeRef.current = now;
 
     // Close polygon: near first point with >= 3 points
     if (currentPoints.length >= 3) {
@@ -284,17 +504,7 @@ export default function CropPopup({
         setAreas(updated);
         setCurrentPoints([]);
         setMousePos(null);
-
-        // Notify parent
-        const canvas = canvasRef.current;
-        if (canvas && canvas.width > 0) {
-          onAreasChange(convertAreas(updated, canvas.width, canvas.height, cropData.bounds));
-          const mpp = computeMetersPerPixel();
-          if (mpp > 0) {
-            console.log(`[CropPopup] canvas: ${canvas.width}×${canvas.height}px, sizeMeters: ${cropData.sizeMeters.width.toFixed(1)}×${cropData.sizeMeters.height.toFixed(1)}m, mpp: ${mpp.toFixed(6)}`);
-            onPixelAreasChange(convertToPixelPolygons(updated), mpp);
-          }
-        }
+        notifyParent(updated);
         return;
       }
     }
@@ -302,36 +512,125 @@ export default function CropPopup({
     setCurrentPoints((prev) => [...prev, pt]);
   }
 
+  function undoLastPoint() {
+    if (currentPoints.length >= 1) {
+      setCurrentPoints((prev) => {
+        const next = prev.slice(0, -1);
+        if (next.length === 0) setMousePos(null);
+        return next;
+      });
+    }
+  }
+
   function handleContextMenu(e: React.MouseEvent<HTMLCanvasElement>) {
     e.preventDefault();
     if (drawingMode !== "install" && drawingMode !== "exclude") return;
-    if (currentPoints.length >= 1) {
-      setCurrentPoints((prev) => {
-        const next = prev.slice(0, -1);
-        if (next.length === 0) setMousePos(null);
-        return next;
-      });
-    }
-  }
-
-  function handleUndo() {
-    if (currentPoints.length >= 1) {
-      setCurrentPoints((prev) => {
-        const next = prev.slice(0, -1);
-        if (next.length === 0) setMousePos(null);
-        return next;
-      });
-    }
+    undoLastPoint();
   }
 
   function handlePointerMove(e: React.PointerEvent<HTMLCanvasElement>) {
+    const rect = canvasRef.current!.getBoundingClientRect();
+    const px = e.clientX - rect.left;
+    const py = e.clientY - rect.top;
+
+    // Polygon drag-move
+    if (drawingMode === null && subMode === "moving" && dragStartRef.current && dragOriginalPointsRef.current && selectedPolygonId) {
+      const dx = px - dragStartRef.current.x;
+      const dy = py - dragStartRef.current.y;
+      const newPoints = dragOriginalPointsRef.current.map((p) => ({
+        x: p.x + dx,
+        y: p.y + dy,
+      }));
+      setAreas((prev) =>
+        prev.map((a) =>
+          a.id === selectedPolygonId ? { ...a, points: newPoints } : a,
+        ),
+      );
+      return;
+    }
+
+    // Vertex dragging
+    if (drawingMode === null && subMode === "editing_vertices" && draggingVertexIdx !== null && selectedPolygonId) {
+      // Cancel long-press if dragging
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+      }
+      setAreas((prev) =>
+        prev.map((a) => {
+          if (a.id !== selectedPolygonId) return a;
+          const newPoints = [...a.points];
+          newPoints[draggingVertexIdx] = { x: px, y: py };
+          return { ...a, points: newPoints };
+        }),
+      );
+      return;
+    }
+
+    // Drawing mode: dashed guide line
     if (drawingMode !== "install" && drawingMode !== "exclude") return;
     if (currentPoints.length === 0) return;
+    setMousePos({ x: px, y: py });
+  }
+
+  function handlePointerUp() {
+    // End polygon drag-move
+    if (subMode === "moving" && dragStartRef.current) {
+      dragStartRef.current = null;
+      dragOriginalPointsRef.current = null;
+      notifyParent(areasRef.current);
+      setSelectedPolygonId(null);
+      setSubMode("idle");
+      return;
+    }
+    // End vertex drag
+    if (subMode === "editing_vertices" && draggingVertexIdx !== null) {
+      // Cancel long-press timer
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+      }
+      setDraggingVertexIdx(null);
+      notifyParent(areasRef.current);
+      return;
+    }
+  }
+
+  // Delete vertex (or entire polygon if <= 3 points)
+  function tryDeleteVertex(vertexIdx: number) {
+    if (!selectedPolygonId) return;
+    const selArea = areas.find((a) => a.id === selectedPolygonId);
+    if (!selArea) return;
+    let updated: AreaEntry[];
+    if (selArea.points.length <= 3) {
+      // Delete entire polygon
+      updated = areas.filter((a) => a.id !== selectedPolygonId);
+      setSelectedPolygonId(null);
+      setSubMode("idle");
+    } else {
+      const newPoints = selArea.points.filter((_, i) => i !== vertexIdx);
+      updated = areas.map((a) =>
+        a.id === selectedPolygonId ? { ...a, points: newPoints } : a,
+      );
+    }
+    setAreas(updated);
+    notifyParent(updated);
+  }
+
+  function handleDoubleClick(e: React.MouseEvent<HTMLCanvasElement>) {
+    if (subMode !== "editing_vertices" || !selectedPolygonId) return;
     const rect = canvasRef.current!.getBoundingClientRect();
-    setMousePos({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    });
+    const px = e.clientX - rect.left;
+    const py = e.clientY - rect.top;
+    const selArea = areas.find((a) => a.id === selectedPolygonId);
+    if (!selArea) return;
+    for (let i = 0; i < selArea.points.length; i++) {
+      const vp = selArea.points[i];
+      if (Math.hypot(px - vp.x, py - vp.y) <= HANDLE_RADIUS) {
+        tryDeleteVertex(i);
+        return;
+      }
+    }
   }
 
   function handleSave() {
@@ -468,7 +767,11 @@ export default function CropPopup({
               cursor:
                 drawingMode === "install" || drawingMode === "exclude"
                   ? "crosshair"
-                  : "default",
+                  : subMode === "moving"
+                    ? "grabbing"
+                    : subMode === "editing_vertices"
+                      ? "pointer"
+                      : "default",
               ...(canvasLayout
                 ? {
                     left: canvasLayout.offsetX,
@@ -485,17 +788,44 @@ export default function CropPopup({
             }}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onDoubleClick={handleDoubleClick}
             onContextMenu={handleContextMenu}
           />
 
         </div>
 
+        {/* Polygon selection tooltip */}
+        {subMode === "selected" && tooltipPos && (
+          <div
+            style={{
+              position: "absolute",
+              left: (canvasLayout?.offsetX ?? 0) + tooltipPos.x + 8,
+              top: (canvasLayout?.offsetY ?? 0) + tooltipPos.y - 8,
+              zIndex: 20,
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+              background: "var(--bg-primary)",
+              border: "1px solid var(--border-primary)",
+              borderRadius: "var(--radius-md)",
+              boxShadow: "var(--shadow-lg)",
+              padding: 4,
+              minWidth: 80,
+            }}
+          >
+            <TooltipButton label={t("polygonMove", lang)} onClick={() => { setSubMode("moving"); setTooltipPos(null); }} />
+            <TooltipButton label={t("polygonDelete", lang)} color="#CF2E2E" onClick={handleDeletePolygon} />
+            <TooltipButton label={t("polygonEditVertices", lang)} onClick={() => { setSubMode("editing_vertices"); setTooltipPos(null); }} />
+          </div>
+        )}
+
         {/* Floating Undo button — bottom-right of popup card */}
         {(drawingMode === "install" || drawingMode === "exclude") &&
           currentPoints.length > 0 && (
             <button
-              onClick={handleUndo}
-              title="Undo"
+              onClick={undoLastPoint}
+              aria-label="Undo"
               style={{
                 position: "absolute",
                 bottom: 16,
