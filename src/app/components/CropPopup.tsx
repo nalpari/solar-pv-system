@@ -410,7 +410,7 @@ export default function CropPopup({
   /** 포인터 다운 이벤트를 처리한다 (좌클릭만 허용, 점 추가·폴리곤 선택·드래그 시작·pointer capture 설정) */
   function handlePointerDown(e: React.PointerEvent<HTMLCanvasElement>) {
     e.preventDefault();
-    // 우클릭(보조 버튼)은 점 입력으로 처리하지 않음 — contextmenu(Undo)에서 처리
+    // 좌클릭(주 버튼)만 허용
     if (e.button !== 0) return;
     const pt = getCanvasCoords(e);
 
