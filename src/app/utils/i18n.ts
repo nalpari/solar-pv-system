@@ -68,6 +68,7 @@ const translations = {
   polygonMove: { ja: "移動", en: "Move" },
   polygonDelete: { ja: "削除", en: "Delete" },
   polygonEditVertices: { ja: "頂点編集", en: "Edit Vertices" },
+  undoLastPoint: { ja: "元に戻す", en: "Undo" },
 
   // page.tsx
   placePanels: { ja: "パネル配置", en: "Place Panels" },

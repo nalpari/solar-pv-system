@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { X, Download, Undo2 } from "lucide-react";
 import type { CropData, CropBounds, DrawingMode, LatLng, PolygonArea, PixelPanel, PixelPolygon, PixelPoint, PolygonSubMode } from "../types";
 import type { Lang } from "../utils/i18n";
 import { t } from "../utils/i18n";
+import { isPointInPolygon } from "../utils/panelPlacement";
 
 interface CropPopupProps {
   cropData: CropData;
@@ -93,17 +94,6 @@ function TooltipButton({ label, color, onClick }: { label: string; color?: strin
 const HANDLE_RADIUS = 12;
 const HANDLE_VISUAL_RADIUS = 6;
 
-function isPointInPolygon(pt: PixelPoint, polygon: PixelPoint[]): boolean {
-  let inside = false;
-  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    const xi = polygon[i].x, yi = polygon[i].y;
-    const xj = polygon[j].x, yj = polygon[j].y;
-    const intersect = ((yi > pt.y) !== (yj > pt.y))
-      && (pt.x < (xj - xi) * (pt.y - yi) / (yj - yi) + xi);
-    if (intersect) inside = !inside;
-  }
-  return inside;
-}
 
 export default function CropPopup({
   cropData,
@@ -142,20 +132,22 @@ export default function CropPopup({
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
-  const [prevDrawingMode, setPrevDrawingMode] = useState<DrawingMode>(drawingMode);
 
-  // Reset in-progress points when drawing mode changes (render-phase state sync)
-  if (prevDrawingMode !== drawingMode) {
-    setPrevDrawingMode(drawingMode);
-    setCurrentPoints([]);
-    setMousePos(null);
-    setSelectedPolygonId(null);
-    setSubMode("idle");
-    setTooltipPos(null);
-  }
+  // Reset in-progress points when drawing mode changes
+  const prevDrawingModeRef = useRef<DrawingMode>(drawingMode);
+  useEffect(() => {
+    if (prevDrawingModeRef.current !== drawingMode) {
+      prevDrawingModeRef.current = drawingMode;
+      setCurrentPoints([]);
+      setMousePos(null);
+      setSelectedPolygonId(null);
+      setSubMode("idle");
+      setTooltipPos(null);
+    }
+  }, [drawingMode]);
 
   // Calculate the actual rendered area of img with object-fit: contain
-  const getRenderedImageRect = useCallback(() => {
+  function getRenderedImageRect() {
     const img = imgRef.current;
     if (!img || !img.naturalWidth || !img.naturalHeight) return null;
     const containerW = img.clientWidth;
@@ -176,9 +168,9 @@ export default function CropPopup({
       offsetY = 0;
     }
     return { renderW, renderH, offsetX, offsetY };
-  }, []);
+  }
 
-  const syncCanvasSize = useCallback(() => {
+  function syncCanvasSize() {
     const canvas = canvasRef.current;
     const rect = getRenderedImageRect();
     if (!canvas || !rect) return;
@@ -188,14 +180,13 @@ export default function CropPopup({
       canvas.width = w;
       canvas.height = h;
     }
-    // Update layout state (React controls positioning via style)
     setCanvasLayout({
       w,
       h,
       offsetX: Math.round(rect.offsetX),
       offsetY: Math.round(rect.offsetY),
     });
-  }, [getRenderedImageRect]);
+  }
 
   // Sync canvas size on image load and resize
   useEffect(() => {
@@ -222,16 +213,16 @@ export default function CropPopup({
       img.removeEventListener("load", handleLoad);
       observer.disconnect();
     };
-  }, [syncCanvasSize]);
+  }, []);  // eslint-disable-line react-hooks/exhaustive-deps -- syncCanvasSize reads refs, stable across renders
 
   // Compute metersPerPixel from canvas size and real-world dimensions
-  const computeMetersPerPixel = useCallback(() => {
+  function computeMetersPerPixel() {
     const canvas = canvasRef.current;
     if (!canvas || canvas.width <= 0 || canvas.height <= 0) return 0;
     const mppX = cropData.sizeMeters.width / canvas.width;
     const mppY = cropData.sizeMeters.height / canvas.height;
     return (mppX + mppY) / 2;
-  }, [cropData.sizeMeters]);
+  }
 
   function notifyParent(updatedAreas: AreaEntry[]) {
     const canvas = canvasRef.current;
@@ -574,6 +565,11 @@ export default function CropPopup({
   }
 
   function handlePointerUp() {
+    // Always clear long-press timer on pointer up
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
     // End polygon drag-move
     if (subMode === "moving" && dragStartRef.current) {
       dragStartRef.current = null;
@@ -585,11 +581,6 @@ export default function CropPopup({
     }
     // End vertex drag
     if (subMode === "editing_vertices" && draggingVertexIdx !== null) {
-      // Cancel long-press timer
-      if (longPressTimerRef.current) {
-        clearTimeout(longPressTimerRef.current);
-        longPressTimerRef.current = null;
-      }
       setDraggingVertexIdx(null);
       notifyParent(areasRef.current);
       return;
@@ -825,7 +816,7 @@ export default function CropPopup({
           currentPoints.length > 0 && (
             <button
               onClick={undoLastPoint}
-              aria-label="Undo"
+              aria-label={t("undoLastPoint", lang)}
               style={{
                 position: "absolute",
                 bottom: 16,
