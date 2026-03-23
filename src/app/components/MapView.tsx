@@ -263,6 +263,13 @@ function CropOverlay({
     setIsDragging(false);
   }
 
+  /** 포인터 캡처가 강제 해제될 때 드래그 상태를 정리한다 */
+  function handlePointerCancel() {
+    dragTargetRef.current = null;
+    dragStartRef.current = null;
+    setIsDragging(false);
+  }
+
   /** 크롭 영역 확정 후 이미지 캡처 및 콜백 호출 */
   function handleConfirm() {
     if (!rect || !map || !overlayRef.current) return;
@@ -391,6 +398,7 @@ function CropOverlay({
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerCancel}
     >
       {/* Dark overlay with cutout */}
       <div

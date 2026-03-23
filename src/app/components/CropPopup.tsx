@@ -647,20 +647,21 @@ export default function CropPopup({
     }
   }
 
-  /** 꼭짓점을 삭제하며, 3개 이하이면 폴리곤 전체를 제거한다 */
+  /** 꼭짓점을 삭제하며, 3개 이하이면 폴리곤 전체를 제거한다 (areasRef로 최신 상태 참조) */
   function tryDeleteVertex(vertexIdx: number) {
     if (!selectedPolygonId) return;
-    const selArea = areas.find((a) => a.id === selectedPolygonId);
+    const currentAreas = areasRef.current;
+    const selArea = currentAreas.find((a) => a.id === selectedPolygonId);
     if (!selArea) return;
     let updated: AreaEntry[];
     if (selArea.points.length <= 3) {
       // Delete entire polygon
-      updated = areas.filter((a) => a.id !== selectedPolygonId);
+      updated = currentAreas.filter((a) => a.id !== selectedPolygonId);
       setSelectedPolygonId(null);
       setSubMode("idle");
     } else {
       const newPoints = selArea.points.filter((_, i) => i !== vertexIdx);
-      updated = areas.map((a) =>
+      updated = currentAreas.map((a) =>
         a.id === selectedPolygonId ? { ...a, points: newPoints } : a,
       );
     }
