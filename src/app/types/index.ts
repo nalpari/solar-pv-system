@@ -52,3 +52,5 @@ export interface PixelPanel {
   id: string;
   corners: [PixelPoint, PixelPoint, PixelPoint, PixelPoint];
 }
+
+export type PolygonSubMode = "idle" | "selected" | "moving" | "editing_vertices";

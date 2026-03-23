@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { X, Download } from "lucide-react";
-import type { CropData, CropBounds, DrawingMode, LatLng, PolygonArea, PixelPanel, PixelPolygon, PixelPoint } from "../types";
+import { useEffect, useRef, useState } from "react";
+import { X, Download, Undo2 } from "lucide-react";
+import type { CropData, CropBounds, DrawingMode, LatLng, PolygonArea, PixelPanel, PixelPolygon, PixelPoint, PolygonSubMode } from "../types";
 import type { Lang } from "../utils/i18n";
 import { t } from "../utils/i18n";
+import { isPointInPolygon } from "../utils/panelPlacement";
 
 interface CropPopupProps {
   cropData: CropData;
@@ -22,6 +23,7 @@ interface AreaEntry {
   points: PixelPoint[];
 }
 
+/** 캔버스 픽셀 좌표를 위경도(LatLng)로 변환한다 */
 function pixelToLatLng(
   x: number,
   y: number,
@@ -37,6 +39,7 @@ function pixelToLatLng(
   };
 }
 
+/** AreaEntry 배열을 위경도 기반 PolygonArea 배열로 변환한다 */
 function convertAreas(
   entries: AreaEntry[],
   canvasWidth: number,
@@ -54,6 +57,7 @@ function convertAreas(
     }));
 }
 
+/** AreaEntry 배열을 픽셀 기반 PixelPolygon 배열로 변환한다 */
 function convertToPixelPolygons(entries: AreaEntry[]): PixelPolygon[] {
   return entries
     .filter((a) => a.points.length >= 3)
@@ -64,6 +68,38 @@ function convertToPixelPolygons(entries: AreaEntry[]): PixelPolygon[] {
     }));
 }
 
+/** 폴리곤 선택 툴팁 내부의 호버 스타일 버튼 */
+function TooltipButton({ label, color, onClick }: { label: string; color?: string; onClick: () => void }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: "block",
+        width: "100%",
+        padding: "4px 8px",
+        border: "none",
+        background: hovered ? "var(--border-primary)" : "transparent",
+        color: color ?? "var(--text-primary)",
+        fontSize: 13,
+        textAlign: "left",
+        cursor: "pointer",
+        borderRadius: 4,
+        whiteSpace: "nowrap",
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
+const HANDLE_RADIUS = 12;
+const HANDLE_VISUAL_RADIUS = 6;
+
+
+/** 크롭된 위성 이미지 위에서 폴리곤 편집·패널 배치를 수행하는 팝업 컴포넌트 */
 export default function CropPopup({
   cropData,
   drawingMode,
@@ -79,20 +115,60 @@ export default function CropPopup({
   const [canvasLayout, setCanvasLayout] = useState<{
     w: number; h: number; offsetX: number; offsetY: number;
   } | null>(null);
+  const [selectedPolygonId, setSelectedPolygonId] = useState<string | null>(null);
+  const [subMode, setSubMode] = useState<PolygonSubMode>("idle");
+  const [tooltipPos, setTooltipPos] = useState<PixelPoint | null>(null);
+
+  // Polygon drag-move refs
+  const dragStartRef = useRef<PixelPoint | null>(null);
+  const dragOriginalPointsRef = useRef<PixelPoint[] | null>(null);
+
+  // Vertex editing
+  const [draggingVertexIdx, setDraggingVertexIdx] = useState<number | null>(null);
+
+  // Long-press timer for vertex deletion on touch
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Debounce rapid clicks in drawing mode (prevents double-click adding 2 points)
+  const lastPointTimeRef = useRef<number>(0);
+
+  const areasRef = useRef<AreaEntry[]>(areas);
+  areasRef.current = areas;
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
-  const [prevDrawingMode, setPrevDrawingMode] = useState<DrawingMode>(drawingMode);
 
-  // Reset in-progress points when drawing mode changes (render-phase state sync)
-  if (prevDrawingMode !== drawingMode) {
-    setPrevDrawingMode(drawingMode);
-    setCurrentPoints([]);
-    setMousePos(null);
-  }
+  // 그리기 모드 변경 시 진행 중 점·선택·드래그·롱프레스 상태 전부 초기화
+  const prevDrawingModeRef = useRef<DrawingMode>(drawingMode);
+  useEffect(() => {
+    if (prevDrawingModeRef.current !== drawingMode) {
+      prevDrawingModeRef.current = drawingMode;
+      setCurrentPoints([]);
+      setMousePos(null);
+      setSelectedPolygonId(null);
+      setSubMode("idle");
+      setTooltipPos(null);
+      setDraggingVertexIdx(null);
+      dragStartRef.current = null;
+      dragOriginalPointsRef.current = null;
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+      }
+    }
+  }, [drawingMode]);
 
-  // Calculate the actual rendered area of img with object-fit: contain
-  const getRenderedImageRect = useCallback(() => {
+  // Cleanup long-press timer on unmount
+  useEffect(() => {
+    return () => {
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+      }
+    };
+  }, []);
+
+  /** object-fit: contain 적용 후 이미지의 실제 렌더링 영역을 계산한다 */
+  function getRenderedImageRect() {
     const img = imgRef.current;
     if (!img || !img.naturalWidth || !img.naturalHeight) return null;
     const containerW = img.clientWidth;
@@ -113,9 +189,10 @@ export default function CropPopup({
       offsetY = 0;
     }
     return { renderW, renderH, offsetX, offsetY };
-  }, []);
+  }
 
-  const syncCanvasSize = useCallback(() => {
+  /** 캔버스 크기를 이미지 렌더링 영역에 맞춰 동기화한다 */
+  function syncCanvasSize() {
     const canvas = canvasRef.current;
     const rect = getRenderedImageRect();
     if (!canvas || !rect) return;
@@ -125,14 +202,13 @@ export default function CropPopup({
       canvas.width = w;
       canvas.height = h;
     }
-    // Update layout state (React controls positioning via style)
     setCanvasLayout({
       w,
       h,
       offsetX: Math.round(rect.offsetX),
       offsetY: Math.round(rect.offsetY),
     });
-  }, [getRenderedImageRect]);
+  }
 
   // Sync canvas size on image load and resize
   useEffect(() => {
@@ -159,16 +235,39 @@ export default function CropPopup({
       img.removeEventListener("load", handleLoad);
       observer.disconnect();
     };
-  }, [syncCanvasSize]);
+  }, []);  // eslint-disable-line react-hooks/exhaustive-deps -- syncCanvasSize reads refs, stable across renders
 
-  // Compute metersPerPixel from canvas size and real-world dimensions
-  const computeMetersPerPixel = useCallback(() => {
+  /** 캔버스 크기와 실제 크기로부터 픽셀당 미터 비율을 계산한다 */
+  function computeMetersPerPixel() {
     const canvas = canvasRef.current;
     if (!canvas || canvas.width <= 0 || canvas.height <= 0) return 0;
     const mppX = cropData.sizeMeters.width / canvas.width;
     const mppY = cropData.sizeMeters.height / canvas.height;
     return (mppX + mppY) / 2;
-  }, [cropData.sizeMeters]);
+  }
+
+  /** 변경된 영역 데이터를 부모 컴포넌트에 전달한다 */
+  function notifyParent(updatedAreas: AreaEntry[]) {
+    const canvas = canvasRef.current;
+    if (canvas && canvas.width > 0) {
+      onAreasChange(convertAreas(updatedAreas, canvas.width, canvas.height, cropData.bounds));
+      const mpp = computeMetersPerPixel();
+      if (mpp > 0) {
+        onPixelAreasChange(convertToPixelPolygons(updatedAreas), mpp);
+      }
+    }
+  }
+
+  /** 선택된 폴리곤을 삭제한다 */
+  function handleDeletePolygon() {
+    if (!selectedPolygonId) return;
+    const updated = areas.filter((a) => a.id !== selectedPolygonId);
+    setAreas(updated);
+    setSelectedPolygonId(null);
+    setSubMode("idle");
+    setTooltipPos(null);
+    notifyParent(updated);
+  }
 
   // Canvas rendering
   useEffect(() => {
@@ -183,6 +282,7 @@ export default function CropPopup({
     for (const area of areas) {
       if (area.points.length < 3) continue;
       const isInstall = area.type === "install";
+      const isSelected = area.id === selectedPolygonId;
       ctx.beginPath();
       ctx.moveTo(area.points[0].x, area.points[0].y);
       for (let i = 1; i < area.points.length; i++) {
@@ -193,9 +293,50 @@ export default function CropPopup({
         ? "rgba(6, 147, 227, 0.2)"
         : "rgba(207, 46, 46, 0.3)";
       ctx.fill();
-      ctx.strokeStyle = isInstall ? "#0693E3" : "#CF2E2E";
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = isSelected ? "#FFD700" : (isInstall ? "#0693E3" : "#CF2E2E");
+      ctx.lineWidth = isSelected ? 4 : 2;
       ctx.stroke();
+    }
+
+    // Draw vertex handles when editing_vertices
+    if (subMode === "editing_vertices" && selectedPolygonId) {
+      const selArea = areas.find((a) => a.id === selectedPolygonId);
+      if (selArea && selArea.points.length >= 3) {
+        // Draw edge midpoint handles with + sign
+        for (let i = 0; i < selArea.points.length; i++) {
+          const p1 = selArea.points[i];
+          const p2 = selArea.points[(i + 1) % selArea.points.length];
+          const mx = (p1.x + p2.x) / 2;
+          const my = (p1.y + p2.y) / 2;
+          ctx.beginPath();
+          ctx.arc(mx, my, HANDLE_VISUAL_RADIUS, 0, Math.PI * 2);
+          ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+          ctx.fill();
+          ctx.strokeStyle = "#FFD700";
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+          // + sign
+          const s = 3;
+          ctx.beginPath();
+          ctx.moveTo(mx - s, my);
+          ctx.lineTo(mx + s, my);
+          ctx.moveTo(mx, my - s);
+          ctx.lineTo(mx, my + s);
+          ctx.strokeStyle = "#FFD700";
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+        }
+        // Draw vertex handles (gold)
+        for (const pt of selArea.points) {
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, HANDLE_VISUAL_RADIUS, 0, Math.PI * 2);
+          ctx.fillStyle = "#FFD700";
+          ctx.fill();
+          ctx.strokeStyle = "#fff";
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+        }
+      }
     }
 
     // Draw in-progress polygon
@@ -255,8 +396,9 @@ export default function CropPopup({
       ctx.fill();
       ctx.stroke();
     }
-  }, [areas, currentPoints, mousePos, drawingMode, placedPanels]);
+  }, [areas, currentPoints, mousePos, drawingMode, placedPanels, selectedPolygonId, subMode]);
 
+  /** 포인터 이벤트에서 캔버스 로컬 좌표를 추출한다 */
   function getCanvasCoords(e: React.PointerEvent<HTMLCanvasElement>): PixelPoint {
     const rect = canvasRef.current!.getBoundingClientRect();
     return {
@@ -265,10 +407,112 @@ export default function CropPopup({
     };
   }
 
+  /** 포인터 다운 이벤트를 처리한다 (좌클릭만 허용, 점 추가·폴리곤 선택·드래그 시작·pointer capture 설정) */
   function handlePointerDown(e: React.PointerEvent<HTMLCanvasElement>) {
-    if (drawingMode !== "install" && drawingMode !== "exclude") return;
     e.preventDefault();
+    // 좌클릭(주 버튼)만 허용
+    if (e.button !== 0) return;
     const pt = getCanvasCoords(e);
+
+    // Selection / move / vertex editing mode
+    if (drawingMode === null) {
+      if (subMode === "idle") {
+        // Check if click is inside any polygon (last to first for z-order)
+        for (let i = areas.length - 1; i >= 0; i--) {
+          if (areas[i].points.length >= 3 && isPointInPolygon(pt, areas[i].points)) {
+            setSelectedPolygonId(areas[i].id);
+            setSubMode("selected");
+            setTooltipPos(pt);
+            return;
+          }
+        }
+      } else if (subMode === "selected") {
+        // If clicking on the same polygon again, reposition tooltip
+        if (selectedPolygonId) {
+          const selArea = areas.find((a) => a.id === selectedPolygonId);
+          if (selArea && selArea.points.length >= 3 && isPointInPolygon(pt, selArea.points)) {
+            setTooltipPos(pt);
+            return;
+          }
+        }
+        // Clicking outside dismisses selection
+        setSelectedPolygonId(null);
+        setSubMode("idle");
+        setTooltipPos(null);
+      } else if (subMode === "moving") {
+        // Start drag if inside selected polygon
+        if (selectedPolygonId) {
+          const selArea = areas.find((a) => a.id === selectedPolygonId);
+          if (selArea && isPointInPolygon(pt, selArea.points)) {
+            dragStartRef.current = pt;
+            dragOriginalPointsRef.current = selArea.points.map((p) => ({ ...p }));
+            e.currentTarget.setPointerCapture(e.pointerId);
+          } else {
+            // Click outside: cancel moving
+            dragStartRef.current = null;
+            dragOriginalPointsRef.current = null;
+            setSelectedPolygonId(null);
+            setSubMode("idle");
+          }
+        }
+      } else if (subMode === "editing_vertices") {
+        // Check vertex hit, then midpoint hit, then empty space
+        if (selectedPolygonId) {
+          const selArea = areas.find((a) => a.id === selectedPolygonId);
+          if (selArea) {
+            // Check vertex handles
+            for (let i = 0; i < selArea.points.length; i++) {
+              const vp = selArea.points[i];
+              if (Math.hypot(pt.x - vp.x, pt.y - vp.y) <= HANDLE_RADIUS) {
+                setDraggingVertexIdx(i);
+                e.currentTarget.setPointerCapture(e.pointerId);
+                // 터치 입력에서만 롱프레스 삭제 활성화 (마우스/펜은 더블클릭 사용)
+                if (e.pointerType === "touch") {
+                  longPressTimerRef.current = setTimeout(() => {
+                    longPressTimerRef.current = null;
+                    tryDeleteVertex(i);
+                    setDraggingVertexIdx(null);
+                  }, 500);
+                }
+                return;
+              }
+            }
+            // Check edge midpoint handles
+            for (let i = 0; i < selArea.points.length; i++) {
+              const p1 = selArea.points[i];
+              const p2 = selArea.points[(i + 1) % selArea.points.length];
+              const mx = (p1.x + p2.x) / 2;
+              const my = (p1.y + p2.y) / 2;
+              if (Math.hypot(pt.x - mx, pt.y - my) <= HANDLE_RADIUS) {
+                // Insert new point at midpoint, start dragging it
+                const insertIdx = i + 1;
+                const newPoints = [...selArea.points];
+                newPoints.splice(insertIdx, 0, { x: mx, y: my });
+                const updated = areas.map((a) =>
+                  a.id === selectedPolygonId ? { ...a, points: newPoints } : a,
+                );
+                setAreas(updated);
+                setDraggingVertexIdx(insertIdx);
+                e.currentTarget.setPointerCapture(e.pointerId);
+                return;
+              }
+            }
+            // Empty space: exit editing
+            setSelectedPolygonId(null);
+            setSubMode("idle");
+          }
+        }
+      }
+      return;
+    }
+
+    // Drawing mode
+    if (drawingMode !== "install" && drawingMode !== "exclude") return;
+
+    // Prevent double-click from adding two points (300ms debounce)
+    const now = performance.now();
+    if (now - lastPointTimeRef.current < 300) return;
+    lastPointTimeRef.current = now;
 
     // Close polygon: near first point with >= 3 points
     if (currentPoints.length >= 3) {
@@ -284,17 +528,7 @@ export default function CropPopup({
         setAreas(updated);
         setCurrentPoints([]);
         setMousePos(null);
-
-        // Notify parent
-        const canvas = canvasRef.current;
-        if (canvas && canvas.width > 0) {
-          onAreasChange(convertAreas(updated, canvas.width, canvas.height, cropData.bounds));
-          const mpp = computeMetersPerPixel();
-          if (mpp > 0) {
-            console.log(`[CropPopup] canvas: ${canvas.width}×${canvas.height}px, sizeMeters: ${cropData.sizeMeters.width.toFixed(1)}×${cropData.sizeMeters.height.toFixed(1)}m, mpp: ${mpp.toFixed(6)}`);
-            onPixelAreasChange(convertToPixelPolygons(updated), mpp);
-          }
-        }
+        notifyParent(updated);
         return;
       }
     }
@@ -302,16 +536,157 @@ export default function CropPopup({
     setCurrentPoints((prev) => [...prev, pt]);
   }
 
-  function handlePointerMove(e: React.PointerEvent<HTMLCanvasElement>) {
-    if (drawingMode !== "install" && drawingMode !== "exclude") return;
-    if (currentPoints.length === 0) return;
-    const rect = canvasRef.current!.getBoundingClientRect();
-    setMousePos({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    });
+  /** 마지막으로 추가한 폴리곤 점을 되돌린다 */
+  function undoLastPoint() {
+    if (currentPoints.length >= 1) {
+      setCurrentPoints((prev) => {
+        const next = prev.slice(0, -1);
+        if (next.length === 0) setMousePos(null);
+        return next;
+      });
+    }
   }
 
+  /** 캔버스에서 브라우저 기본 컨텍스트 메뉴를 차단한다 */
+  function handleContextMenu(e: React.MouseEvent<HTMLCanvasElement>) {
+    e.preventDefault();
+  }
+
+  /** 포인터 이동 시 폴리곤 드래그(캔버스 경계 클램핑)·꼭짓점 드래그·가이드 라인을 처리한다 */
+  function handlePointerMove(e: React.PointerEvent<HTMLCanvasElement>) {
+    const rect = canvasRef.current!.getBoundingClientRect();
+    const px = e.clientX - rect.left;
+    const py = e.clientY - rect.top;
+
+    // Polygon drag-move (캔버스 경계 내로 클램핑)
+    if (drawingMode === null && subMode === "moving" && dragStartRef.current && dragOriginalPointsRef.current && selectedPolygonId) {
+      const canvas = canvasRef.current;
+      const cw = canvas ? canvas.width : Infinity;
+      const ch = canvas ? canvas.height : Infinity;
+      const orig = dragOriginalPointsRef.current;
+      let dx = px - dragStartRef.current.x;
+      let dy = py - dragStartRef.current.y;
+      // 폴리곤 전체가 캔버스 안에 머물도록 dx/dy 클램핑
+      const minX = Math.min(...orig.map((p) => p.x));
+      const maxX = Math.max(...orig.map((p) => p.x));
+      const minY = Math.min(...orig.map((p) => p.y));
+      const maxY = Math.max(...orig.map((p) => p.y));
+      dx = Math.max(-minX, Math.min(cw - maxX, dx));
+      dy = Math.max(-minY, Math.min(ch - maxY, dy));
+      const newPoints = orig.map((p) => ({
+        x: p.x + dx,
+        y: p.y + dy,
+      }));
+      setAreas((prev) =>
+        prev.map((a) =>
+          a.id === selectedPolygonId ? { ...a, points: newPoints } : a,
+        ),
+      );
+      return;
+    }
+
+    // Vertex dragging
+    if (drawingMode === null && subMode === "editing_vertices" && draggingVertexIdx !== null && selectedPolygonId) {
+      // Cancel long-press if dragging
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+      }
+      setAreas((prev) =>
+        prev.map((a) => {
+          if (a.id !== selectedPolygonId) return a;
+          const newPoints = [...a.points];
+          newPoints[draggingVertexIdx] = { x: px, y: py };
+          return { ...a, points: newPoints };
+        }),
+      );
+      return;
+    }
+
+    // Drawing mode: dashed guide line
+    if (drawingMode !== "install" && drawingMode !== "exclude") return;
+    if (currentPoints.length === 0) return;
+    setMousePos({ x: px, y: py });
+  }
+
+  /** 포인터 업 시 드래그 이동·꼭짓점 편집을 종료한다 */
+  function handlePointerUp() {
+    // Always clear long-press timer on pointer up
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    // End polygon drag-move
+    if (subMode === "moving" && dragStartRef.current) {
+      dragStartRef.current = null;
+      dragOriginalPointsRef.current = null;
+      notifyParent(areasRef.current);
+      setSelectedPolygonId(null);
+      setSubMode("idle");
+      return;
+    }
+    // End vertex drag
+    if (subMode === "editing_vertices" && draggingVertexIdx !== null) {
+      setDraggingVertexIdx(null);
+      notifyParent(areasRef.current);
+      return;
+    }
+  }
+
+  /** 포인터 캡처가 강제 해제될 때 드래그 상태를 정리한다 */
+  function handlePointerCancel() {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    dragStartRef.current = null;
+    dragOriginalPointsRef.current = null;
+    if (draggingVertexIdx !== null) {
+      setDraggingVertexIdx(null);
+      notifyParent(areasRef.current);
+    }
+  }
+
+  /** 꼭짓점을 삭제하며, 3개 이하이면 폴리곤 전체를 제거한다 (areasRef로 최신 상태 참조) */
+  function tryDeleteVertex(vertexIdx: number) {
+    if (!selectedPolygonId) return;
+    const currentAreas = areasRef.current;
+    const selArea = currentAreas.find((a) => a.id === selectedPolygonId);
+    if (!selArea) return;
+    let updated: AreaEntry[];
+    if (selArea.points.length <= 3) {
+      // Delete entire polygon
+      updated = currentAreas.filter((a) => a.id !== selectedPolygonId);
+      setSelectedPolygonId(null);
+      setSubMode("idle");
+    } else {
+      const newPoints = selArea.points.filter((_, i) => i !== vertexIdx);
+      updated = currentAreas.map((a) =>
+        a.id === selectedPolygonId ? { ...a, points: newPoints } : a,
+      );
+    }
+    setAreas(updated);
+    notifyParent(updated);
+  }
+
+  /** 더블클릭으로 꼭짓점을 삭제한다 */
+  function handleDoubleClick(e: React.MouseEvent<HTMLCanvasElement>) {
+    if (subMode !== "editing_vertices" || !selectedPolygonId) return;
+    const rect = canvasRef.current!.getBoundingClientRect();
+    const px = e.clientX - rect.left;
+    const py = e.clientY - rect.top;
+    const selArea = areas.find((a) => a.id === selectedPolygonId);
+    if (!selArea) return;
+    for (let i = 0; i < selArea.points.length; i++) {
+      const vp = selArea.points[i];
+      if (Math.hypot(px - vp.x, py - vp.y) <= HANDLE_RADIUS) {
+        tryDeleteVertex(i);
+        return;
+      }
+    }
+  }
+
+  /** 캔버스 + 이미지를 합성하여 PNG로 다운로드한다 */
   function handleSave() {
     const canvas = canvasRef.current;
     const img = imgRef.current;
@@ -446,7 +821,11 @@ export default function CropPopup({
               cursor:
                 drawingMode === "install" || drawingMode === "exclude"
                   ? "crosshair"
-                  : "default",
+                  : subMode === "moving"
+                    ? "grabbing"
+                    : subMode === "editing_vertices"
+                      ? "pointer"
+                      : "default",
               ...(canvasLayout
                 ? {
                     left: canvasLayout.offsetX,
@@ -463,8 +842,78 @@ export default function CropPopup({
             }}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerCancel}
+            onDoubleClick={handleDoubleClick}
+            onContextMenu={handleContextMenu}
           />
+
         </div>
+
+        {/* Polygon selection tooltip (경계 클램핑 적용) */}
+        {subMode === "selected" && tooltipPos && (() => {
+          const tooltipW = 88;
+          const tooltipH = 90;
+          const ox = canvasLayout?.offsetX ?? 0;
+          const oy = canvasLayout?.offsetY ?? 0;
+          const cw = canvasRef.current?.width ?? 300;
+          const ch = canvasRef.current?.height ?? 300;
+          const rawX = ox + tooltipPos.x + 8;
+          const rawY = oy + tooltipPos.y - 8;
+          const clampedX = Math.max(ox, Math.min(rawX, ox + cw - tooltipW));
+          const clampedY = Math.max(oy, Math.min(rawY, oy + ch - tooltipH));
+          return (
+          <div
+            style={{
+              position: "absolute",
+              left: clampedX,
+              top: clampedY,
+              zIndex: 20,
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+              background: "var(--bg-primary)",
+              border: "1px solid var(--border-primary)",
+              borderRadius: "var(--radius-md)",
+              boxShadow: "var(--shadow-lg)",
+              padding: 4,
+              minWidth: 80,
+            }}
+          >
+            <TooltipButton label={t("polygonMove", lang)} onClick={() => { setSubMode("moving"); setTooltipPos(null); }} />
+            <TooltipButton label={t("polygonDelete", lang)} color="#CF2E2E" onClick={handleDeletePolygon} />
+            <TooltipButton label={t("polygonEditVertices", lang)} onClick={() => { setSubMode("editing_vertices"); setTooltipPos(null); }} />
+          </div>
+          );
+        })()}
+
+        {/* Floating Undo button — bottom-right of popup card */}
+        {(drawingMode === "install" || drawingMode === "exclude") &&
+          currentPoints.length > 0 && (
+            <button
+              onClick={undoLastPoint}
+              aria-label={t("undoLastPoint", lang)}
+              style={{
+                position: "absolute",
+                bottom: 16,
+                right: 16,
+                zIndex: 10,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 32,
+                height: 32,
+                border: "1px solid var(--border-primary)",
+                background: "rgba(255, 255, 255, 0.9)",
+                color: "var(--text-secondary)",
+                borderRadius: "var(--radius-md)",
+                cursor: "pointer",
+                backdropFilter: "blur(8px)",
+              }}
+            >
+              <Undo2 size={16} />
+            </button>
+          )}
       </div>
     </div>
   );
