@@ -384,6 +384,8 @@ export default function CropPopup({
 
   function handlePointerDown(e: React.PointerEvent<HTMLCanvasElement>) {
     e.preventDefault();
+    // 우클릭(보조 버튼)은 점 입력으로 처리하지 않음 — contextmenu(Undo)에서 처리
+    if (e.button !== 0) return;
     const pt = getCanvasCoords(e);
 
     // Selection / move / vertex editing mode
@@ -515,8 +517,6 @@ export default function CropPopup({
 
   function handleContextMenu(e: React.MouseEvent<HTMLCanvasElement>) {
     e.preventDefault();
-    if (drawingMode !== "install" && drawingMode !== "exclude") return;
-    undoLastPoint();
   }
 
   function handlePointerMove(e: React.PointerEvent<HTMLCanvasElement>) {
