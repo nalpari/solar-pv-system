@@ -23,6 +23,7 @@ interface AreaEntry {
   points: PixelPoint[];
 }
 
+/** 캔버스 픽셀 좌표를 위경도(LatLng)로 변환한다 */
 function pixelToLatLng(
   x: number,
   y: number,
@@ -38,6 +39,7 @@ function pixelToLatLng(
   };
 }
 
+/** AreaEntry 배열을 위경도 기반 PolygonArea 배열로 변환한다 */
 function convertAreas(
   entries: AreaEntry[],
   canvasWidth: number,
@@ -55,6 +57,7 @@ function convertAreas(
     }));
 }
 
+/** AreaEntry 배열을 픽셀 기반 PixelPolygon 배열로 변환한다 */
 function convertToPixelPolygons(entries: AreaEntry[]): PixelPolygon[] {
   return entries
     .filter((a) => a.points.length >= 3)
@@ -65,6 +68,7 @@ function convertToPixelPolygons(entries: AreaEntry[]): PixelPolygon[] {
     }));
 }
 
+/** 폴리곤 선택 툴팁 내부의 호버 스타일 버튼 */
 function TooltipButton({ label, color, onClick }: { label: string; color?: string; onClick: () => void }) {
   const [hovered, setHovered] = useState(false);
   return (
@@ -95,6 +99,7 @@ const HANDLE_RADIUS = 12;
 const HANDLE_VISUAL_RADIUS = 6;
 
 
+/** 크롭된 위성 이미지 위에서 폴리곤 편집·패널 배치를 수행하는 팝업 컴포넌트 */
 export default function CropPopup({
   cropData,
   drawingMode,
@@ -146,7 +151,7 @@ export default function CropPopup({
     }
   }, [drawingMode]);
 
-  // Calculate the actual rendered area of img with object-fit: contain
+  /** object-fit: contain 적용 후 이미지의 실제 렌더링 영역을 계산한다 */
   function getRenderedImageRect() {
     const img = imgRef.current;
     if (!img || !img.naturalWidth || !img.naturalHeight) return null;
@@ -170,6 +175,7 @@ export default function CropPopup({
     return { renderW, renderH, offsetX, offsetY };
   }
 
+  /** 캔버스 크기를 이미지 렌더링 영역에 맞춰 동기화한다 */
   function syncCanvasSize() {
     const canvas = canvasRef.current;
     const rect = getRenderedImageRect();
@@ -215,7 +221,7 @@ export default function CropPopup({
     };
   }, []);  // eslint-disable-line react-hooks/exhaustive-deps -- syncCanvasSize reads refs, stable across renders
 
-  // Compute metersPerPixel from canvas size and real-world dimensions
+  /** 캔버스 크기와 실제 크기로부터 픽셀당 미터 비율을 계산한다 */
   function computeMetersPerPixel() {
     const canvas = canvasRef.current;
     if (!canvas || canvas.width <= 0 || canvas.height <= 0) return 0;
@@ -224,6 +230,7 @@ export default function CropPopup({
     return (mppX + mppY) / 2;
   }
 
+  /** 변경된 영역 데이터를 부모 컴포넌트에 전달한다 */
   function notifyParent(updatedAreas: AreaEntry[]) {
     const canvas = canvasRef.current;
     if (canvas && canvas.width > 0) {
@@ -235,6 +242,7 @@ export default function CropPopup({
     }
   }
 
+  /** 선택된 폴리곤을 삭제한다 */
   function handleDeletePolygon() {
     if (!selectedPolygonId) return;
     const updated = areas.filter((a) => a.id !== selectedPolygonId);
@@ -374,6 +382,7 @@ export default function CropPopup({
     }
   }, [areas, currentPoints, mousePos, drawingMode, placedPanels, selectedPolygonId, subMode]);
 
+  /** 포인터 이벤트에서 캔버스 로컬 좌표를 추출한다 */
   function getCanvasCoords(e: React.PointerEvent<HTMLCanvasElement>): PixelPoint {
     const rect = canvasRef.current!.getBoundingClientRect();
     return {
@@ -382,6 +391,7 @@ export default function CropPopup({
     };
   }
 
+  /** 포인터 다운 이벤트를 처리하여 점 추가·폴리곤 선택·드래그를 시작한다 */
   function handlePointerDown(e: React.PointerEvent<HTMLCanvasElement>) {
     e.preventDefault();
     // 우클릭(보조 버튼)은 점 입력으로 처리하지 않음 — contextmenu(Undo)에서 처리
@@ -505,6 +515,7 @@ export default function CropPopup({
     setCurrentPoints((prev) => [...prev, pt]);
   }
 
+  /** 마지막으로 추가한 폴리곤 점을 되돌린다 */
   function undoLastPoint() {
     if (currentPoints.length >= 1) {
       setCurrentPoints((prev) => {
@@ -515,10 +526,12 @@ export default function CropPopup({
     }
   }
 
+  /** 캔버스에서 브라우저 기본 컨텍스트 메뉴를 차단한다 */
   function handleContextMenu(e: React.MouseEvent<HTMLCanvasElement>) {
     e.preventDefault();
   }
 
+  /** 포인터 이동 시 폴리곤 드래그·꼭짓점 드래그·가이드 라인을 처리한다 */
   function handlePointerMove(e: React.PointerEvent<HTMLCanvasElement>) {
     const rect = canvasRef.current!.getBoundingClientRect();
     const px = e.clientX - rect.left;
@@ -564,6 +577,7 @@ export default function CropPopup({
     setMousePos({ x: px, y: py });
   }
 
+  /** 포인터 업 시 드래그 이동·꼭짓점 편집을 종료한다 */
   function handlePointerUp() {
     // Always clear long-press timer on pointer up
     if (longPressTimerRef.current) {
@@ -587,7 +601,7 @@ export default function CropPopup({
     }
   }
 
-  // Delete vertex (or entire polygon if <= 3 points)
+  /** 꼭짓점을 삭제하며, 3개 이하이면 폴리곤 전체를 제거한다 */
   function tryDeleteVertex(vertexIdx: number) {
     if (!selectedPolygonId) return;
     const selArea = areas.find((a) => a.id === selectedPolygonId);
@@ -608,6 +622,7 @@ export default function CropPopup({
     notifyParent(updated);
   }
 
+  /** 더블클릭으로 꼭짓점을 삭제한다 */
   function handleDoubleClick(e: React.MouseEvent<HTMLCanvasElement>) {
     if (subMode !== "editing_vertices" || !selectedPolygonId) return;
     const rect = canvasRef.current!.getBoundingClientRect();
@@ -624,6 +639,7 @@ export default function CropPopup({
     }
   }
 
+  /** 캔버스 + 이미지를 합성하여 PNG로 다운로드한다 */
   function handleSave() {
     const canvas = canvasRef.current;
     const img = imgRef.current;

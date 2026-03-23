@@ -19,14 +19,19 @@ interface MapViewProps {
 
 const MAP_ID = "solar-pv-map";
 
+/** 지도 줌/위성/재중심 컨트롤 버튼 모음 */
 function MapControls({ center, lang }: { center: { lat: number; lng: number }; lang: Lang }) {
   const map = useMap(MAP_ID);
 
+  /** 지도 줌 인 */
   const handleZoomIn = () => map?.setZoom((map.getZoom() || 18) + 1);
+  /** 지도 줌 아웃 */
   const handleZoomOut = () => map?.setZoom((map.getZoom() || 18) - 1);
+  /** 지도를 지정된 중심 좌표로 재이동 */
   const handleRecenter = () => {
     if (map) map.panTo(center);
   };
+  /** 위성/로드맵 지도 타입 토글 */
   const handleSatellite = () => {
     const current = map?.getMapTypeId();
     map?.setMapTypeId(current === "satellite" ? "roadmap" : "satellite");
@@ -75,6 +80,7 @@ function MapControls({ center, lang }: { center: { lat: number; lng: number }; l
   );
 }
 
+/** 중심 좌표 변경 시 지도를 부드럽게 이동시키는 컴포넌트 */
 function CenterUpdater({ center }: { center: { lat: number; lng: number } }) {
   const map = useMap(MAP_ID);
   const isFirst = useRef(true);
@@ -96,6 +102,7 @@ type DragTarget = "move" | "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw" | n
 
 const HANDLE_SIZE = 12;
 
+/** 드래그 대상에 따른 마우스 커서 스타일 반환 */
 function getCursorForTarget(target: DragTarget): string {
   switch (target) {
     case "n": case "s": return "ns-resize";
@@ -107,6 +114,7 @@ function getCursorForTarget(target: DragTarget): string {
   }
 }
 
+/** 지도 위 크롭 영역 선택 오버레이 */
 function CropOverlay({
   active,
   onCropComplete,
@@ -154,6 +162,7 @@ function CropOverlay({
     };
   }, [active]);
 
+  /** 마우스 좌표가 크롭 영역의 어느 핸들/내부에 해당하는지 판정 */
   function hitTest(x: number, y: number): DragTarget {
     if (!rect) return null;
     const { left: l, top: tp, width: w, height: h } = rect;
@@ -179,6 +188,7 @@ function CropOverlay({
     return null;
   }
 
+  /** 포인터 누름 시 드래그 시작 처리 */
   function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
     e.preventDefault();
     if (!rect) return;
@@ -195,6 +205,7 @@ function CropOverlay({
     setIsDragging(true);
   }
 
+  /** 포인터 이동 시 크롭 영역 이동/리사이즈 처리 */
   function handlePointerMove(e: React.PointerEvent<HTMLDivElement>) {
     if (!rect || !overlayRef.current) return;
     const elRect = overlayRef.current.getBoundingClientRect();
@@ -245,12 +256,14 @@ function CropOverlay({
     setRect(newRect);
   }
 
+  /** 포인터 해제 시 드래그 종료 처리 */
   function handlePointerUp() {
     dragTargetRef.current = null;
     dragStartRef.current = null;
     setIsDragging(false);
   }
 
+  /** 크롭 영역 확정 후 이미지 캡처 및 콜백 호출 */
   function handleConfirm() {
     if (!rect || !map || !overlayRef.current) return;
 
@@ -459,6 +472,7 @@ function CropOverlay({
   );
 }
 
+/** 위성 지도 및 크롭 오버레이를 포함하는 메인 지도 컴포넌트 */
 export default function MapView({
   center,
   cropMode,

@@ -36,7 +36,7 @@
 
 ## 상태 흐름
 
-```
+```text
 drawingMode: null (선택/이동) | "install" | "exclude"
 
 선택/이동 모드 내부:
