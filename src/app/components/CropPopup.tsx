@@ -493,6 +493,7 @@ export default function CropPopup({
                 );
                 setAreas(updated);
                 setDraggingVertexIdx(insertIdx);
+                e.currentTarget.setPointerCapture(e.pointerId);
                 return;
               }
             }
