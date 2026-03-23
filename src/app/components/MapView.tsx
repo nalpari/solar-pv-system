@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Map, useMap } from "@vis.gl/react-google-maps";
 import html2canvas from "html2canvas";
 import { ZoomIn, ZoomOut, Layers, Maximize2 } from "lucide-react";
@@ -92,82 +92,180 @@ function CenterUpdater({ center }: { center: { lat: number; lng: number } }) {
   return null;
 }
 
+type DragTarget = "move" | "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw" | null;
+
+const HANDLE_SIZE = 12;
+
+function getCursorForTarget(target: DragTarget): string {
+  switch (target) {
+    case "n": case "s": return "ns-resize";
+    case "e": case "w": return "ew-resize";
+    case "ne": case "sw": return "nesw-resize";
+    case "nw": case "se": return "nwse-resize";
+    case "move": return "move";
+    default: return "default";
+  }
+}
+
 function CropOverlay({
   active,
   onCropComplete,
   address,
+  lang,
 }: {
   active: boolean;
   onCropComplete: (cropData: CropData) => void;
   address: string;
+  lang: Lang;
 }) {
   const map = useMap(MAP_ID);
   const overlayRef = useRef<HTMLDivElement>(null);
-  const [dragging, setDragging] = useState(false);
-  const [startPos, setStartPos] = useState<{ x: number; y: number } | null>(null);
-  const [currentPos, setCurrentPos] = useState<{ x: number; y: number } | null>(null);
 
-  const handlePointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+  // Selection rect: { left, top, width, height } in px
+  const [rect, setRect] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [containerSize, setContainerSize] = useState({ w: 0, h: 0 });
+  const dragTargetRef = useRef<DragTarget>(null);
+  const dragStartRef = useRef<{ x: number; y: number; rect: { left: number; top: number; width: number; height: number } } | null>(null);
+
+  // Initialize default rect (50% centered) when overlay activates
+  useEffect(() => {
+    if (!active) return;
+    // Delay to ensure overlayRef is mounted and sized
+    const id = requestAnimationFrame(() => {
+      const el = overlayRef.current;
+      if (!el) return;
+      const cw = el.clientWidth;
+      const ch = el.clientHeight;
+      if (cw === 0 || ch === 0) return;
+      setContainerSize({ w: cw, h: ch });
+      const rw = Math.round(cw * 0.5);
+      const rh = Math.round(ch * 0.5);
+      setRect({
+        left: Math.round((cw - rw) / 2),
+        top: Math.round((ch - rh) / 2),
+        width: rw,
+        height: rh,
+      });
+    });
+    return () => {
+      cancelAnimationFrame(id);
+      setRect(null);
+    };
+  }, [active]);
+
+  function hitTest(x: number, y: number): DragTarget {
+    if (!rect) return null;
+    const { left: l, top: tp, width: w, height: h } = rect;
+    const r = l + w;
+    const b = tp + h;
+    const hs = HANDLE_SIZE;
+
+    // Corner handles (prioritize over edges)
+    if (Math.abs(x - l) <= hs && Math.abs(y - tp) <= hs) return "nw";
+    if (Math.abs(x - r) <= hs && Math.abs(y - tp) <= hs) return "ne";
+    if (Math.abs(x - l) <= hs && Math.abs(y - b) <= hs) return "sw";
+    if (Math.abs(x - r) <= hs && Math.abs(y - b) <= hs) return "se";
+
+    // Edge handles
+    if (Math.abs(y - tp) <= hs && x > l + hs && x < r - hs) return "n";
+    if (Math.abs(y - b) <= hs && x > l + hs && x < r - hs) return "s";
+    if (Math.abs(x - l) <= hs && y > tp + hs && y < b - hs) return "w";
+    if (Math.abs(x - r) <= hs && y > tp + hs && y < b - hs) return "e";
+
+    // Inside = move
+    if (x > l && x < r && y > tp && y < b) return "move";
+
+    return null;
+  }
+
+  function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
     e.preventDefault();
+    if (!rect) return;
+    const el = overlayRef.current!;
+    const elRect = el.getBoundingClientRect();
+    const x = e.clientX - elRect.left;
+    const y = e.clientY - elRect.top;
+    const target = hitTest(x, y);
+    if (!target) return;
+
     e.currentTarget.setPointerCapture(e.pointerId);
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    setStartPos({ x, y });
-    setCurrentPos({ x, y });
-    setDragging(true);
-  }, []);
+    dragTargetRef.current = target;
+    dragStartRef.current = { x, y, rect: { ...rect } };
+    setIsDragging(true);
+  }
 
-  const handlePointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    if (!dragging) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    setCurrentPos({ x, y });
-  }, [dragging]);
+  function handlePointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    if (!rect || !overlayRef.current) return;
+    const elRect = overlayRef.current.getBoundingClientRect();
+    const x = e.clientX - elRect.left;
+    const y = e.clientY - elRect.top;
 
-  const handlePointerUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    if (!dragging || !startPos || !currentPos || !map || !overlayRef.current) {
-      setDragging(false);
-      setStartPos(null);
-      setCurrentPos(null);
+    // Update cursor when not dragging
+    if (!dragStartRef.current) {
+      const target = hitTest(x, y);
+      overlayRef.current.style.cursor = getCursorForTarget(target);
       return;
     }
 
-    const dx = Math.abs(currentPos.x - startPos.x);
-    const dy = Math.abs(currentPos.y - startPos.y);
+    e.preventDefault();
+    const { x: sx, y: sy, rect: orig } = dragStartRef.current;
+    const dx = x - sx;
+    const dy = y - sy;
+    const target = dragTargetRef.current;
+    const cw = overlayRef.current.clientWidth;
+    const ch = overlayRef.current.clientHeight;
+    const MIN_SIZE = 40;
 
-    // Ignore drags smaller than 20px
-    if (dx < 20 || dy < 20) {
-      setDragging(false);
-      setStartPos(null);
-      setCurrentPos(null);
-      return;
+    const newRect = { ...orig };
+
+    if (target === "move") {
+      newRect.left = Math.max(0, Math.min(cw - orig.width, orig.left + dx));
+      newRect.top = Math.max(0, Math.min(ch - orig.height, orig.top + dy));
+    } else {
+      // Resize
+      if (target?.includes("w")) {
+        const newLeft = Math.max(0, Math.min(orig.left + orig.width - MIN_SIZE, orig.left + dx));
+        newRect.width = orig.width + (orig.left - newLeft);
+        newRect.left = newLeft;
+      }
+      if (target?.includes("e")) {
+        newRect.width = Math.max(MIN_SIZE, Math.min(cw - orig.left, orig.width + dx));
+      }
+      if (target?.includes("n")) {
+        const newTop = Math.max(0, Math.min(orig.top + orig.height - MIN_SIZE, orig.top + dy));
+        newRect.height = orig.height + (orig.top - newTop);
+        newRect.top = newTop;
+      }
+      if (target?.includes("s")) {
+        newRect.height = Math.max(MIN_SIZE, Math.min(ch - orig.top, orig.height + dy));
+      }
     }
+
+    setRect(newRect);
+  }
+
+  function handlePointerUp() {
+    dragTargetRef.current = null;
+    dragStartRef.current = null;
+    setIsDragging(false);
+  }
+
+  function handleConfirm() {
+    if (!rect || !map || !overlayRef.current) return;
 
     const bounds = map.getBounds();
-    if (!bounds) {
-      setDragging(false);
-      setStartPos(null);
-      setCurrentPos(null);
-      return;
-    }
+    if (!bounds) return;
 
     const containerWidth = overlayRef.current.clientWidth;
     const containerHeight = overlayRef.current.clientHeight;
-
     const ne = bounds.getNorthEast();
     const sw = bounds.getSouthWest();
 
-    const minX = Math.min(startPos.x, currentPos.x);
-    const maxX = Math.max(startPos.x, currentPos.x);
-    const minY = Math.min(startPos.y, currentPos.y);
-    const maxY = Math.max(startPos.y, currentPos.y);
+    const { left: minX, top: minY, width: cropW, height: cropH } = rect;
+    const maxX = minX + cropW;
+    const maxY = minY + cropH;
 
-    // Interpolate pixel position to lat/lng
-    // X maps to lng, Y maps to lat (top = north, bottom = south)
     const cropSw = {
       lat: ne.lat() - (maxY / containerHeight) * (ne.lat() - sw.lat()),
       lng: sw.lng() + (minX / containerWidth) * (ne.lng() - sw.lng()),
@@ -178,27 +276,15 @@ function CropOverlay({
     };
 
     const zoom = map.getZoom() || 19;
-
-    // Calculate real-world size in meters
     const latDiff = cropNe.lat - cropSw.lat;
     const lngDiff = cropNe.lng - cropSw.lng;
     const avgLat = (cropSw.lat + cropNe.lat) / 2;
     const heightMeters = latDiff * 111320;
     const widthMeters = lngDiff * 111320 * Math.cos((avgLat * Math.PI) / 180);
 
-    const cropW = Math.round(maxX - minX);
-    const cropH = Math.round(maxY - minY);
-
-    // Capture the map DOM using html2canvas, then crop the selected region
     const mapContainer = overlayRef.current.parentElement;
-    if (!mapContainer) {
-      setDragging(false);
-      setStartPos(null);
-      setCurrentPos(null);
-      return;
-    }
+    if (!mapContainer) return;
 
-    // Hide the crop overlay during capture
     overlayRef.current.style.display = "none";
 
     html2canvas(mapContainer, {
@@ -207,7 +293,6 @@ function CropOverlay({
       scale: window.devicePixelRatio || 1,
     })
       .then((fullCanvas) => {
-        // Crop the selected region from the full capture
         const scale = fullCanvas.width / containerWidth;
         const croppedCanvas = document.createElement("canvas");
         croppedCanvas.width = Math.round(cropW * scale);
@@ -229,7 +314,6 @@ function CropOverlay({
         return croppedCanvas.toDataURL("image/png");
       })
       .catch(() => {
-        // Fallback: gray canvas with coordinates text
         const fallback = document.createElement("canvas");
         fallback.width = cropW;
         fallback.height = cropH;
@@ -261,28 +345,25 @@ function CropOverlay({
         });
       })
       .finally(() => {
-        // Always restore overlay visibility
         if (overlayRef.current) {
           overlayRef.current.style.display = "";
         }
       });
-
-    setDragging(false);
-    setStartPos(null);
-    setCurrentPos(null);
-  }, [dragging, startPos, currentPos, map, address, onCropComplete]);
+  }
 
   if (!active) return null;
 
-  // Calculate selection rectangle
-  const selectionRect = startPos && currentPos && dragging
-    ? {
-        left: Math.min(startPos.x, currentPos.x),
-        top: Math.min(startPos.y, currentPos.y),
-        width: Math.abs(currentPos.x - startPos.x),
-        height: Math.abs(currentPos.y - startPos.y),
-      }
-    : null;
+  // Build dark overlay with cutout using clip-path
+  const clipPath = rect
+    ? `polygon(
+        0% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 0%,
+        ${rect.left}px ${rect.top}px,
+        ${rect.left}px ${rect.top + rect.height}px,
+        ${rect.left + rect.width}px ${rect.top + rect.height}px,
+        ${rect.left + rect.width}px ${rect.top}px,
+        ${rect.left}px ${rect.top}px
+      )`
+    : undefined;
 
   return (
     <div
@@ -290,27 +371,89 @@ function CropOverlay({
       style={{
         position: "absolute",
         inset: 0,
-        cursor: "crosshair",
         touchAction: "none",
         zIndex: 20,
+        cursor: "default",
       }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
     >
-      {selectionRect && (
-        <div
-          style={{
-            position: "absolute",
-            left: selectionRect.left,
-            top: selectionRect.top,
-            width: selectionRect.width,
-            height: selectionRect.height,
-            background: "rgba(6, 147, 227, 0.2)",
-            border: "2px solid #0693E3",
-            pointerEvents: "none",
-          }}
-        />
+      {/* Dark overlay with cutout */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: "rgba(0, 0, 0, 0.5)",
+          clipPath,
+          pointerEvents: "none",
+        }}
+      />
+
+      {/* Selection border */}
+      {rect && (
+        <>
+          <div
+            style={{
+              position: "absolute",
+              left: rect.left,
+              top: rect.top,
+              width: rect.width,
+              height: rect.height,
+              border: "2px solid #0693E3",
+              pointerEvents: "none",
+            }}
+          />
+
+          {/* Corner handles */}
+          {(["nw", "ne", "sw", "se"] as const).map((corner) => {
+            const x = corner.includes("w") ? rect.left : rect.left + rect.width;
+            const y = corner.includes("n") ? rect.top : rect.top + rect.height;
+            return (
+              <div
+                key={corner}
+                style={{
+                  position: "absolute",
+                  left: x - 5,
+                  top: y - 5,
+                  width: 10,
+                  height: 10,
+                  background: "#0693E3",
+                  border: "1px solid white",
+                  borderRadius: 2,
+                  pointerEvents: "none",
+                }}
+              />
+            );
+          })}
+
+          {/* Confirm button — hidden while dragging, flips above if no space below */}
+          {!isDragging && (() => {
+            const btnH = 44;
+            const showAbove = rect.top + rect.height + 12 + btnH > containerSize.h;
+            return <button
+            onClick={handleConfirm}
+            style={{
+              position: "absolute",
+              left: rect.left + rect.width / 2,
+              top: showAbove ? rect.top - 12 - btnH : rect.top + rect.height + 12,
+              transform: "translateX(-50%)",
+              padding: "8px 24px",
+              background: "#0693E3",
+              color: "white",
+              border: "none",
+              borderRadius: "var(--radius-md)",
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: "pointer",
+              zIndex: 1,
+              boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+            }}
+          >
+            {t("cropConfirmArea", lang)}
+          </button>;
+          })()}
+        </>
       )}
     </div>
   );
@@ -345,6 +488,7 @@ export default function MapView({
         active={cropMode}
         onCropComplete={onCropComplete}
         address={address}
+        lang={lang}
       />
 
       {/* Coordinates display */}

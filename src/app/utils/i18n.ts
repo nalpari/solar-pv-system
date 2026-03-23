@@ -48,6 +48,7 @@ const translations = {
   cropTools: { ja: "屋根選択", en: "Roof Selection" },
   cropMode: { ja: "範囲選択", en: "Select Area" },
   cropModeActive: { ja: "地図上でドラッグして範囲を選択", en: "Drag on map to select area" },
+  cropConfirmArea: { ja: "確定", en: "Confirm" },
 
   // CropPopup
   cropEditor: { ja: "屋根エディタ", en: "Roof Editor" },
