@@ -138,7 +138,7 @@ export default function CropPopup({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
 
-  // Reset in-progress points when drawing mode changes
+  // 그리기 모드 변경 시 진행 중 점·선택·드래그·롱프레스 상태 전부 초기화
   const prevDrawingModeRef = useRef<DrawingMode>(drawingMode);
   useEffect(() => {
     if (prevDrawingModeRef.current !== drawingMode) {
@@ -148,8 +148,24 @@ export default function CropPopup({
       setSelectedPolygonId(null);
       setSubMode("idle");
       setTooltipPos(null);
+      setDraggingVertexIdx(null);
+      dragStartRef.current = null;
+      dragOriginalPointsRef.current = null;
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+      }
     }
   }, [drawingMode]);
+
+  // Cleanup long-press timer on unmount
+  useEffect(() => {
+    return () => {
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+      }
+    };
+  }, []);
 
   /** object-fit: contain 적용 후 이미지의 실제 렌더링 영역을 계산한다 */
   function getRenderedImageRect() {
@@ -391,7 +407,7 @@ export default function CropPopup({
     };
   }
 
-  /** 포인터 다운 이벤트를 처리하여 점 추가·폴리곤 선택·드래그를 시작한다 */
+  /** 포인터 다운 이벤트를 처리한다 (좌클릭만 허용, 점 추가·폴리곤 선택·드래그 시작·pointer capture 설정) */
   function handlePointerDown(e: React.PointerEvent<HTMLCanvasElement>) {
     e.preventDefault();
     // 우클릭(보조 버튼)은 점 입력으로 처리하지 않음 — contextmenu(Undo)에서 처리
@@ -430,6 +446,7 @@ export default function CropPopup({
           if (selArea && isPointInPolygon(pt, selArea.points)) {
             dragStartRef.current = pt;
             dragOriginalPointsRef.current = selArea.points.map((p) => ({ ...p }));
+            e.currentTarget.setPointerCapture(e.pointerId);
           } else {
             // Click outside: cancel moving
             dragStartRef.current = null;
@@ -448,12 +465,15 @@ export default function CropPopup({
               const vp = selArea.points[i];
               if (Math.hypot(pt.x - vp.x, pt.y - vp.y) <= HANDLE_RADIUS) {
                 setDraggingVertexIdx(i);
-                // Start long-press timer for vertex deletion
-                longPressTimerRef.current = setTimeout(() => {
-                  longPressTimerRef.current = null;
-                  tryDeleteVertex(i);
-                  setDraggingVertexIdx(null);
-                }, 500);
+                e.currentTarget.setPointerCapture(e.pointerId);
+                // 터치 입력에서만 롱프레스 삭제 활성화 (마우스/펜은 더블클릭 사용)
+                if (e.pointerType === "touch") {
+                  longPressTimerRef.current = setTimeout(() => {
+                    longPressTimerRef.current = null;
+                    tryDeleteVertex(i);
+                    setDraggingVertexIdx(null);
+                  }, 500);
+                }
                 return;
               }
             }
@@ -531,17 +551,28 @@ export default function CropPopup({
     e.preventDefault();
   }
 
-  /** 포인터 이동 시 폴리곤 드래그·꼭짓점 드래그·가이드 라인을 처리한다 */
+  /** 포인터 이동 시 폴리곤 드래그(캔버스 경계 클램핑)·꼭짓점 드래그·가이드 라인을 처리한다 */
   function handlePointerMove(e: React.PointerEvent<HTMLCanvasElement>) {
     const rect = canvasRef.current!.getBoundingClientRect();
     const px = e.clientX - rect.left;
     const py = e.clientY - rect.top;
 
-    // Polygon drag-move
+    // Polygon drag-move (캔버스 경계 내로 클램핑)
     if (drawingMode === null && subMode === "moving" && dragStartRef.current && dragOriginalPointsRef.current && selectedPolygonId) {
-      const dx = px - dragStartRef.current.x;
-      const dy = py - dragStartRef.current.y;
-      const newPoints = dragOriginalPointsRef.current.map((p) => ({
+      const canvas = canvasRef.current;
+      const cw = canvas ? canvas.width : Infinity;
+      const ch = canvas ? canvas.height : Infinity;
+      const orig = dragOriginalPointsRef.current;
+      let dx = px - dragStartRef.current.x;
+      let dy = py - dragStartRef.current.y;
+      // 폴리곤 전체가 캔버스 안에 머물도록 dx/dy 클램핑
+      const minX = Math.min(...orig.map((p) => p.x));
+      const maxX = Math.max(...orig.map((p) => p.x));
+      const minY = Math.min(...orig.map((p) => p.y));
+      const maxY = Math.max(...orig.map((p) => p.y));
+      dx = Math.max(-minX, Math.min(cw - maxX, dx));
+      dy = Math.max(-minY, Math.min(ch - maxY, dy));
+      const newPoints = orig.map((p) => ({
         x: p.x + dx,
         y: p.y + dy,
       }));
@@ -598,6 +629,20 @@ export default function CropPopup({
       setDraggingVertexIdx(null);
       notifyParent(areasRef.current);
       return;
+    }
+  }
+
+  /** 포인터 캡처가 강제 해제될 때 드래그 상태를 정리한다 */
+  function handlePointerCancel() {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    dragStartRef.current = null;
+    dragOriginalPointsRef.current = null;
+    if (draggingVertexIdx !== null) {
+      setDraggingVertexIdx(null);
+      notifyParent(areasRef.current);
     }
   }
 
@@ -796,19 +841,31 @@ export default function CropPopup({
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerCancel}
             onDoubleClick={handleDoubleClick}
             onContextMenu={handleContextMenu}
           />
 
         </div>
 
-        {/* Polygon selection tooltip */}
-        {subMode === "selected" && tooltipPos && (
+        {/* Polygon selection tooltip (경계 클램핑 적용) */}
+        {subMode === "selected" && tooltipPos && (() => {
+          const tooltipW = 88;
+          const tooltipH = 90;
+          const ox = canvasLayout?.offsetX ?? 0;
+          const oy = canvasLayout?.offsetY ?? 0;
+          const cw = canvasRef.current?.width ?? 300;
+          const ch = canvasRef.current?.height ?? 300;
+          const rawX = ox + tooltipPos.x + 8;
+          const rawY = oy + tooltipPos.y - 8;
+          const clampedX = Math.max(ox, Math.min(rawX, ox + cw - tooltipW));
+          const clampedY = Math.max(oy, Math.min(rawY, oy + ch - tooltipH));
+          return (
           <div
             style={{
               position: "absolute",
-              left: (canvasLayout?.offsetX ?? 0) + tooltipPos.x + 8,
-              top: (canvasLayout?.offsetY ?? 0) + tooltipPos.y - 8,
+              left: clampedX,
+              top: clampedY,
               zIndex: 20,
               display: "flex",
               flexDirection: "column",
@@ -825,7 +882,8 @@ export default function CropPopup({
             <TooltipButton label={t("polygonDelete", lang)} color="#CF2E2E" onClick={handleDeletePolygon} />
             <TooltipButton label={t("polygonEditVertices", lang)} onClick={() => { setSubMode("editing_vertices"); setTooltipPos(null); }} />
           </div>
-        )}
+          );
+        })()}
 
         {/* Floating Undo button — bottom-right of popup card */}
         {(drawingMode === "install" || drawingMode === "exclude") &&
