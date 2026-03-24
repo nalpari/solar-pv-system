@@ -1,8 +1,11 @@
 "use client";
 
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 export default function Header() {
+  const router = useRouter();
+
   return (
     <header
       style={{
@@ -16,7 +19,10 @@ export default function Header() {
         flexShrink: 0,
       }}
     >
-      <div style={{ display: "flex", alignItems: "center" }}>
+      <div
+        onClick={() => router.push("/")}
+        style={{ display: "flex", alignItems: "center", cursor: "pointer" }}
+      >
         <Image
           src="/hanwha.png"
           alt="Hanwha Japan"
