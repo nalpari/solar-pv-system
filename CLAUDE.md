@@ -10,8 +10,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `pnpm build` — Production build
 - `pnpm start` — Serve production build
 - `pnpm lint` — Run ESLint (flat config, core-web-vitals + typescript rules)
-- `docker compose up --build` — Docker 컨테이너 빌드 및 실행
-- `docker compose down` — Docker 컨테이너 중지
 
 ## Tech Stack
 
@@ -22,7 +20,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Google Maps** via `@vis.gl/react-google-maps` (requires `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`)
 - **html2canvas** for map tile capture
 - **lucide-react** for icons
-- **Docker** — Multi-stage build with standalone output for production deployment
 - Path alias: `@/*` maps to `./src/*`
 - Fonts: Geist Sans + Geist Mono (via `next/font/google`)
 
@@ -30,33 +27,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Solar PV rooftop panel layout planner — single-page app with a left sidebar + Google Maps main area.
 
-### Page structure
-
-`page.tsx` is a `"use client"` component that owns all application state (areas, panel config, placed panels) and passes it down to child components. No server components beyond `layout.tsx`.
-
-### Key components (`src/app/components/`)
-
-- **MapView** — Google Maps with satellite imagery and crop area selection overlay (html2canvas capture)
-- **CropPopup** — Cropped image popup with Canvas-based polygon editor and panel rendering. Supports image save (PNG download)
-- **AddressSearch** — Places autocomplete to navigate the map
-- **DrawingToolbar** — Crop mode toggle (before crop) / polygon drawing mode controls (after crop)
-- **PanelConfig** — Panel size (mm), orientation, gap (cm), and margin (cm) controls
-- **ResultsPanel** — Displays panel count and area calculations
-
-### Core logic (`src/app/utils/`)
-
-- **panelPlacement.ts** — Computational geometry engine with placement functions:
-  - `placePanels` — lat/lng-based (mm 단위): converts to local meters, grid-aligns to longest edge, validates containment
-  - `placePanelsOnCanvas` — pixel-based (mm 단위): uses metersPerPixel scale factor, flips Y-axis for canvas coordinates
-  - `placePanelsOnCanvasCm` — pixel-based (cm 단위): UI에서 사용, 내부적으로 mm 버전 호출
-
-### Types (`src/app/types/index.ts`)
-
-Domain types: `LatLng`, `PanelSize`, `PanelOrientation`, `DrawingMode`, `PolygonArea`, `PlacedPanel`, `CropData`, `CropBounds`, `PixelPoint`, `PixelPolygon`, `PixelPanel`.
-
-### Styling
-
-CSS custom properties defined in `globals.css` (e.g., `--bg-primary`, `--text-primary`, `--accent-blue`). Components use inline styles with these variables — not Tailwind utility classes.
+> 상세 아키텍처 정보는 `.claude/rules/`의 조건부 규칙 파일에서 작업 컨텍스트에 맞게 자동 로드됩니다:
+> - `components.md` — 컴포넌트 구조 및 도메인 타입 (`src/app/components/`, `page.tsx`)
+> - `utils.md` — 핵심 알고리즘 및 유틸리티 (`src/app/utils/`)
+> - `styles.md` — 스타일링 규칙 (`globals.css`, 컴포넌트 TSX)
+> - `docker.md` — Docker 빌드 및 배포 (`Dockerfile`, `docker-compose*`)
 
 ## Memo
 
