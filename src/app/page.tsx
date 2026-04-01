@@ -9,7 +9,9 @@ import DrawingToolbar from "./components/DrawingToolbar";
 import PanelConfig from "./components/PanelConfig";
 import ResultsPanel from "./components/ResultsPanel";
 import SimulationPanel from "./components/SimulationPanel";
+import type { SimulationFormState } from "./components/SimulationPanel";
 import RoofEditToolbar from "./components/RoofEditToolbar";
+import type { RoofEditTool } from "./components/RoofEditToolbar";
 import MapView from "./components/MapView";
 import { placePanels, placePanelsOnCanvasCm } from "./utils/panelPlacement";
 import { t } from "./utils/i18n";
@@ -75,6 +77,13 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<SidebarTab>("design");
   const [slope, setSlope] = useState(4); // 4寸 default
   const [roofEditing, setRoofEditing] = useState(false);
+  const [roofEditTool, setRoofEditTool] = useState<RoofEditTool>("select");
+  const [simForm, setSimForm] = useState<SimulationFormState>({
+    azimuth: "",
+    hasBattery: true,
+    batteryModel: "q-ready-7.7",
+    monthlyElecCost: "",
+  });
 
   useEffect(() => {
     document.documentElement.lang = lang;
@@ -91,7 +100,7 @@ export default function Home() {
     width: 991,
     height: 1650,
   });
-  const [orientation] = useState<PanelOrientation>("portrait");
+  const [orientation, setOrientation] = useState<PanelOrientation>("portrait");
   const [gapCm, setGapCm] = useState(2);
   const [marginCm, setMarginCm] = useState(20);
   const [placedPanelsList, setPlacedPanelsList] = useState<PlacedPanel[]>([]);
@@ -164,37 +173,54 @@ export default function Home() {
   }
 
   function handlePlacePanels() {
+    const orientations: PanelOrientation[] = ["portrait", "landscape"];
+
     if (pixelAreas) {
       try {
         const { areas: pxAreas, metersPerPixel } = pixelAreas;
         const installPx = pxAreas.filter((a) => a.type === "install");
         const excludePx = pxAreas.filter((a) => a.type === "exclude");
-        const panels = placePanelsOnCanvasCm(
-          installPx,
-          excludePx,
-          panelSize.width,
-          panelSize.height,
-          orientation,
-          gapCm,
-          marginCm,
-          metersPerPixel,
-        );
-        setPlacedPixelPanels(panels);
+
+        let bestPanels: PixelPanel[] = [];
+        let bestOrientation: PanelOrientation = orientation;
+
+        for (const ori of orientations) {
+          const panels = placePanelsOnCanvasCm(
+            installPx, excludePx,
+            panelSize.width, panelSize.height,
+            ori, gapCm, marginCm, metersPerPixel,
+          );
+          if (panels.length > bestPanels.length) {
+            bestPanels = panels;
+            bestOrientation = ori;
+          }
+        }
+
+        setOrientation(bestOrientation);
+        setPlacedPixelPanels(bestPanels);
       } catch (e) {
         console.error("Panel placement failed:", e);
         setPlacedPixelPanels([]);
       }
     } else {
       try {
-        const panels = placePanels(
-          installAreas,
-          excludeAreas,
-          panelSize,
-          orientation,
-          gapCm * 10,
-          marginCm * 10,
-        );
-        setPlacedPanelsList(panels);
+        let bestPanels: PlacedPanel[] = [];
+        let bestOrientation: PanelOrientation = orientation;
+
+        for (const ori of orientations) {
+          const panels = placePanels(
+            installAreas, excludeAreas,
+            panelSize, ori,
+            gapCm * 10, marginCm * 10,
+          );
+          if (panels.length > bestPanels.length) {
+            bestPanels = panels;
+            bestOrientation = ori;
+          }
+        }
+
+        setOrientation(bestOrientation);
+        setPlacedPanelsList(bestPanels);
       } catch (e) {
         console.error("Panel placement failed:", e);
         setPlacedPanelsList([]);
@@ -550,7 +576,13 @@ export default function Home() {
                 /* Simulation Tab */
                 <SimulationPanel
                   lang={lang}
+                  formState={simForm}
+                  onFormChange={setSimForm}
                   onGoBack={() => setActiveTab("design")}
+                  onSubmit={() => {
+                    // TODO: 시뮬레이션 결과 조회 API 호출
+                    console.log("Simulation submit:", simForm);
+                  }}
                 />
               )}
             </div>
@@ -642,10 +674,19 @@ export default function Home() {
           {/* Map Area */}
           <main style={{ flex: 1, position: "relative" }}>
             {/* Roof Edit Toolbar (floating over map) */}
-            {roofEditing && (
+            {roofEditing && cropData && (
               <RoofEditToolbar
                 lang={lang}
-                onClose={() => setRoofEditing(false)}
+                activeTool={roofEditTool}
+                onToolChange={setRoofEditTool}
+                onAction={(action) => {
+                  // TODO: 각 액션(deleteSelected, deleteAll, undo) 처리 로직 추가
+                  console.log("Roof edit action:", action);
+                }}
+                onClose={() => {
+                  setRoofEditing(false);
+                  setRoofEditTool("select");
+                }}
               />
             )}
             {GOOGLE_MAPS_API_KEY ? (

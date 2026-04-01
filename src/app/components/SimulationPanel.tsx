@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { ChevronDown, Compass, Battery, Banknote } from "lucide-react";
 import { t } from "../utils/i18n";
 import type { Lang } from "../utils/i18n";
@@ -32,9 +31,19 @@ const BATTERY_MODELS = [
   { value: "q-ready-15.3", label: "Q.READY 15.3kWh" },
 ];
 
+export interface SimulationFormState {
+  azimuth: string;
+  hasBattery: boolean;
+  batteryModel: string;
+  monthlyElecCost: string;
+}
+
 interface SimulationPanelProps {
   lang: Lang;
+  formState: SimulationFormState;
+  onFormChange: (state: SimulationFormState) => void;
   onGoBack: () => void;
+  onSubmit: () => void;
 }
 
 /** 나침반 다이어그램 SVG */
@@ -144,11 +153,12 @@ function CompassDiagram({ direction, lang }: { direction: string; lang: Lang }) 
   );
 }
 
-export default function SimulationPanel({ lang, onGoBack }: SimulationPanelProps) {
-  const [azimuth, setAzimuth] = useState("");
-  const [hasBattery, setHasBattery] = useState(true);
-  const [batteryModel, setBatteryModel] = useState(BATTERY_MODELS[0].value);
-  const [monthlyElecCost, setMonthlyElecCost] = useState("");
+export default function SimulationPanel({ lang, formState, onFormChange, onGoBack, onSubmit }: SimulationPanelProps) {
+  const { azimuth, hasBattery, batteryModel, monthlyElecCost } = formState;
+
+  function update(patch: Partial<SimulationFormState>) {
+    onFormChange({ ...formState, ...patch });
+  }
 
   const canSubmit = azimuth !== "" && monthlyElecCost !== "";
 
@@ -160,7 +170,7 @@ export default function SimulationPanel({ lang, onGoBack }: SimulationPanelProps
 
   function handleCostChange(value: string) {
     const cleaned = value.replace(/[^0-9]/g, "");
-    setMonthlyElecCost(cleaned);
+    update({ monthlyElecCost: cleaned });
   }
 
   return (
@@ -186,7 +196,7 @@ export default function SimulationPanel({ lang, onGoBack }: SimulationPanelProps
           <div style={{ position: "relative" }}>
             <select
               value={azimuth}
-              onChange={(e) => setAzimuth(e.target.value)}
+              onChange={(e) => update({ azimuth: e.target.value })}
               style={{
                 width: "100%",
                 height: 36,
@@ -283,7 +293,7 @@ export default function SimulationPanel({ lang, onGoBack }: SimulationPanelProps
                 type="radio"
                 name="battery"
                 checked={hasBattery}
-                onChange={() => setHasBattery(true)}
+                onChange={() => update({ hasBattery: true })}
                 style={{ accentColor: "var(--accent-blue)", width: 16, height: 16 }}
               />
               {t("batteryYes", lang)}
@@ -302,7 +312,7 @@ export default function SimulationPanel({ lang, onGoBack }: SimulationPanelProps
                 type="radio"
                 name="battery"
                 checked={!hasBattery}
-                onChange={() => setHasBattery(false)}
+                onChange={() => update({ hasBattery: false })}
                 style={{ accentColor: "var(--accent-blue)", width: 16, height: 16 }}
               />
               {t("batteryNo", lang)}
@@ -314,7 +324,7 @@ export default function SimulationPanel({ lang, onGoBack }: SimulationPanelProps
             <div style={{ position: "relative" }}>
               <select
                 value={batteryModel}
-                onChange={(e) => setBatteryModel(e.target.value)}
+                onChange={(e) => update({ batteryModel: e.target.value })}
                 style={{
                   width: "100%",
                   height: 36,
@@ -391,7 +401,7 @@ export default function SimulationPanel({ lang, onGoBack }: SimulationPanelProps
                 pointerEvents: "none",
               }}
             >
-              円
+              {t("currencySuffix", lang)}
             </span>
           </div>
         </div>
@@ -429,6 +439,7 @@ export default function SimulationPanel({ lang, onGoBack }: SimulationPanelProps
           {t("simPrevious", lang)}
         </button>
         <button
+          onClick={onSubmit}
           disabled={!canSubmit}
           style={{
             flex: 1,

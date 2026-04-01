@@ -160,7 +160,7 @@ export default function ResultsPanel({
             textAlign: "center",
           }}
         >
-          {panelCount}{t("capacityUnit", lang)} · {totalKw.toFixed(0)}KW
+          {panelCount}{t("capacityUnit", lang)} · {totalKw.toFixed(1)}kW
         </div>
       </div>
     </div>

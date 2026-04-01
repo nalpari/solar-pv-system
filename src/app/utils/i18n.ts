@@ -183,6 +183,8 @@ const translations = {
     ja: "インタラクティブマップを有効にするには、環境変数にAPIキーを設定してください。",
     en: "Set your API key as an environment variable to enable the interactive map.",
   },
+  currencySuffix: { ja: "円", en: "¥" },
+
   requiredApis: {
     ja: "必要なAPI: Maps JavaScript, Places, Drawing, Geometry",
     en: "Required APIs: Maps JavaScript, Places, Drawing, Geometry",

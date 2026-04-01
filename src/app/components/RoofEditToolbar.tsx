@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
   MousePointer,
   Pentagon,
@@ -15,7 +14,7 @@ import {
 import { t } from "../utils/i18n";
 import type { Lang } from "../utils/i18n";
 
-type RoofEditTool =
+export type RoofEditTool =
   | "select"
   | "drawRoof"
   | "drawOpening"
@@ -47,20 +46,21 @@ const TOOLS: ToolDef[] = [
 
 interface RoofEditToolbarProps {
   lang: Lang;
+  activeTool: RoofEditTool;
+  onToolChange: (tool: RoofEditTool) => void;
+  onAction: (action: RoofEditTool) => void;
   onClose: () => void;
 }
 
-export default function RoofEditToolbar({ lang, onClose }: RoofEditToolbarProps) {
-  const [activeTool, setActiveTool] = useState<RoofEditTool>("select");
-
+export default function RoofEditToolbar({ lang, activeTool, onToolChange, onAction, onClose }: RoofEditToolbarProps) {
   const currentTool = TOOLS.find((tool) => tool.id === activeTool);
 
   function handleToolClick(tool: ToolDef) {
     if (tool.isAction) {
-      // 1회성 액션은 선택 상태를 변경하지 않음
+      onAction(tool.id);
       return;
     }
-    setActiveTool(tool.id);
+    onToolChange(tool.id);
   }
 
   return (

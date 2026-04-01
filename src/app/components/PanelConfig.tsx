@@ -38,8 +38,8 @@ export default function PanelConfig({
   const [gapSettingsOpen, setGapSettingsOpen] = useState(false);
   const presetSizes = getPresetSizes(lang);
 
-  const gapMm = Math.round(panelGap * 10);
-  const marginMm = Math.round(edgeMargin * 10);
+  const gapLabel = `${panelGap}cm`;
+  const marginLabel = `${edgeMargin}cm`;
 
   function handlePresetChange(index: number) {
     setSelectedPreset(index);
@@ -222,7 +222,7 @@ export default function PanelConfig({
                   fontWeight: 600,
                 }}
               >
-                {gapMm}mm
+                {gapLabel}
               </span>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -274,7 +274,7 @@ export default function PanelConfig({
                   fontWeight: 600,
                 }}
               >
-                {marginMm}mm
+                {marginLabel}
               </span>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
