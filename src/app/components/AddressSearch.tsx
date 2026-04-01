@@ -44,7 +44,6 @@ export default function AddressSearch({ onPlaceSelect, lang }: AddressSearchProp
       setIsOpen(false);
       return;
     }
-    // Lazy init if not yet initialized
     if (!autocompleteService.current && typeof google !== "undefined" && google.maps) {
       autocompleteService.current = new google.maps.places.AutocompleteService();
       const div = document.createElement("div");
@@ -79,6 +78,12 @@ export default function AddressSearch({ onPlaceSelect, lang }: AddressSearchProp
     debounceRef.current = setTimeout(() => searchPlaces(value), 300);
   }
 
+  function handleSearchClick() {
+    if (query.trim()) {
+      searchPlaces(query);
+    }
+  }
+
   function handleSelect(prediction: google.maps.places.AutocompletePrediction) {
     if (!placesService.current) return;
     placesService.current.getDetails(
@@ -106,55 +111,82 @@ export default function AddressSearch({ onPlaceSelect, lang }: AddressSearchProp
         htmlFor="address-search-input"
         style={{
           display: "block",
-          fontSize: 11,
+          fontSize: 13,
           fontWeight: 500,
-          color: "var(--text-tertiary)",
-          textTransform: "uppercase",
-          letterSpacing: "0.05em",
+          color: "var(--text-primary)",
           marginBottom: 6,
         }}
       >
         {t("searchAddress", lang)}
+        <span style={{ color: "var(--accent-red)", marginLeft: 2 }}>*</span>
       </label>
-      <div style={{ position: "relative" }}>
-        <Search
-          size={15}
-          color="var(--text-tertiary)"
-          style={{
-            position: "absolute",
-            left: 10,
-            top: "50%",
-            transform: "translateY(-50%)",
-            pointerEvents: "none",
-          }}
-        />
-        <input
-          id="address-search-input"
-          type="text"
-          value={query}
-          onChange={(e) => handleInputChange(e.target.value)}
-          onFocus={() => predictions.length > 0 && setIsOpen(true)}
-          placeholder={t("addressPlaceholder", lang)}
-          style={{
-            width: "100%",
-            paddingLeft: 34,
-            paddingRight: isLoading ? 34 : 12,
-            height: 40,
-          }}
-        />
-        {isLoading && (
-          <Loader2
-            size={14}
+      <div style={{ display: "flex", gap: 6 }}>
+        <div style={{ position: "relative", flex: 1 }}>
+          <Search
+            size={15}
             color="var(--text-tertiary)"
             style={{
               position: "absolute",
-              right: 10,
+              left: 10,
               top: "50%",
               transform: "translateY(-50%)",
-              animation: "spin 1s linear infinite",
+              pointerEvents: "none",
             }}
           />
-        )}
+          <input
+            id="address-search-input"
+            type="text"
+            value={query}
+            onChange={(e) => handleInputChange(e.target.value)}
+            onFocus={() => predictions.length > 0 && setIsOpen(true)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSearchClick();
+            }}
+            placeholder={t("addressPlaceholder", lang)}
+            style={{
+              width: "100%",
+              paddingLeft: 34,
+              paddingRight: isLoading ? 34 : 12,
+              height: 36,
+              fontSize: 13,
+            }}
+          />
+          {isLoading && (
+            <Loader2
+              size={14}
+              color="var(--text-tertiary)"
+              style={{
+                position: "absolute",
+                right: 10,
+                top: "50%",
+                transform: "translateY(-50%)",
+                animation: "spin 1s linear infinite",
+              }}
+            />
+          )}
+        </div>
+        <button
+          onClick={handleSearchClick}
+          style={{
+            padding: "0 16px",
+            height: 36,
+            borderRadius: "var(--radius-md)",
+            border: "none",
+            background: "var(--accent-blue)",
+            color: "#fff",
+            fontSize: 13,
+            fontWeight: 500,
+            flexShrink: 0,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "var(--accent-blue-hover)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "var(--accent-blue)";
+          }}
+        >
+          {t("searchButton", lang)}
+        </button>
       </div>
 
       {isOpen && predictions.length > 0 && (
@@ -212,7 +244,6 @@ export default function AddressSearch({ onPlaceSelect, lang }: AddressSearchProp
           ))}
         </ul>
       )}
-
     </div>
   );
 }
