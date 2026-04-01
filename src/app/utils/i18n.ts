@@ -26,6 +26,7 @@ const translations = {
 
   // Slope Settings
   slopeSettings: { ja: "傾斜設定", en: "Slope Settings" },
+  slopeUnit: { ja: "寸", en: " sun" },
   slopePlaceholder: { ja: "傾斜を選択", en: "Select slope" },
 
   // DrawingToolbar

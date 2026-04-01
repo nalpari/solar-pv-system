@@ -180,6 +180,7 @@ export default function SimulationPanel({ lang, formState, onFormChange, onGoBac
         {/* 方位設定 */}
         <div style={{ padding: "16px 16px 12px" }}>
           <label
+            htmlFor="azimuth-select"
             style={{
               display: "block",
               fontSize: 13,
@@ -195,6 +196,8 @@ export default function SimulationPanel({ lang, formState, onFormChange, onGoBac
 
           <div style={{ position: "relative" }}>
             <select
+              id="azimuth-select"
+              aria-describedby="azimuth-guide"
               value={azimuth}
               onChange={(e) => update({ azimuth: e.target.value })}
               style={{
@@ -231,6 +234,7 @@ export default function SimulationPanel({ lang, formState, onFormChange, onGoBac
 
           {/* Guide text */}
           <div
+            id="azimuth-guide"
             style={{
               marginTop: 8,
               padding: "8px 10px",
@@ -363,6 +367,7 @@ export default function SimulationPanel({ lang, formState, onFormChange, onGoBac
         {/* 月平均電気料金 */}
         <div style={{ padding: "16px 16px 12px" }}>
           <label
+            htmlFor="monthly-elec-cost"
             style={{
               display: "block",
               fontSize: 13,
@@ -378,6 +383,7 @@ export default function SimulationPanel({ lang, formState, onFormChange, onGoBac
 
           <div style={{ position: "relative" }}>
             <input
+              id="monthly-elec-cost"
               type="text"
               inputMode="numeric"
               value={formatCurrency(monthlyElecCost)}

@@ -34,11 +34,8 @@ const DEFAULT_CENTER = { lat: 47.6062, lng: -122.3321 }; // Seattle
 
 type SidebarTab = "design" | "simulation";
 
-// 경사(寸) options: 0.5寸 ~ 10寸, step 0.5
-const SLOPE_OPTIONS = Array.from({ length: 20 }, (_, i) => {
-  const value = (i + 1) * 0.5;
-  return { value, label: `${value}寸` };
-});
+// 경사 options: 0.5 ~ 10, step 0.5
+const SLOPE_OPTIONS = Array.from({ length: 20 }, (_, i) => (i + 1) * 0.5);
 
 function computePolygonAreaM2(paths: { lat: number; lng: number }[]): number {
   if (paths.length < 3) return 0;
@@ -170,6 +167,14 @@ export default function Home() {
   function handleDeleteAllPanels() {
     setPlacedPanelsList([]);
     setPlacedPixelPanels([]);
+  }
+
+  function switchToSimulation() {
+    setCropMode(false);
+    setRoofEditing(false);
+    setRoofEditTool("select");
+    setDrawingMode(null);
+    setActiveTab("simulation");
   }
 
   function handlePlacePanels() {
@@ -317,7 +322,7 @@ export default function Home() {
               </button>
 
               <button
-                onClick={() => setActiveTab("simulation")}
+                onClick={() => switchToSimulation()}
                 style={{
                   flex: 1,
                   display: "flex",
@@ -512,9 +517,9 @@ export default function Home() {
                           padding: "0 32px 0 12px",
                         }}
                       >
-                        {SLOPE_OPTIONS.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
-                            {opt.label}
+                        {SLOPE_OPTIONS.map((val) => (
+                          <option key={val} value={val}>
+                            {val}{t("slopeUnit", lang)}
                           </option>
                         ))}
                       </select>
@@ -597,7 +602,7 @@ export default function Home() {
                 }}
               >
                 <button
-                  onClick={() => setActiveTab("simulation")}
+                  onClick={() => switchToSimulation()}
                   style={{
                     display: "flex",
                     alignItems: "center",
