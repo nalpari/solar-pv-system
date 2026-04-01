@@ -8,7 +8,7 @@ const translations = {
   // AddressSearch
   searchAddress: { ja: "住所検索", en: "Search Address" },
   addressPlaceholder: { ja: "建物の住所を入力...", en: "Enter building address..." },
-  searchButton: { ja: "Search", en: "Search" },
+  searchButton: { ja: "検索", en: "Search" },
 
   // Building Confirm
   confirmBuilding: { ja: "建物確定", en: "Confirm Building" },
@@ -185,6 +185,11 @@ const translations = {
     en: "Set your API key as an environment variable to enable the interactive map.",
   },
   currencySuffix: { ja: "円", en: "¥" },
+
+  panelPlacementFailed: {
+    ja: "モジュール配置に失敗しました。設置面積や設定を確認してください。",
+    en: "Module placement failed. Please check the installation area and settings.",
+  },
 
   requiredApis: {
     ja: "必要なAPI: Maps JavaScript, Places, Drawing, Geometry",

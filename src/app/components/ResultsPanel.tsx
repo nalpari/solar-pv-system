@@ -7,11 +7,10 @@ import type { PanelSize, PanelOrientation } from "../types";
 
 interface ResultsPanelProps {
   panelCount: number;
-  installAreaM2: number;
-  excludeAreaM2: number;
   panelSize: PanelSize;
   orientation: PanelOrientation;
   canPlace: boolean;
+  placementError: string | null;
   onPlacePanels: () => void;
   onDeleteAllPanels: () => void;
   lang: Lang;
@@ -22,6 +21,7 @@ export default function ResultsPanel({
   panelSize,
   orientation,
   canPlace,
+  placementError,
   onPlacePanels,
   onDeleteAllPanels,
   lang,
@@ -59,6 +59,22 @@ export default function ResultsPanel({
           <LayoutGrid size={15} />
           {t("placeModules", lang)}
         </button>
+
+        {/* Placement error banner */}
+        {placementError && (
+          <div
+            style={{
+              padding: "8px 12px",
+              background: "var(--accent-red-muted)",
+              borderRadius: "var(--radius-md)",
+              fontSize: 12,
+              color: "var(--accent-red)",
+              lineHeight: 1.5,
+            }}
+          >
+            {placementError}
+          </div>
+        )}
 
         {/* Delete Selected Modules (placeholder - disabled for now) */}
         <button

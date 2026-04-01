@@ -14,22 +14,16 @@ import {
 import { t } from "../utils/i18n";
 import type { Lang } from "../utils/i18n";
 
-export type RoofEditTool =
-  | "select"
-  | "drawRoof"
-  | "drawOpening"
-  | "flowSetting"
-  | "editRoof"
-  | "deleteSelected"
-  | "deleteAll"
-  | "undo";
+export type RoofTool = "select" | "drawRoof" | "drawOpening" | "flowSetting" | "editRoof";
+export type RoofAction = "deleteSelected" | "deleteAll" | "undo";
+export type RoofEditTool = RoofTool | RoofAction;
 
 interface ToolDef {
   id: RoofEditTool;
   icon: React.ComponentType<{ size?: number; color?: string }>;
   labelKey: string;
   guideKey: string;
-  isAction?: boolean; // 토글이 아닌 1회성 액션
+  isAction?: boolean;
   danger?: boolean;
 }
 
@@ -46,9 +40,9 @@ const TOOLS: ToolDef[] = [
 
 interface RoofEditToolbarProps {
   lang: Lang;
-  activeTool: RoofEditTool;
-  onToolChange: (tool: RoofEditTool) => void;
-  onAction: (action: RoofEditTool) => void;
+  activeTool: RoofTool;
+  onToolChange: (tool: RoofTool) => void;
+  onAction: (action: RoofAction) => void;
   onClose: () => void;
 }
 
@@ -57,10 +51,10 @@ export default function RoofEditToolbar({ lang, activeTool, onToolChange, onActi
 
   function handleToolClick(tool: ToolDef) {
     if (tool.isAction) {
-      onAction(tool.id);
+      onAction(tool.id as RoofAction);
       return;
     }
-    onToolChange(tool.id);
+    onToolChange(tool.id as RoofTool);
   }
 
   return (

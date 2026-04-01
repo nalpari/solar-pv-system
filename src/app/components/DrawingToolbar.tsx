@@ -6,8 +6,6 @@ import type { Lang } from "../utils/i18n";
 import type { DrawingMode } from "../types";
 
 interface DrawingToolbarProps {
-  cropMode: boolean;
-  onCropModeChange: (active: boolean) => void;
   onClearAll: () => void;
   hasCropData: boolean;
   drawingMode: DrawingMode;

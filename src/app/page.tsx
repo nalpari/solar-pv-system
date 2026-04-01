@@ -11,7 +11,7 @@ import ResultsPanel from "./components/ResultsPanel";
 import SimulationPanel from "./components/SimulationPanel";
 import type { SimulationFormState } from "./components/SimulationPanel";
 import RoofEditToolbar from "./components/RoofEditToolbar";
-import type { RoofEditTool } from "./components/RoofEditToolbar";
+import type { RoofTool } from "./components/RoofEditToolbar";
 import MapView from "./components/MapView";
 import { placePanels, placePanelsOnCanvasCm } from "./utils/panelPlacement";
 import { t } from "./utils/i18n";
@@ -36,16 +36,6 @@ type SidebarTab = "design" | "simulation";
 
 // 경사 options: 0.5 ~ 10, step 0.5
 const SLOPE_OPTIONS = Array.from({ length: 20 }, (_, i) => (i + 1) * 0.5);
-
-function computePolygonAreaM2(paths: { lat: number; lng: number }[]): number {
-  if (paths.length < 3) return 0;
-  if (typeof google === "undefined" || !google.maps?.geometry?.spherical) return 0;
-  return Math.abs(
-    google.maps.geometry.spherical.computeArea(
-      paths.map((p) => new google.maps.LatLng(p.lat, p.lng))
-    )
-  );
-}
 
 /** Section header bar component */
 function SectionHeader({ title, primary }: { title: string; primary?: boolean }) {
@@ -74,7 +64,7 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<SidebarTab>("design");
   const [slope, setSlope] = useState(4); // 4寸 default
   const [roofEditing, setRoofEditing] = useState(false);
-  const [roofEditTool, setRoofEditTool] = useState<RoofEditTool>("select");
+  const [roofEditTool, setRoofEditTool] = useState<RoofTool>("select");
   const [simForm, setSimForm] = useState<SimulationFormState>({
     azimuth: "",
     hasBattery: true,
@@ -103,24 +93,11 @@ export default function Home() {
   const [placedPanelsList, setPlacedPanelsList] = useState<PlacedPanel[]>([]);
   const [pixelAreas, setPixelAreas] = useState<{ areas: PixelPolygon[]; metersPerPixel: number } | null>(null);
   const [placedPixelPanels, setPlacedPixelPanels] = useState<PixelPanel[]>([]);
+  const [placementError, setPlacementError] = useState<string | null>(null);
 
   const installAreas = areas.filter((a) => a.type === "install");
   const excludeAreas = areas.filter((a) => a.type === "exclude");
 
-  const installAreaM2 = installAreas.reduce(
-    (sum, a) => {
-      try { return sum + computePolygonAreaM2(a.paths); }
-      catch (e) { console.error(`Area calc failed for ${a.id}:`, e); return sum; }
-    },
-    0
-  );
-  const excludeAreaM2 = excludeAreas.reduce(
-    (sum, a) => {
-      try { return sum + computePolygonAreaM2(a.paths); }
-      catch (e) { console.error(`Area calc failed for ${a.id}:`, e); return sum; }
-    },
-    0
-  );
 
   function handlePlaceSelect(location: {
     lat: number;
@@ -178,6 +155,7 @@ export default function Home() {
   }
 
   function handlePlacePanels() {
+    setPlacementError(null);
     const orientations: PanelOrientation[] = ["portrait", "landscape"];
 
     if (pixelAreas) {
@@ -205,7 +183,7 @@ export default function Home() {
         setPlacedPixelPanels(bestPanels);
       } catch (e) {
         console.error("Panel placement failed:", e);
-        setPlacedPixelPanels([]);
+        setPlacementError(t("panelPlacementFailed", lang));
       }
     } else {
       try {
@@ -228,7 +206,7 @@ export default function Home() {
         setPlacedPanelsList(bestPanels);
       } catch (e) {
         console.error("Panel placement failed:", e);
-        setPlacedPanelsList([]);
+        setPlacementError(t("panelPlacementFailed", lang));
       }
     }
   }
@@ -539,8 +517,6 @@ export default function Home() {
 
                   {/* Drawing Toolbar (polygon tools) - only when crop data exists */}
                   <DrawingToolbar
-                    cropMode={cropMode}
-                    onCropModeChange={setCropMode}
                     onClearAll={handleClearAll}
                     hasCropData={cropData !== null}
                     drawingMode={drawingMode}
@@ -567,11 +543,10 @@ export default function Home() {
                   {/* Results Panel (Action buttons + Capacity) */}
                   <ResultsPanel
                     panelCount={panelCount}
-                    installAreaM2={installAreaM2}
-                    excludeAreaM2={excludeAreaM2}
                     panelSize={panelSize}
                     orientation={orientation}
                     canPlace={canPlace}
+                    placementError={placementError}
                     onPlacePanels={handlePlacePanels}
                     onDeleteAllPanels={handleDeleteAllPanels}
                     lang={lang}
