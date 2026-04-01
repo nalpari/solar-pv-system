@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { RotateCw, RectangleHorizontal, RectangleVertical, Settings2 } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { t } from "../utils/i18n";
 import type { Lang } from "../utils/i18n";
-import type { PanelSize, PanelOrientation } from "../types";
+import type { PanelSize } from "../types";
 
 function getPresetSizes(lang: Lang): PanelSize[] {
   return [
@@ -17,11 +17,9 @@ function getPresetSizes(lang: Lang): PanelSize[] {
 
 interface PanelConfigProps {
   panelSize: PanelSize;
-  orientation: PanelOrientation;
   panelGap: number;
   edgeMargin: number;
   onPanelSizeChange: (size: PanelSize) => void;
-  onOrientationChange: (orientation: PanelOrientation) => void;
   onGapChange: (gap: number) => void;
   onMarginChange: (margin: number) => void;
   lang: Lang;
@@ -29,113 +27,85 @@ interface PanelConfigProps {
 
 export default function PanelConfig({
   panelSize,
-  orientation,
   panelGap,
   edgeMargin,
   onPanelSizeChange,
-  onOrientationChange,
   onGapChange,
   onMarginChange,
   lang,
 }: PanelConfigProps) {
-  const [selectedPreset, setSelectedPreset] = useState(3); // Custom default
-  const isCustom = selectedPreset === 3;
+  const [selectedPreset, setSelectedPreset] = useState(0);
+  const [gapSettingsOpen, setGapSettingsOpen] = useState(false);
   const presetSizes = getPresetSizes(lang);
+
+  const gapMm = Math.round(panelGap * 10);
+  const marginMm = Math.round(edgeMargin * 10);
 
   function handlePresetChange(index: number) {
     setSelectedPreset(index);
     onPanelSizeChange({ ...presetSizes[index] });
   }
 
-  const displayW = orientation === "landscape" ? panelSize.height : panelSize.width;
-  const displayH = orientation === "landscape" ? panelSize.width : panelSize.height;
-
   return (
-    <div>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-          marginBottom: 12,
-        }}
-      >
-        <Settings2 size={14} color="var(--text-tertiary)" />
+    <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+      {/* Module Selection */}
+      <div style={{ padding: "12px 16px" }}>
         <label
           style={{
-            fontSize: 11,
+            display: "block",
+            fontSize: 13,
             fontWeight: 500,
-            color: "var(--text-tertiary)",
-            textTransform: "uppercase",
-            letterSpacing: "0.05em",
-          }}
-        >
-          {t("panelConfig", lang)}
-        </label>
-      </div>
-
-      {/* Preset selector */}
-      <div style={{ marginBottom: 12 }}>
-        <div
-          style={{
-            fontSize: 12,
-            color: "var(--text-secondary)",
+            color: "var(--text-primary)",
             marginBottom: 6,
           }}
         >
-          {t("panelType", lang)}
+          {t("moduleSelect", lang)}
+          <span style={{ color: "var(--accent-red)", marginLeft: 2 }}>*</span>
+        </label>
+        <div style={{ position: "relative" }}>
+          <select
+            value={selectedPreset}
+            onChange={(e) => handlePresetChange(Number(e.target.value))}
+            style={{
+              width: "100%",
+              height: 36,
+              fontSize: 13,
+              paddingRight: 32,
+              appearance: "none",
+              background: "var(--bg-surface)",
+              border: "1px solid var(--border-primary)",
+              borderRadius: "var(--radius-md)",
+              color: "var(--text-primary)",
+              padding: "0 32px 0 12px",
+            }}
+          >
+            {presetSizes.map((preset, i) => (
+              <option key={i} value={i}>
+                {preset.label} ({preset.width} × {preset.height}mm)
+              </option>
+            ))}
+          </select>
+          <ChevronDown
+            size={14}
+            color="var(--text-tertiary)"
+            style={{
+              position: "absolute",
+              right: 10,
+              top: "50%",
+              transform: "translateY(-50%)",
+              pointerEvents: "none",
+            }}
+          />
         </div>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: 4,
-          }}
-        >
-          {presetSizes.map((preset, i) => (
-            <button
-              key={i}
-              onClick={() => handlePresetChange(i)}
-              style={{
-                padding: "6px 8px",
-                borderRadius: "var(--radius-sm)",
-                border: `1px solid ${
-                  selectedPreset === i
-                    ? "var(--accent-blue)"
-                    : "var(--border-primary)"
-                }`,
-                background:
-                  selectedPreset === i
-                    ? "var(--accent-blue-muted)"
-                    : "var(--bg-surface)",
-                color:
-                  selectedPreset === i
-                    ? "var(--accent-blue-hover)"
-                    : "var(--text-secondary)",
-                fontSize: 11,
-                fontWeight: selectedPreset === i ? 500 : 400,
-                textAlign: "center",
-                lineHeight: 1.3,
-              }}
-            >
-              {preset.label}
-              <br />
-              <span style={{ fontSize: 10, opacity: 0.7 }}>
-                {preset.width} x {preset.height}
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
 
-      {/* Custom size inputs */}
-      {isCustom && (
-        <div style={{ marginBottom: 12 }}>
+        {/* Custom size inputs */}
+        {selectedPreset === 3 && (
           <div
             style={{
               display: "grid",
               gridTemplateColumns: "1fr 1fr",
               gap: 8,
+              marginTop: 8,
             }}
           >
             <div>
@@ -161,7 +131,7 @@ export default function PanelConfig({
                 min={100}
                 max={3000}
                 step={10}
-                style={{ width: "100%", height: 36, fontSize: 13 }}
+                style={{ width: "100%", height: 34, fontSize: 13 }}
               />
             </div>
             <div>
@@ -187,217 +157,153 @@ export default function PanelConfig({
                 min={100}
                 max={5000}
                 step={10}
-                style={{ width: "100%", height: 36, fontSize: 13 }}
+                style={{ width: "100%", height: 34, fontSize: 13 }}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Gap Settings Accordion Header */}
+      <button
+        onClick={() => setGapSettingsOpen(!gapSettingsOpen)}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          width: "100%",
+          padding: "10px 16px",
+          background: "var(--bg-surface)",
+          border: "none",
+          borderTop: "1px solid var(--border-primary)",
+          borderBottom: gapSettingsOpen ? "1px solid var(--border-primary)" : "none",
+          color: "var(--text-primary)",
+          fontSize: 13,
+          fontWeight: 600,
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = "var(--bg-surface-hover)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = "var(--bg-surface)";
+        }}
+      >
+        <span>{t("sectionGapSettings", lang)}</span>
+        <ChevronDown
+          size={14}
+          style={{
+            transition: "transform 0.2s ease",
+            transform: gapSettingsOpen ? "rotate(180deg)" : "rotate(0deg)",
+          }}
+        />
+      </button>
+
+      {/* Gap Settings Content */}
+      {gapSettingsOpen && (
+        <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: 16 }}>
+          {/* Module Gap (all sides) */}
+          <div>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 8,
+              }}
+            >
+              <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
+                {t("panelGap", lang)}
+              </span>
+              <span
+                style={{
+                  fontSize: 13,
+                  color: "var(--text-primary)",
+                  fontFamily: "var(--font-geist-mono)",
+                  fontWeight: 600,
+                }}
+              >
+                {gapMm}mm
+              </span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <input
+                type="range"
+                min={0}
+                max={10}
+                step={0.5}
+                value={panelGap}
+                onChange={(e) => onGapChange(Number(e.target.value))}
+                style={{
+                  flex: 1,
+                  accentColor: "var(--accent-blue)",
+                  height: 4,
+                }}
+              />
+              <div
+                style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: "50%",
+                  background: "var(--accent-blue)",
+                  flexShrink: 0,
+                }}
+              />
+            </div>
+          </div>
+
+          <div style={{ height: 1, background: "var(--border-primary)" }} />
+
+          {/* Edge Margin */}
+          <div>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 8,
+              }}
+            >
+              <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
+                {t("edgeMargin", lang)}
+              </span>
+              <span
+                style={{
+                  fontSize: 13,
+                  color: "var(--text-primary)",
+                  fontFamily: "var(--font-geist-mono)",
+                  fontWeight: 600,
+                }}
+              >
+                {marginMm}mm
+              </span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={5}
+                value={edgeMargin}
+                onChange={(e) => onMarginChange(Number(e.target.value))}
+                style={{
+                  flex: 1,
+                  accentColor: "var(--accent-blue)",
+                  height: 4,
+                }}
+              />
+              <div
+                style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: "50%",
+                  background: "var(--accent-blue)",
+                  flexShrink: 0,
+                }}
               />
             </div>
           </div>
         </div>
       )}
-
-      {/* Orientation */}
-      <div style={{ marginBottom: 12 }}>
-        <div
-          style={{
-            fontSize: 12,
-            color: "var(--text-secondary)",
-            marginBottom: 6,
-          }}
-        >
-          {t("orientation", lang)}
-        </div>
-        <div style={{ display: "flex", gap: 4 }}>
-          <button
-            onClick={() => onOrientationChange("portrait")}
-            style={{
-              flex: 1,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 6,
-              padding: "8px 12px",
-              borderRadius: "var(--radius-md)",
-              border: `1px solid ${
-                orientation === "portrait"
-                  ? "var(--accent-blue)"
-                  : "var(--border-primary)"
-              }`,
-              background:
-                orientation === "portrait"
-                  ? "var(--accent-blue-muted)"
-                  : "var(--bg-surface)",
-              color:
-                orientation === "portrait"
-                  ? "var(--accent-blue-hover)"
-                  : "var(--text-secondary)",
-              fontSize: 12,
-              fontWeight: orientation === "portrait" ? 500 : 400,
-            }}
-          >
-            <RectangleVertical size={14} />
-            {t("portrait", lang)}
-          </button>
-          <button
-            onClick={() => onOrientationChange("landscape")}
-            style={{
-              flex: 1,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 6,
-              padding: "8px 12px",
-              borderRadius: "var(--radius-md)",
-              border: `1px solid ${
-                orientation === "landscape"
-                  ? "var(--accent-blue)"
-                  : "var(--border-primary)"
-              }`,
-              background:
-                orientation === "landscape"
-                  ? "var(--accent-blue-muted)"
-                  : "var(--bg-surface)",
-              color:
-                orientation === "landscape"
-                  ? "var(--accent-blue-hover)"
-                  : "var(--text-secondary)",
-              fontSize: 12,
-              fontWeight: orientation === "landscape" ? 500 : 400,
-            }}
-          >
-            <RectangleHorizontal size={14} />
-            {t("landscape", lang)}
-          </button>
-        </div>
-      </div>
-
-      {/* Gap control (display cm, internal mm) */}
-      <div style={{ marginBottom: 12 }}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 6,
-          }}
-        >
-          <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-            {t("panelGap", lang)}
-          </span>
-          <span
-            style={{
-              fontSize: 12,
-              color: "var(--text-primary)",
-              fontFamily: "var(--font-geist-mono)",
-              fontWeight: 500,
-            }}
-          >
-            {panelGap} cm
-          </span>
-        </div>
-        <input
-          type="range"
-          min={0}
-          max={10}
-          step={0.5}
-          value={panelGap}
-          onChange={(e) => onGapChange(Number(e.target.value))}
-          style={{
-            width: "100%",
-            accentColor: "var(--accent-blue)",
-            height: 4,
-          }}
-        />
-      </div>
-
-      {/* Edge Margin (display cm, internal mm) */}
-      <div style={{ marginBottom: 12 }}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 6,
-          }}
-        >
-          <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-            {t("edgeMargin", lang)}
-          </span>
-          <span
-            style={{
-              fontSize: 12,
-              color: "var(--text-primary)",
-              fontFamily: "var(--font-geist-mono)",
-              fontWeight: 500,
-            }}
-          >
-            {edgeMargin} cm
-          </span>
-        </div>
-        <input
-          type="range"
-          min={0}
-          max={100}
-          step={5}
-          value={edgeMargin}
-          onChange={(e) => onMarginChange(Number(e.target.value))}
-          style={{
-            width: "100%",
-            accentColor: "var(--accent-blue)",
-            height: 4,
-          }}
-        />
-      </div>
-
-      {/* Size preview */}
-      <div
-        style={{
-          padding: 12,
-          background: "var(--bg-surface)",
-          borderRadius: "var(--radius-md)",
-          border: "1px solid var(--border-primary)",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 8,
-            marginBottom: 8,
-          }}
-        >
-          <div
-            style={{
-              width: orientation === "portrait" ? 28 : 48,
-              height: orientation === "portrait" ? 48 : 28,
-              background: "var(--accent-blue-muted)",
-              border: "1.5px solid var(--accent-blue)",
-              borderRadius: 3,
-              transition: "all 0.2s ease",
-            }}
-          />
-          <RotateCw size={12} color="var(--text-tertiary)" />
-          <div
-            style={{
-              fontSize: 12,
-              color: "var(--text-secondary)",
-              fontFamily: "var(--font-geist-mono)",
-            }}
-          >
-            {displayW} x {displayH} mm
-          </div>
-        </div>
-        <div
-          style={{
-            fontSize: 11,
-            color: "var(--text-tertiary)",
-            textAlign: "center",
-          }}
-        >
-          {t(orientation === "portrait" ? "portrait" : "landscape", lang)}
-          &middot;{" "}
-          {t("perPanelPrefix", lang)}{((displayW * displayH) / 1_000_000).toFixed(2)} m&sup2;{t("perPanelSuffix", lang)}
-        </div>
-      </div>
     </div>
   );
 }

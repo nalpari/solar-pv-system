@@ -2,12 +2,14 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { APIProvider } from "@vis.gl/react-google-maps";
-import { Play, Globe } from "lucide-react";
+import { Globe, Sun, BarChart3, Crop, ChevronDown, ArrowRight, PenTool } from "lucide-react";
 import Header from "./components/Header";
 import AddressSearch from "./components/AddressSearch";
 import DrawingToolbar from "./components/DrawingToolbar";
 import PanelConfig from "./components/PanelConfig";
 import ResultsPanel from "./components/ResultsPanel";
+import SimulationPanel from "./components/SimulationPanel";
+import RoofEditToolbar from "./components/RoofEditToolbar";
 import MapView from "./components/MapView";
 import { placePanels, placePanelsOnCanvasCm } from "./utils/panelPlacement";
 import { t } from "./utils/i18n";
@@ -28,6 +30,14 @@ const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
 
 const DEFAULT_CENTER = { lat: 47.6062, lng: -122.3321 }; // Seattle
 
+type SidebarTab = "design" | "simulation";
+
+// 경사(寸) options: 0.5寸 ~ 10寸, step 0.5
+const SLOPE_OPTIONS = Array.from({ length: 20 }, (_, i) => {
+  const value = (i + 1) * 0.5;
+  return { value, label: `${value}寸` };
+});
+
 function computePolygonAreaM2(paths: { lat: number; lng: number }[]): number {
   if (paths.length < 3) return 0;
   if (typeof google === "undefined" || !google.maps?.geometry?.spherical) return 0;
@@ -38,8 +48,33 @@ function computePolygonAreaM2(paths: { lat: number; lng: number }[]): number {
   );
 }
 
+/** Section header bar component */
+function SectionHeader({ title, primary }: { title: string; primary?: boolean }) {
+  return (
+    <div
+      style={{
+        padding: "10px 16px",
+        background: primary ? "var(--accent-blue)" : "var(--bg-surface)",
+        borderTop: primary ? "none" : "1px solid var(--border-primary)",
+        borderBottom: primary ? "none" : "1px solid var(--border-primary)",
+        fontSize: 13,
+        fontWeight: 600,
+        color: primary ? "#fff" : "var(--text-primary)",
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+      }}
+    >
+      {title}
+    </div>
+  );
+}
+
 export default function Home() {
   const [lang, setLang] = useState<Lang>("ja");
+  const [activeTab, setActiveTab] = useState<SidebarTab>("design");
+  const [slope, setSlope] = useState(4); // 4寸 default
+  const [roofEditing, setRoofEditing] = useState(false);
 
   useEffect(() => {
     document.documentElement.lang = lang;
@@ -53,12 +88,12 @@ export default function Home() {
   const [areas, setAreas] = useState<PolygonArea[]>([]);
   const [panelSize, setPanelSize] = useState<PanelSize>({
     label: "Custom",
-    width: 1000,
-    height: 3000,
+    width: 991,
+    height: 1650,
   });
-  const [orientation, setOrientation] = useState<PanelOrientation>("portrait");
-  const [gapCm, setGapCm] = useState(2);      // cm 단위 (기존 20mm = 2cm)
-  const [marginCm, setMarginCm] = useState(20); // cm 단위 (기존 200mm = 20cm)
+  const [orientation] = useState<PanelOrientation>("portrait");
+  const [gapCm, setGapCm] = useState(2);
+  const [marginCm, setMarginCm] = useState(20);
   const [placedPanelsList, setPlacedPanelsList] = useState<PlacedPanel[]>([]);
   const [pixelAreas, setPixelAreas] = useState<{ areas: PixelPolygon[]; metersPerPixel: number } | null>(null);
   const [placedPixelPanels, setPlacedPixelPanels] = useState<PixelPanel[]>([]);
@@ -123,9 +158,13 @@ export default function Home() {
     setPlacedPixelPanels([]);
   }
 
+  function handleDeleteAllPanels() {
+    setPlacedPanelsList([]);
+    setPlacedPixelPanels([]);
+  }
+
   function handlePlacePanels() {
     if (pixelAreas) {
-      // Use pixel-based placement when crop data is available
       try {
         const { areas: pxAreas, metersPerPixel } = pixelAreas;
         const installPx = pxAreas.filter((a) => a.type === "install");
@@ -141,34 +180,19 @@ export default function Home() {
           metersPerPixel,
         );
         setPlacedPixelPanels(panels);
-
-        // Console log results
-        const panelAreaM2 = (panelSize.width * panelSize.height) / 1_000_000;
-        const totalPanelArea = panels.length * panelAreaM2;
-        console.log("=== Panel Placement Results ===");
-        console.log(`Total panels: ${panels.length}`);
-        console.log(`Panel size: ${panelSize.width}mm × ${panelSize.height}mm (${panelAreaM2.toFixed(3)} m²)`);
-        console.log(`Total panel area: ${totalPanelArea.toFixed(2)} m²`);
-        console.log(`Orientation: ${orientation}`);
-        console.log(`Gap: ${gapCm}cm, Margin: ${marginCm}cm`);
-        console.log(`Scale: ${metersPerPixel.toFixed(6)} m/px`);
-        console.log(`Panel in pixels: ${(panelSize.width / 1000 / metersPerPixel).toFixed(1)}px × ${(panelSize.height / 1000 / metersPerPixel).toFixed(1)}px`);
-        console.log(`Gap in pixels: ${(gapCm / 100 / metersPerPixel).toFixed(1)}px`);
-        console.log(`Margin in pixels: ${(marginCm / 100 / metersPerPixel).toFixed(1)}px`);
       } catch (e) {
         console.error("Panel placement failed:", e);
         setPlacedPixelPanels([]);
       }
     } else {
-      // Fallback to lat/lng placement
       try {
         const panels = placePanels(
           installAreas,
           excludeAreas,
           panelSize,
           orientation,
-          gapCm * 10,   // cm → mm for lat/lng version
-          marginCm * 10, // cm → mm for lat/lng version
+          gapCm * 10,
+          marginCm * 10,
         );
         setPlacedPanelsList(panels);
       } catch (e) {
@@ -181,6 +205,8 @@ export default function Home() {
   const canPlace = cropData !== null
     ? pixelAreas !== null && pixelAreas.areas.some((a) => a.type === "install")
     : installAreas.length > 0;
+
+  const panelCount = placedPixelPanels.length || placedPanelsList.length;
 
   return (
     <APIProvider
@@ -210,102 +236,367 @@ export default function Home() {
               overflow: "hidden",
             }}
           >
+            {/* Tab Navigation */}
+            <div
+              style={{
+                display: "flex",
+                borderBottom: "1px solid var(--border-primary)",
+                flexShrink: 0,
+              }}
+            >
+              <button
+                onClick={() => setActiveTab("design")}
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "14px 8px 10px",
+                  border: "none",
+                  borderBottom: activeTab === "design"
+                    ? "2px solid var(--accent-blue)"
+                    : "2px solid transparent",
+                  background: activeTab === "design"
+                    ? "var(--bg-primary)"
+                    : "var(--bg-secondary)",
+                  color: activeTab === "design"
+                    ? "var(--accent-blue)"
+                    : "var(--text-tertiary)",
+                  fontSize: 11,
+                  fontWeight: activeTab === "design" ? 600 : 400,
+                  transition: "all 0.15s ease",
+                }}
+              >
+                <div
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: "50%",
+                    background: activeTab === "design"
+                      ? "var(--accent-blue)"
+                      : "var(--bg-surface)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  <Sun
+                    size={20}
+                    color={activeTab === "design" ? "#fff" : "var(--text-tertiary)"}
+                  />
+                </div>
+                {t("tabSolarDesign", lang)}
+              </button>
+
+              <button
+                onClick={() => setActiveTab("simulation")}
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "14px 8px 10px",
+                  border: "none",
+                  borderBottom: activeTab === "simulation"
+                    ? "2px solid var(--accent-blue)"
+                    : "2px solid transparent",
+                  background: activeTab === "simulation"
+                    ? "var(--bg-primary)"
+                    : "var(--bg-secondary)",
+                  color: activeTab === "simulation"
+                    ? "var(--accent-blue)"
+                    : "var(--text-tertiary)",
+                  fontSize: 11,
+                  fontWeight: activeTab === "simulation" ? 600 : 400,
+                  transition: "all 0.15s ease",
+                }}
+              >
+                <div
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: "50%",
+                    background: activeTab === "simulation"
+                      ? "var(--accent-blue)"
+                      : "var(--bg-surface)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  <BarChart3
+                    size={20}
+                    color={activeTab === "simulation" ? "#fff" : "var(--text-tertiary)"}
+                  />
+                </div>
+                {t("tabSimulationInput", lang)}
+              </button>
+            </div>
+
+            {/* Scrollable Content */}
             <div
               style={{
                 flex: 1,
                 overflowY: "auto",
-                padding: 16,
                 display: "flex",
                 flexDirection: "column",
-                gap: 20,
               }}
             >
-              <AddressSearch onPlaceSelect={handlePlaceSelect} lang={lang} />
+              {activeTab === "design" ? (
+                <>
+                  {/* Section: 주소 검색 */}
+                  <SectionHeader title={t("searchAddress", lang)} primary />
 
+                  {/* Address Search */}
+                  <div style={{ padding: "16px 16px 12px" }}>
+                    <AddressSearch onPlaceSelect={handlePlaceSelect} lang={lang} />
+                  </div>
+
+                  {/* Confirm Building Button */}
+                  <div style={{ padding: "0 16px 12px" }}>
+                    <button
+                      onClick={() => setCropMode(!cropMode)}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 8,
+                        width: "100%",
+                        padding: "10px 16px",
+                        borderRadius: "var(--radius-md)",
+                        border: cropMode
+                          ? "1px solid var(--accent-blue)"
+                          : "1px solid var(--border-primary)",
+                        background: cropMode
+                          ? "var(--accent-blue)"
+                          : "var(--bg-surface)",
+                        color: cropMode ? "#fff" : "var(--text-primary)",
+                        fontSize: 13,
+                        fontWeight: 600,
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!cropMode) {
+                          e.currentTarget.style.background = "var(--bg-surface-hover)";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!cropMode) {
+                          e.currentTarget.style.background = "var(--bg-surface)";
+                        }
+                      }}
+                    >
+                      <Crop size={15} />
+                      {t("confirmBuilding", lang)}
+                    </button>
+                  </div>
+
+                  {/* Guide Text */}
+                  <div
+                    style={{
+                      padding: "0 16px 12px",
+                      fontSize: 11,
+                      color: "var(--text-tertiary)",
+                      lineHeight: 1.6,
+                    }}
+                  >
+                    {cropMode
+                      ? t("cropModeActive", lang)
+                      : t("confirmBuildingGuide", lang)}
+                  </div>
+
+                  {/* Section: 지붕 편집 */}
+                  <SectionHeader title={t("sectionRoofEdit", lang)} primary />
+
+                  {/* Roof Edit Toggle Button */}
+                  <div style={{ padding: "12px 16px 0" }}>
+                    <button
+                      onClick={() => cropData && setRoofEditing(!roofEditing)}
+                      disabled={!cropData}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 8,
+                        width: "100%",
+                        padding: "10px 16px",
+                        borderRadius: "var(--radius-md)",
+                        border: roofEditing
+                          ? "1px solid var(--accent-blue)"
+                          : "1px solid var(--border-primary)",
+                        background: roofEditing
+                          ? "var(--accent-blue)"
+                          : "var(--bg-surface)",
+                        color: roofEditing
+                          ? "#fff"
+                          : !cropData
+                            ? "var(--text-tertiary)"
+                            : "var(--text-primary)",
+                        fontSize: 13,
+                        fontWeight: 600,
+                        cursor: cropData ? "pointer" : "not-allowed",
+                        opacity: cropData ? 1 : 0.5,
+                        transition: "all 0.15s ease",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!roofEditing && cropData) {
+                          e.currentTarget.style.background = "var(--bg-surface-hover)";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!roofEditing && cropData) {
+                          e.currentTarget.style.background = "var(--bg-surface)";
+                        }
+                      }}
+                    >
+                      <PenTool size={15} />
+                      {roofEditing ? t("roofEditing", lang) : t("roofEditStart", lang)}
+                    </button>
+                  </div>
+
+                  {/* Slope Settings */}
+                  <div style={{ padding: "12px 16px" }}>
+                    <label
+                      style={{
+                        display: "block",
+                        fontSize: 13,
+                        fontWeight: 500,
+                        color: "var(--text-primary)",
+                        marginBottom: 6,
+                      }}
+                    >
+                      {t("slopeSettings", lang)}
+                    </label>
+                    <div style={{ position: "relative" }}>
+                      <select
+                        value={slope}
+                        onChange={(e) => setSlope(Number(e.target.value))}
+                        style={{
+                          width: "100%",
+                          height: 36,
+                          fontSize: 13,
+                          appearance: "none",
+                          background: "var(--bg-surface)",
+                          border: "1px solid var(--border-primary)",
+                          borderRadius: "var(--radius-md)",
+                          color: "var(--text-primary)",
+                          padding: "0 32px 0 12px",
+                        }}
+                      >
+                        {SLOPE_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown
+                        size={14}
+                        color="var(--text-tertiary)"
+                        style={{
+                          position: "absolute",
+                          right: 10,
+                          top: "50%",
+                          transform: "translateY(-50%)",
+                          pointerEvents: "none",
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Drawing Toolbar (polygon tools) - only when crop data exists */}
+                  <DrawingToolbar
+                    cropMode={cropMode}
+                    onCropModeChange={setCropMode}
+                    onClearAll={handleClearAll}
+                    hasCropData={cropData !== null}
+                    drawingMode={drawingMode}
+                    onDrawingModeChange={setDrawingMode}
+                    installCount={installAreas.length}
+                    excludeCount={excludeAreas.length}
+                    lang={lang}
+                  />
+
+                  {/* Section: 모듈 배치 */}
+                  <SectionHeader title={t("sectionModulePlacement", lang)} primary />
+
+                  {/* Panel Config (Module selection + Gap settings) */}
+                  <PanelConfig
+                    panelSize={panelSize}
+                    panelGap={gapCm}
+                    edgeMargin={marginCm}
+                    onPanelSizeChange={setPanelSize}
+                    onGapChange={setGapCm}
+                    onMarginChange={setMarginCm}
+                    lang={lang}
+                  />
+
+                  {/* Results Panel (Action buttons + Capacity) */}
+                  <ResultsPanel
+                    panelCount={panelCount}
+                    installAreaM2={installAreaM2}
+                    excludeAreaM2={excludeAreaM2}
+                    panelSize={panelSize}
+                    orientation={orientation}
+                    canPlace={canPlace}
+                    onPlacePanels={handlePlacePanels}
+                    onDeleteAllPanels={handleDeleteAllPanels}
+                    lang={lang}
+                  />
+                </>
+              ) : (
+                /* Simulation Tab */
+                <SimulationPanel
+                  lang={lang}
+                  onGoBack={() => setActiveTab("design")}
+                />
+              )}
+            </div>
+
+            {/* Bottom CTA Button */}
+            {activeTab === "design" && (
               <div
                 style={{
-                  height: 1,
-                  background: "var(--border-primary)",
-                }}
-              />
-
-              <DrawingToolbar
-                cropMode={cropMode}
-                onCropModeChange={setCropMode}
-                onClearAll={handleClearAll}
-                hasCropData={cropData !== null}
-                drawingMode={drawingMode}
-                onDrawingModeChange={setDrawingMode}
-                installCount={installAreas.length}
-                excludeCount={excludeAreas.length}
-                lang={lang}
-              />
-
-              <div
-                style={{
-                  height: 1,
-                  background: "var(--border-primary)",
-                }}
-              />
-
-              <PanelConfig
-                panelSize={panelSize}
-                orientation={orientation}
-                panelGap={gapCm}
-                edgeMargin={marginCm}
-                onPanelSizeChange={setPanelSize}
-                onOrientationChange={setOrientation}
-                onGapChange={setGapCm}
-                onMarginChange={setMarginCm}
-                lang={lang}
-              />
-
-              {/* Place Panels Button */}
-              <button
-                onClick={handlePlacePanels}
-                disabled={!canPlace}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 8,
-                  width: "100%",
                   padding: "12px 16px",
-                  borderRadius: "var(--radius-md)",
-                  border: "none",
-                  background: canPlace ? "var(--accent-blue)" : "var(--bg-surface)",
-                  color: canPlace ? "#fff" : "var(--text-tertiary)",
-                  fontSize: 14,
-                  fontWeight: 600,
-                  cursor: canPlace ? "pointer" : "not-allowed",
-                  opacity: canPlace ? 1 : 0.5,
+                  borderTop: "1px solid var(--border-primary)",
+                  flexShrink: 0,
                 }}
               >
-                <Play size={16} />
-                {t("placePanels", lang)}
-              </button>
-
-              <div
-                style={{
-                  height: 1,
-                  background: "var(--border-primary)",
-                }}
-              />
-
-              <ResultsPanel
-                panelCount={placedPixelPanels.length || placedPanelsList.length}
-                installAreaM2={installAreaM2}
-                excludeAreaM2={excludeAreaM2}
-                panelSize={panelSize}
-                orientation={orientation}
-                lang={lang}
-              />
-            </div>
+                <button
+                  onClick={() => setActiveTab("simulation")}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 8,
+                    width: "100%",
+                    padding: "12px 16px",
+                    borderRadius: "var(--radius-md)",
+                    border: "none",
+                    background: "var(--accent-orange)",
+                    color: "#fff",
+                    fontSize: 14,
+                    fontWeight: 600,
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "var(--accent-orange-hover)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "var(--accent-orange)";
+                  }}
+                >
+                  {t("simulationCalcInput", lang)}
+                  <ArrowRight size={16} />
+                </button>
+              </div>
+            )}
 
             {/* Sidebar footer */}
             <div
               style={{
-                padding: "10px 16px",
+                padding: "8px 16px",
                 borderTop: "1px solid var(--border-primary)",
                 fontSize: 11,
                 color: "var(--text-tertiary)",
@@ -313,6 +604,7 @@ export default function Home() {
                 alignItems: "center",
                 justifyContent: "center",
                 gap: 8,
+                flexShrink: 0,
               }}
             >
               <span>Hanwha Japan PV Simulation v0.1.0</span>
@@ -349,6 +641,13 @@ export default function Home() {
 
           {/* Map Area */}
           <main style={{ flex: 1, position: "relative" }}>
+            {/* Roof Edit Toolbar (floating over map) */}
+            {roofEditing && (
+              <RoofEditToolbar
+                lang={lang}
+                onClose={() => setRoofEditing(false)}
+              />
+            )}
             {GOOGLE_MAPS_API_KEY ? (
               <MapView
                 center={center}
