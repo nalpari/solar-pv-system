@@ -469,6 +469,7 @@ export default function Home() {
                   {/* Slope Settings */}
                   <div style={{ padding: "12px 16px" }}>
                     <label
+                      htmlFor="slope-select"
                       style={{
                         display: "block",
                         fontSize: 13,
@@ -481,6 +482,7 @@ export default function Home() {
                     </label>
                     <div style={{ position: "relative" }}>
                       <select
+                        id="slope-select"
                         value={slope}
                         onChange={(e) => setSlope(Number(e.target.value))}
                         style={{
