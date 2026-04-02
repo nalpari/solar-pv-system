@@ -88,8 +88,8 @@ export default function Home() {
     height: 1650,
   });
   const [orientation, setOrientation] = useState<PanelOrientation>("portrait");
-  const [gapCm, setGapCm] = useState(2);
-  const [marginCm, setMarginCm] = useState(20);
+  const gapCm = 0.3;
+  const marginCm = 30;
   const [placedPanelsList, setPlacedPanelsList] = useState<PlacedPanel[]>([]);
   const [pixelAreas, setPixelAreas] = useState<{ areas: PixelPolygon[]; metersPerPixel: number } | null>(null);
   const [placedPixelPanels, setPlacedPixelPanels] = useState<PixelPanel[]>([]);
@@ -531,14 +531,10 @@ export default function Home() {
                   {/* Section: 모듈 배치 */}
                   <SectionHeader title={t("sectionModulePlacement", lang)} primary />
 
-                  {/* Panel Config (Module selection + Gap settings) */}
+                  {/* Panel Config (Module selection) */}
                   <PanelConfig
                     panelSize={panelSize}
-                    panelGap={gapCm}
-                    edgeMargin={marginCm}
                     onPanelSizeChange={setPanelSize}
-                    onGapChange={setGapCm}
-                    onMarginChange={setMarginCm}
                     lang={lang}
                   />
 
