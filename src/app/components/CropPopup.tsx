@@ -290,10 +290,10 @@ export default function CropPopup({
       }
       ctx.closePath();
       ctx.fillStyle = isInstall
-        ? "rgba(6, 147, 227, 0.2)"
+        ? "rgba(51, 102, 170, 0.2)"
         : "rgba(207, 46, 46, 0.3)";
       ctx.fill();
-      ctx.strokeStyle = isSelected ? "#FFD700" : (isInstall ? "#0693E3" : "#CF2E2E");
+      ctx.strokeStyle = isSelected ? "#FFD700" : (isInstall ? "#3366AA" : "#CF2E2E");
       ctx.lineWidth = isSelected ? 4 : 2;
       ctx.stroke();
     }
@@ -342,7 +342,7 @@ export default function CropPopup({
     // Draw in-progress polygon
     if (currentPoints.length > 0) {
       const isInstall = drawingMode === "install";
-      const strokeColor = isInstall ? "#0693E3" : "#CF2E2E";
+      const strokeColor = isInstall ? "#3366AA" : "#CF2E2E";
 
       ctx.beginPath();
       ctx.moveTo(currentPoints[0].x, currentPoints[0].y);
@@ -390,8 +390,8 @@ export default function CropPopup({
         ctx.lineTo(panel.corners[i].x, panel.corners[i].y);
       }
       ctx.closePath();
-      ctx.fillStyle = "rgba(6, 147, 227, 0.5)";
-      ctx.strokeStyle = "#0693E3";
+      ctx.fillStyle = "rgba(51, 102, 170, 0.5)";
+      ctx.strokeStyle = "#3366AA";
       ctx.lineWidth = 1;
       ctx.fill();
       ctx.stroke();

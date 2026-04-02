@@ -421,7 +421,7 @@ function CropOverlay({
               top: rect.top,
               width: rect.width,
               height: rect.height,
-              border: "2px solid #0693E3",
+              border: "2px solid #3366AA",
               pointerEvents: "none",
             }}
           />
@@ -439,7 +439,7 @@ function CropOverlay({
                   top: y - 5,
                   width: 10,
                   height: 10,
-                  background: "#0693E3",
+                  background: "#3366AA",
                   border: "1px solid white",
                   borderRadius: 2,
                   pointerEvents: "none",
@@ -460,7 +460,7 @@ function CropOverlay({
               top: showAbove ? rect.top - 12 - btnH : rect.top + rect.height + 12,
               transform: "translateX(-50%)",
               padding: "8px 24px",
-              background: "#0693E3",
+              background: "#3366AA",
               color: "white",
               border: "none",
               borderRadius: "var(--radius-md)",
