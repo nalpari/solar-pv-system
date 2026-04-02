@@ -225,14 +225,11 @@ export default function Home() {
       <div
         style={{
           display: "flex",
-          flexDirection: "column",
+          flexDirection: "row",
           height: "100dvh",
           overflow: "hidden",
         }}
       >
-        <Header />
-
-        <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
           {/* Left Sidebar */}
           <aside
             style={{
@@ -245,6 +242,7 @@ export default function Home() {
               overflow: "hidden",
             }}
           >
+            <Header />
             {/* Tab Navigation */}
             <div
               style={{
@@ -520,7 +518,7 @@ export default function Home() {
                   {/* Roof image */}
                   <div style={{ padding: "0 16px 12px" }}>
                     <img
-                      src="/roof.png"
+                      src="/roof_one_line.png"
                       alt="roof"
                       style={{
                         width: "100%",
@@ -797,7 +795,6 @@ export default function Home() {
               />
             )}
           </main>
-        </div>
       </div>
     </APIProvider>
   );
