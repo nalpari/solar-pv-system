@@ -7,6 +7,14 @@ import type { Lang } from "../utils/i18n";
 import { t } from "../utils/i18n";
 import { isPointInPolygon } from "../utils/panelPlacement";
 
+/** Canvas 렌더링 시 getComputedStyle 호출을 피하기 위해 CSS 변수 값을 상수로 정의 */
+const COLOR_INSTALL = "#3366AA"; // --accent-blue
+const COLOR_INSTALL_FILL = "rgba(51, 102, 170, 0.2)";
+const COLOR_INSTALL_PANEL = "rgba(51, 102, 170, 0.5)";
+const COLOR_EXCLUDE = "#CF2E2E"; // --accent-red
+const COLOR_EXCLUDE_FILL = "rgba(207, 46, 46, 0.3)";
+const COLOR_SELECTED = "#FFD700"; // 선택 강조용 gold (VI 팔레트 --accent-yellow와 별도)
+
 interface CropPopupProps {
   cropData: CropData;
   drawingMode: DrawingMode;
@@ -290,10 +298,10 @@ export default function CropPopup({
       }
       ctx.closePath();
       ctx.fillStyle = isInstall
-        ? "rgba(6, 147, 227, 0.2)"
-        : "rgba(207, 46, 46, 0.3)";
+        ? COLOR_INSTALL_FILL
+        : COLOR_EXCLUDE_FILL;
       ctx.fill();
-      ctx.strokeStyle = isSelected ? "#FFD700" : (isInstall ? "#0693E3" : "#CF2E2E");
+      ctx.strokeStyle = isSelected ? COLOR_SELECTED : (isInstall ? COLOR_INSTALL : COLOR_EXCLUDE);
       ctx.lineWidth = isSelected ? 4 : 2;
       ctx.stroke();
     }
@@ -312,7 +320,7 @@ export default function CropPopup({
           ctx.arc(mx, my, HANDLE_VISUAL_RADIUS, 0, Math.PI * 2);
           ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
           ctx.fill();
-          ctx.strokeStyle = "#FFD700";
+          ctx.strokeStyle = COLOR_SELECTED;
           ctx.lineWidth = 1.5;
           ctx.stroke();
           // + sign
@@ -322,7 +330,7 @@ export default function CropPopup({
           ctx.lineTo(mx + s, my);
           ctx.moveTo(mx, my - s);
           ctx.lineTo(mx, my + s);
-          ctx.strokeStyle = "#FFD700";
+          ctx.strokeStyle = COLOR_SELECTED;
           ctx.lineWidth = 1.5;
           ctx.stroke();
         }
@@ -330,7 +338,7 @@ export default function CropPopup({
         for (const pt of selArea.points) {
           ctx.beginPath();
           ctx.arc(pt.x, pt.y, HANDLE_VISUAL_RADIUS, 0, Math.PI * 2);
-          ctx.fillStyle = "#FFD700";
+          ctx.fillStyle = COLOR_SELECTED;
           ctx.fill();
           ctx.strokeStyle = "#fff";
           ctx.lineWidth = 1.5;
@@ -342,7 +350,7 @@ export default function CropPopup({
     // Draw in-progress polygon
     if (currentPoints.length > 0) {
       const isInstall = drawingMode === "install";
-      const strokeColor = isInstall ? "#0693E3" : "#CF2E2E";
+      const strokeColor = isInstall ? COLOR_INSTALL : COLOR_EXCLUDE;
 
       ctx.beginPath();
       ctx.moveTo(currentPoints[0].x, currentPoints[0].y);
@@ -390,8 +398,8 @@ export default function CropPopup({
         ctx.lineTo(panel.corners[i].x, panel.corners[i].y);
       }
       ctx.closePath();
-      ctx.fillStyle = "rgba(6, 147, 227, 0.5)";
-      ctx.strokeStyle = "#0693E3";
+      ctx.fillStyle = COLOR_INSTALL_PANEL;
+      ctx.strokeStyle = COLOR_INSTALL;
       ctx.lineWidth = 1;
       ctx.fill();
       ctx.stroke();
@@ -881,7 +889,7 @@ export default function CropPopup({
             }}
           >
             <TooltipButton label={t("polygonMove", lang)} onClick={() => { setSubMode("moving"); setTooltipPos(null); }} />
-            <TooltipButton label={t("polygonDelete", lang)} color="#CF2E2E" onClick={handleDeletePolygon} />
+            <TooltipButton label={t("polygonDelete", lang)} color="var(--accent-red)" onClick={handleDeletePolygon} />
             <TooltipButton label={t("polygonEditVertices", lang)} onClick={() => { setSubMode("editing_vertices"); setTooltipPos(null); }} />
           </div>
           );

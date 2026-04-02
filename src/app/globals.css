@@ -1,37 +1,39 @@
 @import "tailwindcss";
 
 :root {
-  /* Background — Q-Cells white corporate */
+  /* Background — Hanwha Japan corporate */
   --bg-primary: #FFFFFF;
   --bg-secondary: #F7F8FA;
   --bg-surface: #F0F2F5;
   --bg-surface-hover: #E8EAEF;
   --bg-elevated: #FFFFFF;
 
-  /* Text */
-  --text-primary: #1A1A2E;
+  /* Text — Hanwha VI #333333 */
+  --text-primary: #333333;
   --text-secondary: #555555;
   --text-tertiary: #8C8C8C;
   --text-inverse: #FFFFFF;
 
-  /* Accent — Q-Cells brand palette */
-  --accent-blue: #0693E3;
-  --accent-blue-hover: #0580C9;
-  --accent-blue-muted: rgba(6, 147, 227, 0.08);
-  --accent-orange: #FCB900;
-  --accent-orange-hover: #E5A800;
-  --accent-orange-muted: rgba(252, 185, 0, 0.10);
-  --accent-green: #00D084;
-  --accent-green-hover: #00B872;
-  --accent-green-muted: rgba(0, 208, 132, 0.08);
+  /* Accent — Hanwha Japan VI palette */
+  --accent-blue: #3366AA;
+  --accent-blue-hover: #2A5590;
+  --accent-blue-muted: rgba(51, 102, 170, 0.08);
+  --accent-orange: #EE7744;
+  --accent-orange-hover: #D9663A;
+  --accent-orange-muted: rgba(238, 119, 68, 0.10);
+  --accent-green: #88BBBB;
+  --accent-green-hover: #6FA8A8;
+  --accent-green-muted: rgba(136, 187, 187, 0.08);
   --accent-red: #CF2E2E;
   --accent-red-hover: #B52525;
   --accent-red-muted: rgba(207, 46, 46, 0.08);
+  --accent-yellow: #FFEE55;
+  --accent-yellow-muted: rgba(255, 238, 85, 0.12);
 
   /* Border */
   --border-primary: rgba(0, 0, 0, 0.10);
   --border-secondary: rgba(0, 0, 0, 0.05);
-  --border-focus: #0693E3;
+  --border-focus: #3366AA;
 
   /* Misc */
   --radius-sm: 6px;
@@ -45,7 +47,7 @@
 @theme inline {
   --color-background: var(--bg-primary);
   --color-foreground: var(--text-primary);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-figtree);
   --font-mono: var(--font-geist-mono);
 }
 
@@ -56,7 +58,7 @@
 body {
   background: var(--bg-primary);
   color: var(--text-primary);
-  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  font-family: var(--font-figtree), var(--font-noto-sans-jp), system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
