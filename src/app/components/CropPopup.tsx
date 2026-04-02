@@ -12,6 +12,7 @@ const COLOR_INSTALL = "#3366AA";
 const COLOR_INSTALL_FILL = "rgba(51, 102, 170, 0.2)";
 const COLOR_INSTALL_PANEL = "rgba(51, 102, 170, 0.5)";
 const COLOR_EXCLUDE = "#CF2E2E";
+const COLOR_EXCLUDE_FILL = "rgba(207, 46, 46, 0.3)";
 const COLOR_SELECTED = "#FFD700";
 
 interface CropPopupProps {
@@ -298,7 +299,7 @@ export default function CropPopup({
       ctx.closePath();
       ctx.fillStyle = isInstall
         ? COLOR_INSTALL_FILL
-        : "rgba(207, 46, 46, 0.3)";
+        : COLOR_EXCLUDE_FILL;
       ctx.fill();
       ctx.strokeStyle = isSelected ? COLOR_SELECTED : (isInstall ? COLOR_INSTALL : COLOR_EXCLUDE);
       ctx.lineWidth = isSelected ? 4 : 2;
@@ -888,7 +889,7 @@ export default function CropPopup({
             }}
           >
             <TooltipButton label={t("polygonMove", lang)} onClick={() => { setSubMode("moving"); setTooltipPos(null); }} />
-            <TooltipButton label={t("polygonDelete", lang)} color="#CF2E2E" onClick={handleDeletePolygon} />
+            <TooltipButton label={t("polygonDelete", lang)} color="var(--accent-red)" onClick={handleDeletePolygon} />
             <TooltipButton label={t("polygonEditVertices", lang)} onClick={() => { setSubMode("editing_vertices"); setTooltipPos(null); }} />
           </div>
           );
