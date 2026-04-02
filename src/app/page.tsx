@@ -517,6 +517,19 @@ export default function Home() {
                     </div>
                   </div>
 
+                  {/* Roof image */}
+                  <div style={{ padding: "0 16px 12px" }}>
+                    <img
+                      src="/roof.png"
+                      alt="roof"
+                      style={{
+                        width: "100%",
+                        borderRadius: "var(--radius-md)",
+                        display: "block",
+                      }}
+                    />
+                  </div>
+
                   {/* Drawing Toolbar (polygon tools) - only when crop data exists */}
                   <DrawingToolbar
                     onClearAll={handleClearAll}

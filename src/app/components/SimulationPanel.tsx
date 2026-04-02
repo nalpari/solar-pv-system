@@ -47,22 +47,17 @@ interface SimulationPanelProps {
 }
 
 /** 나침반 다이어그램 SVG */
-function CompassDiagram({ direction, lang }: { direction: string; lang: Lang }) {
+function CompassDiagram({ direction }: { direction: string }) {
   const directionIndex = COMPASS_DIRECTIONS.findIndex((d) => d.value === direction);
 
-  const mainDirs = [
-    { value: "N", angle: 0 },
-    { value: "E", angle: 90 },
-    { value: "S", angle: 180 },
-    { value: "W", angle: 270 },
-  ];
-
-  const mainLabels: Record<string, Record<string, string>> = {
-    N: { ja: "北", en: "N" },
-    E: { ja: "東", en: "E" },
-    S: { ja: "南", en: "S" },
-    W: { ja: "西", en: "W" },
-  };
+  const scale = 180 / 200;
+  const indicatorPos = directionIndex >= 0 ? (() => {
+    const angle = (directionIndex * 22.5 - 90) * (Math.PI / 180);
+    return {
+      x: (100 + Math.cos(angle) * 75) * scale,
+      y: (100 + Math.sin(angle) * 75) * scale,
+    };
+  })() : null;
 
   return (
     <div
@@ -72,83 +67,29 @@ function CompassDiagram({ direction, lang }: { direction: string; lang: Lang }) 
         padding: "8px 0",
       }}
     >
-      <svg viewBox="0 0 200 200" width="180" height="180">
-        {/* Outer circle */}
-        <circle cx="100" cy="100" r="90" fill="none" stroke="var(--border-primary)" strokeWidth="1" />
-        <circle cx="100" cy="100" r="70" fill="var(--bg-surface)" stroke="var(--border-primary)" strokeWidth="0.5" />
-
-        {/* Tick marks for 16 directions */}
-        {COMPASS_DIRECTIONS.map((dir, i) => {
-          const angle = (i * 22.5 - 90) * (Math.PI / 180);
-          const x1 = 100 + Math.cos(angle) * 82;
-          const y1 = 100 + Math.sin(angle) * 82;
-          const x2 = 100 + Math.cos(angle) * 90;
-          const y2 = 100 + Math.sin(angle) * 90;
-          const isMain = i % 4 === 0;
-          return (
-            <line
-              key={dir.value}
-              x1={x1} y1={y1} x2={x2} y2={y2}
-              stroke={isMain ? "var(--text-secondary)" : "var(--border-primary)"}
-              strokeWidth={isMain ? 1.5 : 0.5}
-            />
-          );
-        })}
-
-        {/* Main direction labels */}
-        {mainDirs.map((d) => {
-          const angle = (d.angle - 90) * (Math.PI / 180);
-          const x = 100 + Math.cos(angle) * 96;
-          const y = 100 + Math.sin(angle) * 96;
-          const isSelected = direction === d.value;
-          return (
-            <text
-              key={d.value}
-              x={x} y={y}
-              textAnchor="middle"
-              dominantBaseline="central"
-              fontSize={isSelected ? 12 : 10}
-              fontWeight={isSelected ? 700 : 400}
-              fill={d.value === "S" ? "var(--accent-red)" : (d.value === "N" ? "var(--accent-red)" : "var(--text-secondary)")}
-            >
-              {mainLabels[d.value][lang]}
-            </text>
-          );
-        })}
-
-        {/* Selected direction indicator */}
-        {directionIndex >= 0 && (() => {
-          const angle = (directionIndex * 22.5 - 90) * (Math.PI / 180);
-          const x = 100 + Math.cos(angle) * 75;
-          const y = 100 + Math.sin(angle) * 75;
-          return (
-            <circle
-              cx={x} cy={y} r="5"
-              fill="var(--accent-blue)"
-            />
-          );
-        })()}
-
-        {/* Center house icon (simplified) */}
-        <rect x="80" y="82" width="40" height="30" rx="2" fill="var(--accent-orange-muted)" stroke="var(--accent-orange)" strokeWidth="0.8" />
-        <polygon points="100,72 78,88 122,88" fill="var(--accent-orange-muted)" stroke="var(--accent-orange)" strokeWidth="0.8" />
-
-        {/* Panel indicators on roof */}
-        {[0, 1, 2].map((col) => (
-          [0, 1].map((row) => (
-            <rect
-              key={`${col}-${row}`}
-              x={87 + col * 10}
-              y={76 + row * 6}
-              width={8}
-              height={5}
-              rx="0.5"
-              fill="var(--accent-blue)"
-              opacity={0.7}
-            />
-          ))
-        ))}
-      </svg>
+      <div style={{ position: "relative", width: 180, height: 180 }}>
+        <img
+          src="/compass.png"
+          alt="compass"
+          width={180}
+          height={180}
+          style={{ display: "block", width: 180, height: 180 }}
+        />
+        {indicatorPos && (
+          <div
+            style={{
+              position: "absolute",
+              left: indicatorPos.x - 5,
+              top: indicatorPos.y - 5,
+              width: 10,
+              height: 10,
+              borderRadius: "50%",
+              background: "var(--accent-blue)",
+              pointerEvents: "none",
+            }}
+          />
+        )}
+      </div>
     </div>
   );
 }
@@ -249,7 +190,7 @@ export default function SimulationPanel({ lang, formState, onFormChange, onGoBac
           </div>
 
           {/* Compass Diagram */}
-          <CompassDiagram direction={azimuth} lang={lang} />
+          <CompassDiagram direction={azimuth} />
         </div>
 
         <div style={{ height: 1, background: "var(--border-primary)" }} />
