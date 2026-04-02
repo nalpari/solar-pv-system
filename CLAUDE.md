@@ -21,7 +21,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **html2canvas** for map tile capture
 - **lucide-react** for icons
 - Path alias: `@/*` maps to `./src/*`
-- Fonts: Geist Sans + Geist Mono (via `next/font/google`)
+- Fonts: Figtree + Noto Sans JP + Geist Mono (via `next/font/google`)
 
 ## Architecture
 

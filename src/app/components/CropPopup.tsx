@@ -7,6 +7,13 @@ import type { Lang } from "../utils/i18n";
 import { t } from "../utils/i18n";
 import { isPointInPolygon } from "../utils/panelPlacement";
 
+/** Canvas API에서 CSS 변수를 직접 참조할 수 없으므로 상수로 정의 */
+const COLOR_INSTALL = "#3366AA";
+const COLOR_INSTALL_FILL = "rgba(51, 102, 170, 0.2)";
+const COLOR_INSTALL_PANEL = "rgba(51, 102, 170, 0.5)";
+const COLOR_EXCLUDE = "#CF2E2E";
+const COLOR_SELECTED = "#FFD700";
+
 interface CropPopupProps {
   cropData: CropData;
   drawingMode: DrawingMode;
@@ -290,10 +297,10 @@ export default function CropPopup({
       }
       ctx.closePath();
       ctx.fillStyle = isInstall
-        ? "rgba(51, 102, 170, 0.2)"
+        ? COLOR_INSTALL_FILL
         : "rgba(207, 46, 46, 0.3)";
       ctx.fill();
-      ctx.strokeStyle = isSelected ? "#FFD700" : (isInstall ? "#3366AA" : "#CF2E2E");
+      ctx.strokeStyle = isSelected ? COLOR_SELECTED : (isInstall ? COLOR_INSTALL : COLOR_EXCLUDE);
       ctx.lineWidth = isSelected ? 4 : 2;
       ctx.stroke();
     }
@@ -312,7 +319,7 @@ export default function CropPopup({
           ctx.arc(mx, my, HANDLE_VISUAL_RADIUS, 0, Math.PI * 2);
           ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
           ctx.fill();
-          ctx.strokeStyle = "#FFD700";
+          ctx.strokeStyle = COLOR_SELECTED;
           ctx.lineWidth = 1.5;
           ctx.stroke();
           // + sign
@@ -322,7 +329,7 @@ export default function CropPopup({
           ctx.lineTo(mx + s, my);
           ctx.moveTo(mx, my - s);
           ctx.lineTo(mx, my + s);
-          ctx.strokeStyle = "#FFD700";
+          ctx.strokeStyle = COLOR_SELECTED;
           ctx.lineWidth = 1.5;
           ctx.stroke();
         }
@@ -330,7 +337,7 @@ export default function CropPopup({
         for (const pt of selArea.points) {
           ctx.beginPath();
           ctx.arc(pt.x, pt.y, HANDLE_VISUAL_RADIUS, 0, Math.PI * 2);
-          ctx.fillStyle = "#FFD700";
+          ctx.fillStyle = COLOR_SELECTED;
           ctx.fill();
           ctx.strokeStyle = "#fff";
           ctx.lineWidth = 1.5;
@@ -342,7 +349,7 @@ export default function CropPopup({
     // Draw in-progress polygon
     if (currentPoints.length > 0) {
       const isInstall = drawingMode === "install";
-      const strokeColor = isInstall ? "#3366AA" : "#CF2E2E";
+      const strokeColor = isInstall ? COLOR_INSTALL : COLOR_EXCLUDE;
 
       ctx.beginPath();
       ctx.moveTo(currentPoints[0].x, currentPoints[0].y);
@@ -390,8 +397,8 @@ export default function CropPopup({
         ctx.lineTo(panel.corners[i].x, panel.corners[i].y);
       }
       ctx.closePath();
-      ctx.fillStyle = "rgba(51, 102, 170, 0.5)";
-      ctx.strokeStyle = "#3366AA";
+      ctx.fillStyle = COLOR_INSTALL_PANEL;
+      ctx.strokeStyle = COLOR_INSTALL;
       ctx.lineWidth = 1;
       ctx.fill();
       ctx.stroke();
