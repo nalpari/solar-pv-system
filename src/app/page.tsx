@@ -37,6 +37,9 @@ type SidebarTab = "design" | "simulation";
 // 경사 options: 0.5 ~ 10, step 0.5
 const SLOPE_OPTIONS = Array.from({ length: 20 }, (_, i) => (i + 1) * 0.5);
 
+const GAP_CM = 0.3; // 모듈 간격 3mm
+const MARGIN_CM = 30; // 외곽 여백 300mm
+
 /** Section header bar component */
 function SectionHeader({ title, primary }: { title: string; primary?: boolean }) {
   return (
@@ -88,8 +91,6 @@ export default function Home() {
     height: 1650,
   });
   const [orientation, setOrientation] = useState<PanelOrientation>("portrait");
-  const [gapCm, setGapCm] = useState(2);
-  const [marginCm, setMarginCm] = useState(20);
   const [placedPanelsList, setPlacedPanelsList] = useState<PlacedPanel[]>([]);
   const [pixelAreas, setPixelAreas] = useState<{ areas: PixelPolygon[]; metersPerPixel: number } | null>(null);
   const [placedPixelPanels, setPlacedPixelPanels] = useState<PixelPanel[]>([]);
@@ -97,7 +98,6 @@ export default function Home() {
 
   const installAreas = areas.filter((a) => a.type === "install");
   const excludeAreas = areas.filter((a) => a.type === "exclude");
-
 
   function handlePlaceSelect(location: {
     lat: number;
@@ -171,7 +171,7 @@ export default function Home() {
           const panels = placePanelsOnCanvasCm(
             installPx, excludePx,
             panelSize.width, panelSize.height,
-            ori, gapCm, marginCm, metersPerPixel,
+            ori, GAP_CM, MARGIN_CM, metersPerPixel,
           );
           if (panels.length > bestPanels.length) {
             bestPanels = panels;
@@ -194,7 +194,7 @@ export default function Home() {
           const panels = placePanels(
             installAreas, excludeAreas,
             panelSize, ori,
-            gapCm * 10, marginCm * 10,
+            GAP_CM * 10, MARGIN_CM * 10,
           );
           if (panels.length > bestPanels.length) {
             bestPanels = panels;
@@ -531,14 +531,10 @@ export default function Home() {
                   {/* Section: 모듈 배치 */}
                   <SectionHeader title={t("sectionModulePlacement", lang)} primary />
 
-                  {/* Panel Config (Module selection + Gap settings) */}
+                  {/* Panel Config (Module selection) */}
                   <PanelConfig
                     panelSize={panelSize}
-                    panelGap={gapCm}
-                    edgeMargin={marginCm}
                     onPanelSizeChange={setPanelSize}
-                    onGapChange={setGapCm}
-                    onMarginChange={setMarginCm}
                     lang={lang}
                   />
 
