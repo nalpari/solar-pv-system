@@ -6,7 +6,6 @@ import { t } from "../utils/i18n";
 import type { Lang } from "../utils/i18n";
 import type { PanelSize } from "../types";
 
-
 function getPresetSizes(lang: Lang): PanelSize[] {
   return [
     { label: t("preset60Cell", lang), width: 991, height: 1650 },
@@ -152,7 +151,6 @@ export default function PanelConfig({
           </div>
         )}
       </div>
-
     </div>
   );
 }
