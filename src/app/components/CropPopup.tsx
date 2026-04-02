@@ -7,13 +7,13 @@ import type { Lang } from "../utils/i18n";
 import { t } from "../utils/i18n";
 import { isPointInPolygon } from "../utils/panelPlacement";
 
-/** Canvas API에서 CSS 변수를 직접 참조할 수 없으므로 상수로 정의 */
-const COLOR_INSTALL = "#3366AA";
+/** Canvas 렌더링 시 getComputedStyle 호출을 피하기 위해 CSS 변수 값을 상수로 정의 */
+const COLOR_INSTALL = "#3366AA"; // --accent-blue
 const COLOR_INSTALL_FILL = "rgba(51, 102, 170, 0.2)";
 const COLOR_INSTALL_PANEL = "rgba(51, 102, 170, 0.5)";
-const COLOR_EXCLUDE = "#CF2E2E";
+const COLOR_EXCLUDE = "#CF2E2E"; // --accent-red
 const COLOR_EXCLUDE_FILL = "rgba(207, 46, 46, 0.3)";
-const COLOR_SELECTED = "#FFD700";
+const COLOR_SELECTED = "#FFD700"; // 선택 강조용 gold (VI 팔레트 --accent-yellow와 별도)
 
 interface CropPopupProps {
   cropData: CropData;
