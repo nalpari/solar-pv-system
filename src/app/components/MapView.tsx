@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Map, useMap } from "@vis.gl/react-google-maps";
 import html2canvas from "html2canvas";
-import { ZoomIn, ZoomOut, Layers, Maximize2 } from "lucide-react";
 import { t } from "../utils/i18n";
 import type { Lang } from "../utils/i18n";
 import type { CropData } from "../types";
@@ -19,66 +18,6 @@ interface MapViewProps {
 
 const MAP_ID = "solar-pv-map";
 
-/** 지도 줌/위성/재중심 컨트롤 버튼 모음 */
-function MapControls({ center, lang }: { center: { lat: number; lng: number }; lang: Lang }) {
-  const map = useMap(MAP_ID);
-
-  /** 지도 줌 인 */
-  const handleZoomIn = () => map?.setZoom((map.getZoom() || 18) + 1);
-  /** 지도 줌 아웃 */
-  const handleZoomOut = () => map?.setZoom((map.getZoom() || 18) - 1);
-  /** 지도를 지정된 중심 좌표로 재이동 */
-  const handleRecenter = () => {
-    if (map) map.panTo(center);
-  };
-  /** 위성/로드맵 지도 타입 토글 */
-  const handleSatellite = () => {
-    const current = map?.getMapTypeId();
-    map?.setMapTypeId(current === "satellite" ? "roadmap" : "satellite");
-  };
-
-  const btnStyle = {
-    width: 36,
-    height: 36,
-    display: "flex" as const,
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
-    background: "rgba(255, 255, 255, 0.9)",
-    border: "1px solid var(--border-primary)",
-    borderRadius: "var(--radius-md)",
-    color: "var(--text-secondary)",
-    cursor: "pointer" as const,
-    transition: "all 0.15s ease",
-    backdropFilter: "blur(8px)",
-  };
-
-  return (
-    <div
-      style={{
-        position: "absolute",
-        right: 12,
-        top: 12,
-        display: "flex",
-        flexDirection: "column",
-        gap: 4,
-        zIndex: 10,
-      }}
-    >
-      <button onClick={handleZoomIn} style={btnStyle} aria-label={t("zoomIn", lang)}>
-        <ZoomIn size={16} />
-      </button>
-      <button onClick={handleZoomOut} style={btnStyle} aria-label={t("zoomOut", lang)}>
-        <ZoomOut size={16} />
-      </button>
-      <button onClick={handleSatellite} style={btnStyle} aria-label={t("toggleSatellite", lang)}>
-        <Layers size={16} />
-      </button>
-      <button onClick={handleRecenter} style={btnStyle} aria-label={t("recenterMap", lang)}>
-        <Maximize2 size={16} />
-      </button>
-    </div>
-  );
-}
 
 /** 중심 좌표 변경 시 지도를 부드럽게 이동시키는 컴포넌트 */
 function CenterUpdater({ center }: { center: { lat: number; lng: number } }) {
@@ -504,7 +443,6 @@ export default function MapView({
         <CenterUpdater center={center} />
       </Map>
 
-      <MapControls center={center} lang={lang} />
 
       <CropOverlay
         active={cropMode}
@@ -513,25 +451,20 @@ export default function MapView({
         lang={lang}
       />
 
-      {/* Coordinates display */}
-      <div
+      {/* Center pin overlay — 크롭 모드 및 팝업 표시 중에는 숨김 */}
+      {!cropMode && !locked && <div
         style={{
           position: "absolute",
-          bottom: 12,
-          left: 12,
-          padding: "6px 10px",
-          background: "rgba(255, 255, 255, 0.9)",
-          borderRadius: "var(--radius-sm)",
-          border: "1px solid var(--border-primary)",
-          color: "var(--text-tertiary)",
-          fontSize: 11,
-          fontFamily: "var(--font-geist-mono)",
-          backdropFilter: "blur(8px)",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -100%)",
+          pointerEvents: "none",
           zIndex: 10,
         }}
       >
-        {center.lat.toFixed(6)}, {center.lng.toFixed(6)}
-      </div>
+        <img src="/map-point.svg" alt="" width={40} height={56} style={{ opacity: 0.9 }} />
+      </div>}
+
     </div>
   );
 }
