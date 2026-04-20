@@ -9,6 +9,7 @@ import type { CropData } from "../types";
 
 interface MapViewProps {
   center: { lat: number; lng: number };
+  viewport?: google.maps.LatLngBounds | null;
   cropMode: boolean;
   locked: boolean;
   onCropComplete: (cropData: CropData) => void;
@@ -19,8 +20,14 @@ interface MapViewProps {
 const MAP_ID = "solar-pv-map";
 
 
-/** 중심 좌표 변경 시 지도를 부드럽게 이동시키는 컴포넌트 */
-function CenterUpdater({ center }: { center: { lat: number; lng: number } }) {
+/** 중심 좌표 또는 viewport 변경 시 지도 뷰를 조정 (viewport 우선, 없으면 panTo) */
+function ViewUpdater({
+  center,
+  viewport,
+}: {
+  center: { lat: number; lng: number };
+  viewport?: google.maps.LatLngBounds | null;
+}) {
   const map = useMap(MAP_ID);
   const isFirst = useRef(true);
 
@@ -30,9 +37,13 @@ function CenterUpdater({ center }: { center: { lat: number; lng: number } }) {
       isFirst.current = false;
       return;
     }
-    map.panTo(center);
+    if (viewport) {
+      map.fitBounds(viewport);
+    } else {
+      map.panTo(center);
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps -- center object reference changes on every render; lat/lng are stable
-  }, [map, center.lat, center.lng]);
+  }, [map, center.lat, center.lng, viewport]);
 
   return null;
 }
@@ -422,6 +433,7 @@ function CropOverlay({
 /** 위성 지도 및 크롭 오버레이를 포함하는 메인 지도 컴포넌트 */
 export default function MapView({
   center,
+  viewport,
   cropMode,
   locked,
   onCropComplete,
@@ -440,7 +452,7 @@ export default function MapView({
         gestureHandling={locked ? "none" : "greedy"}
         style={{ width: "100%", height: "100%" }}
       >
-        <CenterUpdater center={center} />
+        <ViewUpdater center={center} viewport={viewport} />
       </Map>
 
 

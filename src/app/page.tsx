@@ -80,6 +80,7 @@ export default function Home() {
   }, [lang]);
 
   const [center, setCenter] = useState(DEFAULT_CENTER);
+  const [viewport, setViewport] = useState<google.maps.LatLngBounds | null>(null);
   const [cropMode, setCropMode] = useState(false);
   const [cropData, setCropData] = useState<CropData | null>(null);
   const [address, setAddress] = useState("");
@@ -103,9 +104,11 @@ export default function Home() {
     lat: number;
     lng: number;
     address: string;
+    viewport?: google.maps.LatLngBounds;
   }) {
     setCenter({ lat: location.lat, lng: location.lng });
     setAddress(location.address);
+    setViewport(location.viewport ?? null);
   }
 
   const handleCropComplete = useCallback((data: CropData) => {
@@ -681,6 +684,7 @@ export default function Home() {
             {GOOGLE_MAPS_API_KEY ? (
               <MapView
                 center={center}
+                viewport={viewport}
                 cropMode={cropMode}
                 locked={cropData !== null}
                 onCropComplete={handleCropComplete}

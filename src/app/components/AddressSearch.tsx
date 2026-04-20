@@ -6,7 +6,12 @@ import { t } from "../utils/i18n";
 import type { Lang } from "../utils/i18n";
 
 interface AddressSearchProps {
-  onPlaceSelect: (location: { lat: number; lng: number; address: string }) => void;
+  onPlaceSelect: (location: {
+    lat: number;
+    lng: number;
+    address: string;
+    viewport?: google.maps.LatLngBounds;
+  }) => void;
   lang: Lang;
 }
 
@@ -97,6 +102,7 @@ export default function AddressSearch({ onPlaceSelect, lang }: AddressSearchProp
             lat: place.geometry.location.lat(),
             lng: place.geometry.location.lng(),
             address: place.formatted_address || prediction.description,
+            viewport: place.geometry.viewport,
           });
         } else {
           console.error("Places getDetails failed:", status);
