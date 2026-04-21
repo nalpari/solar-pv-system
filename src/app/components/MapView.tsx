@@ -48,6 +48,37 @@ function ViewUpdater({
   return null;
 }
 
+/** 휠 줌의 기준점을 커서 위치가 아닌 지도 중심으로 변경 */
+function WheelZoomController() {
+  const map = useMap(MAP_ID);
+  const accumRef = useRef(0);
+  const ZOOM_THRESHOLD = 50;
+
+  useEffect(() => {
+    if (!map) return;
+    const div = map.getDiv();
+    if (!div) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      accumRef.current += e.deltaY;
+      if (Math.abs(accumRef.current) >= ZOOM_THRESHOLD) {
+        const currentZoom = map.getZoom() ?? 18;
+        const direction = accumRef.current > 0 ? -1 : 1;
+        map.setZoom(currentZoom + direction);
+        accumRef.current = 0;
+      }
+    };
+
+    div.addEventListener("wheel", handleWheel, { passive: false });
+    return () => {
+      div.removeEventListener("wheel", handleWheel);
+    };
+  }, [map]);
+
+  return null;
+}
+
 type DragTarget = "move" | "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw" | null;
 
 const HANDLE_SIZE = 12;
@@ -450,9 +481,11 @@ export default function MapView({
         tilt={0}
         disableDefaultUI
         gestureHandling={locked ? "none" : "greedy"}
+        scrollwheel={false}
         style={{ width: "100%", height: "100%" }}
       >
         <ViewUpdater center={center} viewport={viewport} />
+        <WheelZoomController />
       </Map>
 
 
