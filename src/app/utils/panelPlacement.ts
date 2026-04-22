@@ -260,17 +260,25 @@ export function placePanelsOnCanvas(
     const inset = insetPolygon(localPoly, marginPx);
     if (inset.length < 3) continue;
 
-    // Find longest edge of the original polygon for alignment
-    let maxLen = 0;
+    // Determine reference edge angle: use eaveEdgeIndex if provided, else longest edge
     let angle = 0;
-    for (let i = 0; i < localPoly.length; i++) {
+    if (typeof area.eaveEdgeIndex === "number" && area.eaveEdgeIndex >= 0 && area.eaveEdgeIndex < localPoly.length) {
+      const i = area.eaveEdgeIndex;
       const j = (i + 1) % localPoly.length;
       const dx = localPoly[j].x - localPoly[i].x;
       const dy = localPoly[j].y - localPoly[i].y;
-      const len = Math.sqrt(dx * dx + dy * dy);
-      if (len > maxLen) {
-        maxLen = len;
-        angle = Math.atan2(dy, dx);
+      angle = Math.atan2(dy, dx);
+    } else {
+      let maxLen = 0;
+      for (let i = 0; i < localPoly.length; i++) {
+        const j = (i + 1) % localPoly.length;
+        const dx = localPoly[j].x - localPoly[i].x;
+        const dy = localPoly[j].y - localPoly[i].y;
+        const len = Math.sqrt(dx * dx + dy * dy);
+        if (len > maxLen) {
+          maxLen = len;
+          angle = Math.atan2(dy, dx);
+        }
       }
     }
 

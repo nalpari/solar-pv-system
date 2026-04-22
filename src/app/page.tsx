@@ -149,6 +149,14 @@ export default function Home() {
     setPlacedPixelPanels([]);
   }
 
+  /** 특정 폴리곤의 처마 기준선이 변경되면 해당 폴리곤 위 패널만 삭제 (현재는 전체 초기화) */
+  const handleEaveChange = useCallback(() => {
+    // 현재 PixelPanel 구조에 polygon 연결 정보가 없어 전체 초기화로 처리
+    // TODO: 폴리곤별 패널 연결 정보를 PixelPanel에 추가하면 해당 폴리곤만 선택적 삭제 가능
+    setPlacedPanelsList([]);
+    setPlacedPixelPanels([]);
+  }, []);
+
   function switchToSimulation() {
     setCropMode(false);
     setRoofEditing(false);
@@ -796,6 +804,8 @@ export default function Home() {
                 placedPanels={placedPixelPanels}
                 onClose={handleCropClose}
                 lang={lang}
+                roofEditTool={roofEditing ? roofEditTool : undefined}
+                onEaveChange={handleEaveChange}
               />
             )}
           </main>

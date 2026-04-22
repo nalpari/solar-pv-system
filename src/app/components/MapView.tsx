@@ -485,7 +485,7 @@ export default function MapView({
         style={{ width: "100%", height: "100%" }}
       >
         <ViewUpdater center={center} viewport={viewport} />
-        <WheelZoomController />
+        {!locked && !cropMode && <WheelZoomController />}
       </Map>
 
 

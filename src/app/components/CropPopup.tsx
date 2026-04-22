@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { X, Download, Undo2 } from "lucide-react";
 import type { CropData, CropBounds, DrawingMode, LatLng, PolygonArea, PixelPanel, PixelPolygon, PixelPoint, PolygonSubMode } from "../types";
 import type { Lang } from "../utils/i18n";
+import type { RoofTool } from "./RoofEditToolbar";
 import { t } from "../utils/i18n";
 import { isPointInPolygon } from "../utils/panelPlacement";
 
@@ -14,6 +15,7 @@ const COLOR_INSTALL_PANEL = "rgba(51, 102, 170, 0.5)";
 const COLOR_EXCLUDE = "#CF2E2E"; // --accent-red
 const COLOR_EXCLUDE_FILL = "rgba(207, 46, 46, 0.3)";
 const COLOR_SELECTED = "#FFD700"; // 선택 강조용 gold (VI 팔레트 --accent-yellow와 별도)
+const COLOR_EAVE = "#FF8A00"; // 처마(흐름방향) 기준변 하이라이트 color
 
 interface CropPopupProps {
   cropData: CropData;
@@ -23,12 +25,48 @@ interface CropPopupProps {
   placedPanels: PixelPanel[];
   onClose: () => void;
   lang: Lang;
+  /** 지붕 편집 툴바 활성 도구 (현재는 flowSetting만 사용) */
+  roofEditTool?: RoofTool;
+  /** 특정 폴리곤의 처마 기준선이 변경되었을 때 해당 폴리곤 위 패널 삭제 요청 */
+  onEaveChange?: (polygonId: string) => void;
 }
 
 interface AreaEntry {
   id: string;
   type: "install" | "exclude";
   points: PixelPoint[];
+  /** 처마(흐름방향) 기준변 인덱스 - points[i] → points[i+1] */
+  eaveEdgeIndex?: number;
+}
+
+/** 가장 긴 변의 인덱스를 반환 (i → i+1 기준) */
+function findLongestEdgeIndex(points: PixelPoint[]): number {
+  let maxLen = 0;
+  let idx = 0;
+  for (let i = 0; i < points.length; i++) {
+    const j = (i + 1) % points.length;
+    const dx = points[j].x - points[i].x;
+    const dy = points[j].y - points[i].y;
+    const len = Math.hypot(dx, dy);
+    if (len > maxLen) {
+      maxLen = len;
+      idx = i;
+    }
+  }
+  return idx;
+}
+
+/** 점 pt에서 선분 p1-p2까지의 거리 */
+function distanceToSegment(pt: PixelPoint, p1: PixelPoint, p2: PixelPoint): number {
+  const dx = p2.x - p1.x;
+  const dy = p2.y - p1.y;
+  const lenSq = dx * dx + dy * dy;
+  if (lenSq === 0) return Math.hypot(pt.x - p1.x, pt.y - p1.y);
+  let t = ((pt.x - p1.x) * dx + (pt.y - p1.y) * dy) / lenSq;
+  t = Math.max(0, Math.min(1, t));
+  const projX = p1.x + t * dx;
+  const projY = p1.y + t * dy;
+  return Math.hypot(pt.x - projX, pt.y - projY);
 }
 
 /** 캔버스 픽셀 좌표를 위경도(LatLng)로 변환한다 */
@@ -62,6 +100,7 @@ function convertAreas(
       paths: area.points.map((pt) =>
         pixelToLatLng(pt.x, pt.y, canvasWidth, canvasHeight, bounds),
       ),
+      eaveEdgeIndex: area.eaveEdgeIndex,
     }));
 }
 
@@ -73,6 +112,7 @@ function convertToPixelPolygons(entries: AreaEntry[]): PixelPolygon[] {
       id: area.id,
       type: area.type,
       points: area.points.map((pt) => ({ x: pt.x, y: pt.y })),
+      eaveEdgeIndex: area.eaveEdgeIndex,
     }));
 }
 
@@ -116,6 +156,8 @@ export default function CropPopup({
   placedPanels,
   onClose,
   lang,
+  roofEditTool,
+  onEaveChange,
 }: CropPopupProps) {
   const [areas, setAreas] = useState<AreaEntry[]>([]);
   const [currentPoints, setCurrentPoints] = useState<PixelPoint[]>([]);
@@ -304,6 +346,21 @@ export default function CropPopup({
       ctx.strokeStyle = isSelected ? COLOR_SELECTED : (isInstall ? COLOR_INSTALL : COLOR_EXCLUDE);
       ctx.lineWidth = isSelected ? 4 : 2;
       ctx.stroke();
+
+      // 처마(eave) 기준변 하이라이트 — install 폴리곤만
+      if (isInstall && typeof area.eaveEdgeIndex === "number") {
+        const i = area.eaveEdgeIndex;
+        if (i >= 0 && i < area.points.length) {
+          const p1 = area.points[i];
+          const p2 = area.points[(i + 1) % area.points.length];
+          ctx.beginPath();
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.strokeStyle = COLOR_EAVE;
+          ctx.lineWidth = 4;
+          ctx.stroke();
+        }
+      }
     }
 
     // Draw vertex handles when editing_vertices
@@ -423,6 +480,36 @@ export default function CropPopup({
     const pt = getCanvasCoords(e);
 
     // Selection / move / vertex editing mode
+    // 흐름설정(처마 기준선 변경) 모드: 가장 가까운 변을 찾아 eaveEdgeIndex 업데이트
+    if (roofEditTool === "flowSetting") {
+      const EDGE_HIT_THRESHOLD = 15;
+      for (let ai = areas.length - 1; ai >= 0; ai--) {
+        const area = areas[ai];
+        if (area.type !== "install" || area.points.length < 3) continue;
+        let bestDist = Infinity;
+        let bestIdx = -1;
+        for (let i = 0; i < area.points.length; i++) {
+          const p1 = area.points[i];
+          const p2 = area.points[(i + 1) % area.points.length];
+          const d = distanceToSegment(pt, p1, p2);
+          if (d < bestDist) {
+            bestDist = d;
+            bestIdx = i;
+          }
+        }
+        if (bestIdx >= 0 && bestDist <= EDGE_HIT_THRESHOLD && area.eaveEdgeIndex !== bestIdx) {
+          const updated = areas.map((a) =>
+            a.id === area.id ? { ...a, eaveEdgeIndex: bestIdx } : a,
+          );
+          setAreas(updated);
+          notifyParent(updated);
+          onEaveChange?.(area.id);
+          return;
+        }
+      }
+      return;
+    }
+
     if (drawingMode === null) {
       if (subMode === "idle") {
         // Check if click is inside any polygon (last to first for z-order)
@@ -497,11 +584,19 @@ export default function CropPopup({
                 const newPoints = [...selArea.points];
                 newPoints.splice(insertIdx, 0, { x: mx, y: my });
                 const updated = areas.map((a) =>
-                  a.id === selectedPolygonId ? { ...a, points: newPoints } : a,
+                  a.id === selectedPolygonId
+                    ? {
+                        ...a,
+                        points: newPoints,
+                        // 꼭짓점 편집 시 기준선을 가장 긴 변으로 자동 리셋 (install만)
+                        eaveEdgeIndex: a.type === "install" ? findLongestEdgeIndex(newPoints) : undefined,
+                      }
+                    : a,
                 );
                 setAreas(updated);
                 setDraggingVertexIdx(insertIdx);
                 e.currentTarget.setPointerCapture(e.pointerId);
+                onEaveChange?.(selectedPolygonId);
                 return;
               }
             }
@@ -527,10 +622,13 @@ export default function CropPopup({
       const first = currentPoints[0];
       const dist = Math.hypot(pt.x - first.x, pt.y - first.y);
       if (dist <= 10) {
+        const closedPoints = [...currentPoints];
         const newArea: AreaEntry = {
           id: crypto.randomUUID(),
           type: drawingMode,
-          points: [...currentPoints],
+          points: closedPoints,
+          // install 타입만 eaveEdgeIndex 기본값(가장 긴 변) 설정
+          eaveEdgeIndex: drawingMode === "install" ? findLongestEdgeIndex(closedPoints) : undefined,
         };
         const updated = [...areas, newArea];
         setAreas(updated);
@@ -636,7 +734,16 @@ export default function CropPopup({
     // End vertex drag
     if (subMode === "editing_vertices" && draggingVertexIdx !== null) {
       setDraggingVertexIdx(null);
-      notifyParent(areasRef.current);
+      // 꼭짓점 이동 완료 시 기준선을 가장 긴 변으로 자동 리셋 (install만)
+      const movedId = selectedPolygonId;
+      const resetAreas = areasRef.current.map((a) =>
+        a.id === movedId && a.type === "install"
+          ? { ...a, eaveEdgeIndex: findLongestEdgeIndex(a.points) }
+          : a,
+      );
+      setAreas(resetAreas);
+      notifyParent(resetAreas);
+      if (movedId) onEaveChange?.(movedId);
       return;
     }
   }
@@ -670,8 +777,16 @@ export default function CropPopup({
     } else {
       const newPoints = selArea.points.filter((_, i) => i !== vertexIdx);
       updated = currentAreas.map((a) =>
-        a.id === selectedPolygonId ? { ...a, points: newPoints } : a,
+        a.id === selectedPolygonId
+          ? {
+              ...a,
+              points: newPoints,
+              // 꼭짓점 편집 시 기준선을 가장 긴 변으로 자동 리셋 (install만)
+              eaveEdgeIndex: a.type === "install" ? findLongestEdgeIndex(newPoints) : undefined,
+            }
+          : a,
       );
+      onEaveChange?.(selectedPolygonId);
     }
     setAreas(updated);
     notifyParent(updated);
