@@ -5,7 +5,6 @@ import { APIProvider } from "@vis.gl/react-google-maps";
 import { Globe, Sun, BarChart3, Crop, ChevronDown, ArrowRight, PenTool } from "lucide-react";
 import Header from "./components/Header";
 import AddressSearch from "./components/AddressSearch";
-import DrawingToolbar from "./components/DrawingToolbar";
 import PanelConfig from "./components/PanelConfig";
 import ResultsPanel from "./components/ResultsPanel";
 import SimulationPanel from "./components/SimulationPanel";
@@ -84,7 +83,8 @@ export default function Home() {
   const [cropMode, setCropMode] = useState(false);
   const [cropData, setCropData] = useState<CropData | null>(null);
   const [address, setAddress] = useState("");
-  const [drawingMode, setDrawingMode] = useState<DrawingMode>(null);
+  // drawingMode는 roofEditTool에서 파생 (drawRoof → install, drawOpening → exclude, 그 외 → null)
+  const [undoSignal, setUndoSignal] = useState(0);
   const [areas, setAreas] = useState<PolygonArea[]>([]);
   const [panelSize, setPanelSize] = useState<PanelSize>({
     label: "Custom",
@@ -99,6 +99,14 @@ export default function Home() {
 
   const installAreas = areas.filter((a) => a.type === "install");
   const excludeAreas = areas.filter((a) => a.type === "exclude");
+
+  // RoofEditToolbar의 활성 툴에서 CropPopup의 drawingMode를 파생
+  const drawingMode: DrawingMode =
+    roofEditing && roofEditTool === "drawRoof"
+      ? "install"
+      : roofEditing && roofEditTool === "drawOpening"
+        ? "exclude"
+        : null;
 
   function handlePlaceSelect(location: {
     lat: number;
@@ -128,20 +136,21 @@ export default function Home() {
 
   const handleCropClose = useCallback(() => {
     setCropData(null);
-    setDrawingMode(null);
+    setRoofEditTool("select");
+    setRoofEditing(false);
     setAreas([]);
     setPixelAreas(null);
     setPlacedPixelPanels([]);
     setPlacedPanelsList([]);
   }, []);
 
-  function handleClearAll() {
+  /** 지붕편집 툴바의 "전체 삭제" 액션 - 그려진 폴리곤/패널만 초기화 (cropData 유지) */
+  function handleDeleteAll() {
     setAreas([]);
     setPlacedPanelsList([]);
-    setCropData(null);
-    setDrawingMode(null);
     setPixelAreas(null);
     setPlacedPixelPanels([]);
+    setRoofEditTool("select");
   }
 
   function handleDeleteAllPanels() {
@@ -161,7 +170,6 @@ export default function Home() {
     setCropMode(false);
     setRoofEditing(false);
     setRoofEditTool("select");
-    setDrawingMode(null);
     setActiveTab("simulation");
   }
 
@@ -539,17 +547,6 @@ export default function Home() {
                     />
                   </div>
 
-                  {/* Drawing Toolbar (polygon tools) - only when crop data exists */}
-                  <DrawingToolbar
-                    onClearAll={handleClearAll}
-                    hasCropData={cropData !== null}
-                    drawingMode={drawingMode}
-                    onDrawingModeChange={setDrawingMode}
-                    installCount={installAreas.length}
-                    excludeCount={excludeAreas.length}
-                    lang={lang}
-                  />
-
                   {/* Section: 모듈 배치 */}
                   <SectionHeader title={t("sectionModulePlacement", lang)} primary />
 
@@ -680,8 +677,12 @@ export default function Home() {
                 activeTool={roofEditTool}
                 onToolChange={setRoofEditTool}
                 onAction={(action) => {
-                  // TODO: 각 액션(deleteSelected, deleteAll, undo) 처리 로직 추가
-                  console.log("Roof edit action:", action);
+                  if (action === "undo") {
+                    setUndoSignal((n) => n + 1);
+                  } else if (action === "deleteAll") {
+                    handleDeleteAll();
+                  }
+                  // deleteSelected는 추후 연결 (현재는 CropPopup 툴팁의 삭제 사용)
                 }}
                 onClose={() => {
                   setRoofEditing(false);
@@ -806,6 +807,7 @@ export default function Home() {
                 lang={lang}
                 roofEditTool={roofEditing ? roofEditTool : undefined}
                 onEaveChange={handleEaveChange}
+                undoSignal={undoSignal}
               />
             )}
           </main>

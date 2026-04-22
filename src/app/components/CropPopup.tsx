@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { X, Download, Undo2 } from "lucide-react";
+import { X, Download } from "lucide-react";
 import type { CropData, CropBounds, DrawingMode, LatLng, PolygonArea, PixelPanel, PixelPolygon, PixelPoint, PolygonSubMode } from "../types";
 import type { Lang } from "../utils/i18n";
 import type { RoofTool } from "./RoofEditToolbar";
@@ -29,6 +29,8 @@ interface CropPopupProps {
   roofEditTool?: RoofTool;
   /** 특정 폴리곤의 처마 기준선이 변경되었을 때 해당 폴리곤 위 패널 삭제 요청 */
   onEaveChange?: (polygonId: string) => void;
+  /** 외부(툴바 undo)로부터 undo 신호. 값이 바뀔 때마다 마지막 점 삭제 실행 */
+  undoSignal?: number;
 }
 
 interface AreaEntry {
@@ -158,6 +160,7 @@ export default function CropPopup({
   lang,
   roofEditTool,
   onEaveChange,
+  undoSignal,
 }: CropPopupProps) {
   const [areas, setAreas] = useState<AreaEntry[]>([]);
   const [currentPoints, setCurrentPoints] = useState<PixelPoint[]>([]);
@@ -653,6 +656,17 @@ export default function CropPopup({
     }
   }
 
+  // 외부(툴바) undo 신호 수신 — 값이 바뀌면 undoLastPoint 실행
+  const prevUndoSignalRef = useRef<number | undefined>(undoSignal);
+  useEffect(() => {
+    if (undoSignal === undefined) return;
+    if (prevUndoSignalRef.current !== undoSignal) {
+      prevUndoSignalRef.current = undoSignal;
+      undoLastPoint();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- undoLastPoint는 currentPoints closure를 참조하므로 signal만 의존
+  }, [undoSignal]);
+
   /** 캔버스에서 브라우저 기본 컨텍스트 메뉴를 차단한다 */
   function handleContextMenu(e: React.MouseEvent<HTMLCanvasElement>) {
     e.preventDefault();
@@ -1010,33 +1024,6 @@ export default function CropPopup({
           );
         })()}
 
-        {/* Floating Undo button — bottom-right of popup card */}
-        {(drawingMode === "install" || drawingMode === "exclude") &&
-          currentPoints.length > 0 && (
-            <button
-              onClick={undoLastPoint}
-              aria-label={t("undoLastPoint", lang)}
-              style={{
-                position: "absolute",
-                bottom: 16,
-                right: 16,
-                zIndex: 10,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: 32,
-                height: 32,
-                border: "1px solid var(--border-primary)",
-                background: "rgba(255, 255, 255, 0.9)",
-                color: "var(--text-secondary)",
-                borderRadius: "var(--radius-md)",
-                cursor: "pointer",
-                backdropFilter: "blur(8px)",
-              }}
-            >
-              <Undo2 size={16} />
-            </button>
-          )}
       </div>
     </div>
   );
