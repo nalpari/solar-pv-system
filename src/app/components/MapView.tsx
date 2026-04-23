@@ -211,26 +211,43 @@ function CropOverlay({
 
     const newRect = { ...orig };
 
+    // 지도 중심(핀 위치)은 크롭 영역 안에 항상 포함되어야 함
+    const centerX = cw / 2;
+    const centerY = ch / 2;
+
     if (target === "move") {
-      newRect.left = Math.max(0, Math.min(cw - orig.width, orig.left + dx));
-      newRect.top = Math.max(0, Math.min(ch - orig.height, orig.top + dy));
+      let newLeft = Math.max(0, Math.min(cw - orig.width, orig.left + dx));
+      let newTop = Math.max(0, Math.min(ch - orig.height, orig.top + dy));
+      // 중심 포함 보정: left <= centerX <= left+width, top <= centerY <= top+height
+      newLeft = Math.max(centerX - orig.width, Math.min(centerX, newLeft));
+      newTop = Math.max(centerY - orig.height, Math.min(centerY, newTop));
+      newRect.left = newLeft;
+      newRect.top = newTop;
     } else {
       // Resize
       if (target?.includes("w")) {
-        const newLeft = Math.max(0, Math.min(orig.left + orig.width - MIN_SIZE, orig.left + dx));
+        let newLeft = Math.max(0, Math.min(orig.left + orig.width - MIN_SIZE, orig.left + dx));
+        // 중심 포함 보정: 서쪽 edge가 centerX를 넘어가면 안 됨
+        newLeft = Math.min(newLeft, centerX);
         newRect.width = orig.width + (orig.left - newLeft);
         newRect.left = newLeft;
       }
       if (target?.includes("e")) {
-        newRect.width = Math.max(MIN_SIZE, Math.min(cw - orig.left, orig.width + dx));
+        let w = Math.max(MIN_SIZE, Math.min(cw - orig.left, orig.width + dx));
+        // 중심 포함 보정: 동쪽 edge가 centerX 이전으로 오면 안 됨
+        w = Math.max(w, centerX - orig.left);
+        newRect.width = w;
       }
       if (target?.includes("n")) {
-        const newTop = Math.max(0, Math.min(orig.top + orig.height - MIN_SIZE, orig.top + dy));
+        let newTop = Math.max(0, Math.min(orig.top + orig.height - MIN_SIZE, orig.top + dy));
+        newTop = Math.min(newTop, centerY);
         newRect.height = orig.height + (orig.top - newTop);
         newRect.top = newTop;
       }
       if (target?.includes("s")) {
-        newRect.height = Math.max(MIN_SIZE, Math.min(ch - orig.top, orig.height + dy));
+        let h = Math.max(MIN_SIZE, Math.min(ch - orig.top, orig.height + dy));
+        h = Math.max(h, centerY - orig.top);
+        newRect.height = h;
       }
     }
 
@@ -480,7 +497,7 @@ export default function MapView({
         mapTypeId="satellite"
         tilt={0}
         disableDefaultUI
-        gestureHandling={locked ? "none" : "greedy"}
+        gestureHandling={locked || cropMode ? "none" : "greedy"}
         scrollwheel={false}
         style={{ width: "100%", height: "100%" }}
       >
