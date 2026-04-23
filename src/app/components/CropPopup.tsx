@@ -41,6 +41,34 @@ interface AreaEntry {
   eaveEdgeIndex?: number;
 }
 
+/** 꼭짓점 스냅 임계값 (픽셀) - 폴리곤 닫기(첫 점 클릭) 기준과 동일 */
+const SNAP_RADIUS = 10;
+
+/**
+ * 주어진 위치에서 SNAP_RADIUS 내 가장 가까운 install 폴리곤 꼭짓점 반환
+ * @param excludeId 제외할 폴리곤 id (꼭짓점 편집 중 자기 자신 제외용)
+ */
+function findNearestSnapVertex(
+  pt: PixelPoint,
+  areas: AreaEntry[],
+  excludeId?: string,
+): PixelPoint | null {
+  let best: PixelPoint | null = null;
+  let bestDist = SNAP_RADIUS;
+  for (const area of areas) {
+    if (area.type !== "install") continue;
+    if (area.id === excludeId) continue;
+    for (const vertex of area.points) {
+      const d = Math.hypot(pt.x - vertex.x, pt.y - vertex.y);
+      if (d <= bestDist) {
+        bestDist = d;
+        best = vertex;
+      }
+    }
+  }
+  return best;
+}
+
 /** 가장 긴 변의 인덱스를 반환 (i → i+1 기준) */
 function findLongestEdgeIndex(points: PixelPoint[]): number {
   let maxLen = 0;
@@ -620,29 +648,41 @@ export default function CropPopup({
     if (now - lastPointTimeRef.current < 300) return;
     lastPointTimeRef.current = now;
 
-    // Close polygon: near first point with >= 3 points
+    // 스냅 처리: 그리는 중인 폴리곤의 첫 점 또는 기존 install 폴리곤의 꼭짓점에 흡착
+    // 첫 점 스냅 시 폴리곤 닫기 실행, 기존 폴리곤 꼭짓점 스냅 시 해당 좌표로 점 추가
+    let snappedPt = pt;
+    let snappedToFirst = false;
     if (currentPoints.length >= 3) {
       const first = currentPoints[0];
-      const dist = Math.hypot(pt.x - first.x, pt.y - first.y);
-      if (dist <= 10) {
-        const closedPoints = [...currentPoints];
-        const newArea: AreaEntry = {
-          id: crypto.randomUUID(),
-          type: drawingMode,
-          points: closedPoints,
-          // install 타입만 eaveEdgeIndex 기본값(가장 긴 변) 설정
-          eaveEdgeIndex: drawingMode === "install" ? findLongestEdgeIndex(closedPoints) : undefined,
-        };
-        const updated = [...areas, newArea];
-        setAreas(updated);
-        setCurrentPoints([]);
-        setMousePos(null);
-        notifyParent(updated);
-        return;
+      if (Math.hypot(pt.x - first.x, pt.y - first.y) <= SNAP_RADIUS) {
+        snappedPt = first;
+        snappedToFirst = true;
       }
     }
+    if (!snappedToFirst) {
+      const nearest = findNearestSnapVertex(pt, areas);
+      if (nearest) snappedPt = nearest;
+    }
 
-    setCurrentPoints((prev) => [...prev, pt]);
+    // 첫 점으로 스냅된 경우 폴리곤 닫기
+    if (snappedToFirst) {
+      const closedPoints = [...currentPoints];
+      const newArea: AreaEntry = {
+        id: crypto.randomUUID(),
+        type: drawingMode,
+        points: closedPoints,
+        // install 타입만 eaveEdgeIndex 기본값(가장 긴 변) 설정
+        eaveEdgeIndex: drawingMode === "install" ? findLongestEdgeIndex(closedPoints) : undefined,
+      };
+      const updated = [...areas, newArea];
+      setAreas(updated);
+      setCurrentPoints([]);
+      setMousePos(null);
+      notifyParent(updated);
+      return;
+    }
+
+    setCurrentPoints((prev) => [...prev, snappedPt]);
   }
 
   /** 마지막으로 추가한 폴리곤 점을 되돌린다 */
@@ -712,11 +752,13 @@ export default function CropPopup({
         clearTimeout(longPressTimerRef.current);
         longPressTimerRef.current = null;
       }
+      // 스냅: 다른 install 폴리곤의 꼭짓점에 흡착 (자기 폴리곤은 제외)
+      const snapped = findNearestSnapVertex({ x: px, y: py }, areasRef.current, selectedPolygonId) ?? { x: px, y: py };
       setAreas((prev) =>
         prev.map((a) => {
           if (a.id !== selectedPolygonId) return a;
           const newPoints = [...a.points];
-          newPoints[draggingVertexIdx] = { x: px, y: py };
+          newPoints[draggingVertexIdx] = snapped;
           return { ...a, points: newPoints };
         }),
       );
