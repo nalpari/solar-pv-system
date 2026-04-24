@@ -219,11 +219,15 @@ export default function CropPopup({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
 
-  // 그리기 모드 변경 시 진행 중 점·선택·드래그·롱프레스 상태 전부 초기화
+  // 그리기 모드 또는 지붕편집 툴 변경 시 진행 중 점·선택·드래그·롱프레스 상태 전부 초기화
   const prevDrawingModeRef = useRef<DrawingMode>(drawingMode);
+  const prevRoofEditToolRef = useRef<RoofTool | undefined>(roofEditTool);
   useEffect(() => {
-    if (prevDrawingModeRef.current !== drawingMode) {
+    const drawingChanged = prevDrawingModeRef.current !== drawingMode;
+    const toolChanged = prevRoofEditToolRef.current !== roofEditTool;
+    if (drawingChanged || toolChanged) {
       prevDrawingModeRef.current = drawingMode;
+      prevRoofEditToolRef.current = roofEditTool;
       setCurrentPoints([]);
       setMousePos(null);
       setSelectedPolygonId(null);
@@ -237,7 +241,7 @@ export default function CropPopup({
         longPressTimerRef.current = null;
       }
     }
-  }, [drawingMode]);
+  }, [drawingMode, roofEditTool]);
 
   // Cleanup long-press timer on unmount
   useEffect(() => {
@@ -789,19 +793,26 @@ export default function CropPopup({
     }
     // End vertex drag
     if (subMode === "editing_vertices" && draggingVertexIdx !== null) {
-      setDraggingVertexIdx(null);
-      // 꼭짓점 이동 완료 시 기준선을 가장 긴 변으로 자동 리셋 (install만)
-      const movedId = selectedPolygonId;
-      const resetAreas = areasRef.current.map((a) =>
-        a.id === movedId && a.type === "install"
-          ? { ...a, eaveEdgeIndex: findLongestEdgeIndex(a.points) }
-          : a,
-      );
-      setAreas(resetAreas);
-      notifyParent(resetAreas);
-      if (movedId) onEaveChange?.(movedId);
+      finalizeVertexDrag();
       return;
     }
+  }
+
+  /**
+   * 꼭짓점 드래그 종료 시 상태 정리 + 처마 기준선 가장 긴 변으로 리셋.
+   * handlePointerUp(정상 종료)과 handlePointerCancel(강제 취소) 양쪽에서 호출된다.
+   */
+  function finalizeVertexDrag() {
+    setDraggingVertexIdx(null);
+    const movedId = selectedPolygonId;
+    const resetAreas = areasRef.current.map((a) =>
+      a.id === movedId && a.type === "install"
+        ? { ...a, eaveEdgeIndex: findLongestEdgeIndex(a.points) }
+        : a,
+    );
+    setAreas(resetAreas);
+    notifyParent(resetAreas);
+    if (movedId) onEaveChange?.(movedId);
   }
 
   /** 포인터 캡처가 강제 해제될 때 드래그 상태를 정리한다 */
@@ -813,8 +824,7 @@ export default function CropPopup({
     dragStartRef.current = null;
     dragOriginalPointsRef.current = null;
     if (draggingVertexIdx !== null) {
-      setDraggingVertexIdx(null);
-      notifyParent(areasRef.current);
+      finalizeVertexDrag();
     }
   }
 
