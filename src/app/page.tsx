@@ -125,13 +125,17 @@ export default function Home() {
   }, []);
 
   const handleAreasChange = useCallback((newAreas: PolygonArea[]) => {
+    const validIds = new Set(newAreas.map((a) => a.id));
     setAreas(newAreas);
-    setPlacedPanelsList([]);
+    // 없어진 폴리곤에 속한 패널만 제거 (살아있는 폴리곤 패널은 유지)
+    setPlacedPanelsList((prev) => prev.filter((p) => validIds.has(p.polygonId)));
   }, []);
 
   const handlePixelAreasChange = useCallback((areas: PixelPolygon[], metersPerPixel: number) => {
+    const validIds = new Set(areas.map((a) => a.id));
     setPixelAreas({ areas, metersPerPixel });
-    setPlacedPixelPanels([]);
+    // 없어진 폴리곤에 속한 패널만 제거
+    setPlacedPixelPanels((prev) => prev.filter((p) => validIds.has(p.polygonId)));
   }, []);
 
   const handleCropClose = useCallback(() => {
