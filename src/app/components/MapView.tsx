@@ -60,6 +60,12 @@ function WheelZoomController() {
     if (!div) return;
 
     const handleWheel = (e: WheelEvent) => {
+      // 좌우 스크롤(트랙패드)은 zoom과 무관 — 통과시켜 페이지/자식 스크롤 보호
+      if (e.deltaY === 0) return;
+      // 자식 인터랙티브 UI 위에서의 휠은 차단하지 않음 (툴바 버튼/입력 등 자체 처리 보호)
+      const target = e.target as HTMLElement | null;
+      if (target?.closest('button, input, a, [role="button"]')) return;
+
       e.preventDefault();
       accumRef.current += e.deltaY;
       if (Math.abs(accumRef.current) >= ZOOM_THRESHOLD) {
