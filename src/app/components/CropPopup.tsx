@@ -31,6 +31,8 @@ interface CropPopupProps {
   onEaveChange?: (polygonId: string) => void;
   /** 외부(툴바 undo)로부터 undo 신호. 값이 바뀔 때마다 마지막 점 삭제 실행 */
   undoSignal?: number;
+  /** 외부(툴바 deleteAll)로부터 전체 초기화 신호. 값이 바뀔 때마다 내부 areas/currentPoints/선택 상태 초기화 */
+  clearSignal?: number;
 }
 
 interface AreaEntry {
@@ -189,6 +191,7 @@ export default function CropPopup({
   roofEditTool,
   onEaveChange,
   undoSignal,
+  clearSignal,
 }: CropPopupProps) {
   const [areas, setAreas] = useState<AreaEntry[]>([]);
   const [currentPoints, setCurrentPoints] = useState<PixelPoint[]>([]);
@@ -710,6 +713,28 @@ export default function CropPopup({
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps -- undoLastPoint는 currentPoints closure를 참조하므로 signal만 의존
   }, [undoSignal]);
+
+  // 외부(툴바 deleteAll) 전체 초기화 신호 수신 — 내부 polygon 상태도 함께 비움
+  const prevClearSignalRef = useRef<number | undefined>(clearSignal);
+  useEffect(() => {
+    if (clearSignal === undefined) return;
+    if (prevClearSignalRef.current !== clearSignal) {
+      prevClearSignalRef.current = clearSignal;
+      setAreas([]);
+      setCurrentPoints([]);
+      setMousePos(null);
+      setSelectedPolygonId(null);
+      setSubMode("idle");
+      setTooltipPos(null);
+      setDraggingVertexIdx(null);
+      dragStartRef.current = null;
+      dragOriginalPointsRef.current = null;
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+      }
+    }
+  }, [clearSignal]);
 
   /** 캔버스에서 브라우저 기본 컨텍스트 메뉴를 차단한다 */
   function handleContextMenu(e: React.MouseEvent<HTMLCanvasElement>) {

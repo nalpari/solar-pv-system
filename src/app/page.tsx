@@ -85,6 +85,7 @@ export default function Home() {
   const [address, setAddress] = useState("");
   // drawingMode는 roofEditTool에서 파생 (drawRoof → install, drawOpening → exclude, 그 외 → null)
   const [undoSignal, setUndoSignal] = useState(0);
+  const [clearSignal, setClearSignal] = useState(0);
   const [areas, setAreas] = useState<PolygonArea[]>([]);
   const [panelSize, setPanelSize] = useState<PanelSize>({
     label: "Custom",
@@ -155,6 +156,8 @@ export default function Home() {
     setPixelAreas(null);
     setPlacedPixelPanels([]);
     setRoofEditTool("select");
+    // CropPopup 내부 areas state도 함께 비우도록 신호
+    setClearSignal((n) => n + 1);
   }
 
   function handleDeleteAllPanels() {
@@ -810,6 +813,7 @@ export default function Home() {
                 roofEditTool={roofEditing ? roofEditTool : undefined}
                 onEaveChange={handleEaveChange}
                 undoSignal={undoSignal}
+                clearSignal={clearSignal}
               />
             )}
           </main>
