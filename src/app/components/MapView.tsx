@@ -251,6 +251,17 @@ function CropOverlay({
       }
     }
 
+    // 최종 invariant 검증: 축별 보정 후에도 중심이 rect 안에 있는지 확인하고
+    // edge case(컨테이너 크기 변동, MIN_SIZE 충돌 등)에서 보정. 캔버스 경계도 함께 보장.
+    if (newRect.left > centerX) newRect.left = centerX;
+    if (newRect.top > centerY) newRect.top = centerY;
+    if (newRect.left + newRect.width < centerX) newRect.width = centerX - newRect.left;
+    if (newRect.top + newRect.height < centerY) newRect.height = centerY - newRect.top;
+    newRect.left = Math.max(0, newRect.left);
+    newRect.top = Math.max(0, newRect.top);
+    newRect.width = Math.min(newRect.width, cw - newRect.left);
+    newRect.height = Math.min(newRect.height, ch - newRect.top);
+
     setRect(newRect);
   }
 
