@@ -16,10 +16,11 @@ globs:
 - **MapView** — Google Maps with satellite imagery and crop area selection overlay (html2canvas capture)
 - **CropPopup** — Cropped image popup with Canvas-based polygon editor and panel rendering. Supports image save (PNG download)
 - **AddressSearch** — Places autocomplete to navigate the map
-- **DrawingToolbar** — Crop mode toggle (before crop) / polygon drawing mode controls (after crop)
+- **RoofEditToolbar** — Floating toolbar over map for polygon editing (select/drawRoof/drawOpening/flowSetting/editRoof/deleteSelected/deleteAll/undo)
 - **PanelConfig** — Panel size (mm), orientation, gap (cm), and margin (cm) controls
 - **ResultsPanel** — Displays panel count and area calculations
+- **SimulationPanel** — Generation simulation inputs (azimuth, battery, monthly electric cost) and results view
 
 ## Domain Types (`src/app/types/index.ts`)
 
-`LatLng`, `PanelSize`, `PanelOrientation`, `DrawingMode`, `PolygonArea`, `PlacedPanel`, `CropData`, `CropBounds`, `PixelPoint`, `PixelPolygon`, `PixelPanel`.
+`LatLng`, `PanelSize`, `PanelOrientation`, `DrawingMode`, `PolygonArea`, `PlacedPanel`, `CropData`, `CropBounds`, `PixelPoint`, `PixelPolygon`, `PixelPanel`, `PolygonSubMode`.

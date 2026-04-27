@@ -29,9 +29,6 @@ const translations = {
   slopeUnit: { ja: "寸", en: " sun" },
   slopePlaceholder: { ja: "傾斜を選択", en: "Select slope" },
 
-  // DrawingToolbar
-  clearAll: { ja: "すべてクリア", en: "Clear All Areas" },
-
   // PanelConfig
   panelConfig: { ja: "パネル設定", en: "Panel Configuration" },
   panelType: { ja: "パネルタイプ", en: "Panel Type" },

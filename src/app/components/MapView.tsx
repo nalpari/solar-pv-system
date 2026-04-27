@@ -9,6 +9,7 @@ import type { CropData } from "../types";
 
 interface MapViewProps {
   center: { lat: number; lng: number };
+  viewport?: google.maps.LatLngBounds | null;
   cropMode: boolean;
   locked: boolean;
   onCropComplete: (cropData: CropData) => void;
@@ -19,8 +20,14 @@ interface MapViewProps {
 const MAP_ID = "solar-pv-map";
 
 
-/** 중심 좌표 변경 시 지도를 부드럽게 이동시키는 컴포넌트 */
-function CenterUpdater({ center }: { center: { lat: number; lng: number } }) {
+/** 중심 좌표 또는 viewport 변경 시 지도 뷰를 조정 (viewport 우선, 없으면 panTo) */
+function ViewUpdater({
+  center,
+  viewport,
+}: {
+  center: { lat: number; lng: number };
+  viewport?: google.maps.LatLngBounds | null;
+}) {
   const map = useMap(MAP_ID);
   const isFirst = useRef(true);
 
@@ -30,9 +37,50 @@ function CenterUpdater({ center }: { center: { lat: number; lng: number } }) {
       isFirst.current = false;
       return;
     }
-    map.panTo(center);
+    if (viewport) {
+      map.fitBounds(viewport);
+    } else {
+      map.panTo(center);
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps -- center object reference changes on every render; lat/lng are stable
-  }, [map, center.lat, center.lng]);
+  }, [map, center.lat, center.lng, viewport]);
+
+  return null;
+}
+
+/** 휠 줌의 기준점을 커서 위치가 아닌 지도 중심으로 변경 */
+function WheelZoomController() {
+  const map = useMap(MAP_ID);
+  const accumRef = useRef(0);
+  const ZOOM_THRESHOLD = 50;
+
+  useEffect(() => {
+    if (!map) return;
+    const div = map.getDiv();
+    if (!div) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      // 좌우 스크롤(트랙패드)은 zoom과 무관 — 통과시켜 페이지/자식 스크롤 보호
+      if (e.deltaY === 0) return;
+      // 자식 인터랙티브 UI 위에서의 휠은 차단하지 않음 (툴바 버튼/입력 등 자체 처리 보호)
+      const target = e.target as HTMLElement | null;
+      if (target?.closest('button, input, a, [role="button"]')) return;
+
+      e.preventDefault();
+      accumRef.current += e.deltaY;
+      if (Math.abs(accumRef.current) >= ZOOM_THRESHOLD) {
+        const currentZoom = map.getZoom() ?? 18;
+        const direction = accumRef.current > 0 ? -1 : 1;
+        map.setZoom(currentZoom + direction);
+        accumRef.current = 0;
+      }
+    };
+
+    div.addEventListener("wheel", handleWheel, { passive: false });
+    return () => {
+      div.removeEventListener("wheel", handleWheel);
+    };
+  }, [map]);
 
   return null;
 }
@@ -169,28 +217,56 @@ function CropOverlay({
 
     const newRect = { ...orig };
 
+    // 지도 중심(핀 위치)은 크롭 영역 안에 항상 포함되어야 함
+    const centerX = cw / 2;
+    const centerY = ch / 2;
+
     if (target === "move") {
-      newRect.left = Math.max(0, Math.min(cw - orig.width, orig.left + dx));
-      newRect.top = Math.max(0, Math.min(ch - orig.height, orig.top + dy));
+      let newLeft = Math.max(0, Math.min(cw - orig.width, orig.left + dx));
+      let newTop = Math.max(0, Math.min(ch - orig.height, orig.top + dy));
+      // 중심 포함 보정: left <= centerX <= left+width, top <= centerY <= top+height
+      newLeft = Math.max(centerX - orig.width, Math.min(centerX, newLeft));
+      newTop = Math.max(centerY - orig.height, Math.min(centerY, newTop));
+      newRect.left = newLeft;
+      newRect.top = newTop;
     } else {
       // Resize
       if (target?.includes("w")) {
-        const newLeft = Math.max(0, Math.min(orig.left + orig.width - MIN_SIZE, orig.left + dx));
+        let newLeft = Math.max(0, Math.min(orig.left + orig.width - MIN_SIZE, orig.left + dx));
+        // 중심 포함 보정: 서쪽 edge가 centerX를 넘어가면 안 됨
+        newLeft = Math.min(newLeft, centerX);
         newRect.width = orig.width + (orig.left - newLeft);
         newRect.left = newLeft;
       }
       if (target?.includes("e")) {
-        newRect.width = Math.max(MIN_SIZE, Math.min(cw - orig.left, orig.width + dx));
+        let w = Math.max(MIN_SIZE, Math.min(cw - orig.left, orig.width + dx));
+        // 중심 포함 보정: 동쪽 edge가 centerX 이전으로 오면 안 됨
+        w = Math.max(w, centerX - orig.left);
+        newRect.width = w;
       }
       if (target?.includes("n")) {
-        const newTop = Math.max(0, Math.min(orig.top + orig.height - MIN_SIZE, orig.top + dy));
+        let newTop = Math.max(0, Math.min(orig.top + orig.height - MIN_SIZE, orig.top + dy));
+        newTop = Math.min(newTop, centerY);
         newRect.height = orig.height + (orig.top - newTop);
         newRect.top = newTop;
       }
       if (target?.includes("s")) {
-        newRect.height = Math.max(MIN_SIZE, Math.min(ch - orig.top, orig.height + dy));
+        let h = Math.max(MIN_SIZE, Math.min(ch - orig.top, orig.height + dy));
+        h = Math.max(h, centerY - orig.top);
+        newRect.height = h;
       }
     }
+
+    // 최종 invariant 검증: 축별 보정 후에도 중심이 rect 안에 있는지 확인하고
+    // edge case(컨테이너 크기 변동, MIN_SIZE 충돌 등)에서 보정. 캔버스 경계도 함께 보장.
+    if (newRect.left > centerX) newRect.left = centerX;
+    if (newRect.top > centerY) newRect.top = centerY;
+    if (newRect.left + newRect.width < centerX) newRect.width = centerX - newRect.left;
+    if (newRect.top + newRect.height < centerY) newRect.height = centerY - newRect.top;
+    newRect.left = Math.max(0, newRect.left);
+    newRect.top = Math.max(0, newRect.top);
+    newRect.width = Math.min(newRect.width, cw - newRect.left);
+    newRect.height = Math.min(newRect.height, ch - newRect.top);
 
     setRect(newRect);
   }
@@ -422,6 +498,7 @@ function CropOverlay({
 /** 위성 지도 및 크롭 오버레이를 포함하는 메인 지도 컴포넌트 */
 export default function MapView({
   center,
+  viewport,
   cropMode,
   locked,
   onCropComplete,
@@ -437,10 +514,12 @@ export default function MapView({
         mapTypeId="satellite"
         tilt={0}
         disableDefaultUI
-        gestureHandling={locked ? "none" : "greedy"}
+        gestureHandling={locked || cropMode ? "none" : "greedy"}
+        scrollwheel={false}
         style={{ width: "100%", height: "100%" }}
       >
-        <CenterUpdater center={center} />
+        <ViewUpdater center={center} viewport={viewport} />
+        {!locked && !cropMode && <WheelZoomController />}
       </Map>
 
 

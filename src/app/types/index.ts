@@ -17,10 +17,14 @@ export interface PolygonArea {
   id: string;
   type: "install" | "exclude";
   paths: LatLng[];
+  /** 처마(흐름방향) 기준변 인덱스 - points[i] → points[i+1] */
+  eaveEdgeIndex?: number;
 }
 
 export interface PlacedPanel {
   id: string;
+  /** 이 패널이 배치된 install 폴리곤의 id */
+  polygonId: string;
   corners: [LatLng, LatLng, LatLng, LatLng];
 }
 
@@ -46,10 +50,14 @@ export interface PixelPolygon {
   id: string;
   type: "install" | "exclude";
   points: PixelPoint[];
+  /** 처마(흐름방향) 기준변 인덱스 - points[i] → points[i+1] */
+  eaveEdgeIndex?: number;
 }
 
 export interface PixelPanel {
   id: string;
+  /** 이 패널이 배치된 install 폴리곤의 id */
+  polygonId: string;
   corners: [PixelPoint, PixelPoint, PixelPoint, PixelPoint];
 }
 

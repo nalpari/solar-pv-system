@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { X, Download, Undo2 } from "lucide-react";
+import { X, Download } from "lucide-react";
 import type { CropData, CropBounds, DrawingMode, LatLng, PolygonArea, PixelPanel, PixelPolygon, PixelPoint, PolygonSubMode } from "../types";
 import type { Lang } from "../utils/i18n";
+import type { RoofTool } from "./RoofEditToolbar";
 import { t } from "../utils/i18n";
 import { isPointInPolygon } from "../utils/panelPlacement";
 
@@ -14,6 +15,7 @@ const COLOR_INSTALL_PANEL = "rgba(51, 102, 170, 0.5)";
 const COLOR_EXCLUDE = "#CF2E2E"; // --accent-red
 const COLOR_EXCLUDE_FILL = "rgba(207, 46, 46, 0.3)";
 const COLOR_SELECTED = "#FFD700"; // 선택 강조용 gold (VI 팔레트 --accent-yellow와 별도)
+const COLOR_EAVE = "#FF8A00"; // 처마(흐름방향) 기준변 하이라이트 color
 
 interface CropPopupProps {
   cropData: CropData;
@@ -23,12 +25,80 @@ interface CropPopupProps {
   placedPanels: PixelPanel[];
   onClose: () => void;
   lang: Lang;
+  /** 지붕 편집 툴바 활성 도구 (현재는 flowSetting만 사용) */
+  roofEditTool?: RoofTool;
+  /** 특정 폴리곤의 처마 기준선이 변경되었을 때 해당 폴리곤 위 패널 삭제 요청 */
+  onEaveChange?: (polygonId: string) => void;
+  /** 외부(툴바 undo)로부터 undo 신호. 값이 바뀔 때마다 마지막 점 삭제 실행 */
+  undoSignal?: number;
+  /** 외부(툴바 deleteAll)로부터 전체 초기화 신호. 값이 바뀔 때마다 내부 areas/currentPoints/선택 상태 초기화 */
+  clearSignal?: number;
 }
 
 interface AreaEntry {
   id: string;
   type: "install" | "exclude";
   points: PixelPoint[];
+  /** 처마(흐름방향) 기준변 인덱스 - points[i] → points[i+1] */
+  eaveEdgeIndex?: number;
+}
+
+/** 꼭짓점 스냅 임계값 (픽셀) - 폴리곤 닫기(첫 점 클릭) 기준과 동일 */
+const SNAP_RADIUS = 10;
+
+/**
+ * 주어진 위치에서 SNAP_RADIUS 내 가장 가까운 install 폴리곤 꼭짓점 반환
+ * @param excludeId 제외할 폴리곤 id (꼭짓점 편집 중 자기 자신 제외용)
+ */
+function findNearestSnapVertex(
+  pt: PixelPoint,
+  areas: AreaEntry[],
+  excludeId?: string,
+): PixelPoint | null {
+  let best: PixelPoint | null = null;
+  let bestDist = SNAP_RADIUS;
+  for (const area of areas) {
+    if (area.type !== "install") continue;
+    if (area.id === excludeId) continue;
+    for (const vertex of area.points) {
+      const d = Math.hypot(pt.x - vertex.x, pt.y - vertex.y);
+      if (d <= bestDist) {
+        bestDist = d;
+        best = vertex;
+      }
+    }
+  }
+  return best;
+}
+
+/** 가장 긴 변의 인덱스를 반환 (i → i+1 기준) */
+function findLongestEdgeIndex(points: PixelPoint[]): number {
+  let maxLen = 0;
+  let idx = 0;
+  for (let i = 0; i < points.length; i++) {
+    const j = (i + 1) % points.length;
+    const dx = points[j].x - points[i].x;
+    const dy = points[j].y - points[i].y;
+    const len = Math.hypot(dx, dy);
+    if (len > maxLen) {
+      maxLen = len;
+      idx = i;
+    }
+  }
+  return idx;
+}
+
+/** 점 pt에서 선분 p1-p2까지의 거리 */
+function distanceToSegment(pt: PixelPoint, p1: PixelPoint, p2: PixelPoint): number {
+  const dx = p2.x - p1.x;
+  const dy = p2.y - p1.y;
+  const lenSq = dx * dx + dy * dy;
+  if (lenSq === 0) return Math.hypot(pt.x - p1.x, pt.y - p1.y);
+  let t = ((pt.x - p1.x) * dx + (pt.y - p1.y) * dy) / lenSq;
+  t = Math.max(0, Math.min(1, t));
+  const projX = p1.x + t * dx;
+  const projY = p1.y + t * dy;
+  return Math.hypot(pt.x - projX, pt.y - projY);
 }
 
 /** 캔버스 픽셀 좌표를 위경도(LatLng)로 변환한다 */
@@ -62,6 +132,7 @@ function convertAreas(
       paths: area.points.map((pt) =>
         pixelToLatLng(pt.x, pt.y, canvasWidth, canvasHeight, bounds),
       ),
+      eaveEdgeIndex: area.eaveEdgeIndex,
     }));
 }
 
@@ -73,6 +144,7 @@ function convertToPixelPolygons(entries: AreaEntry[]): PixelPolygon[] {
       id: area.id,
       type: area.type,
       points: area.points.map((pt) => ({ x: pt.x, y: pt.y })),
+      eaveEdgeIndex: area.eaveEdgeIndex,
     }));
 }
 
@@ -116,6 +188,10 @@ export default function CropPopup({
   placedPanels,
   onClose,
   lang,
+  roofEditTool,
+  onEaveChange,
+  undoSignal,
+  clearSignal,
 }: CropPopupProps) {
   const [areas, setAreas] = useState<AreaEntry[]>([]);
   const [currentPoints, setCurrentPoints] = useState<PixelPoint[]>([]);
@@ -146,11 +222,15 @@ export default function CropPopup({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
 
-  // 그리기 모드 변경 시 진행 중 점·선택·드래그·롱프레스 상태 전부 초기화
+  // 그리기 모드 또는 지붕편집 툴 변경 시 진행 중 점·선택·드래그·롱프레스 상태 전부 초기화
   const prevDrawingModeRef = useRef<DrawingMode>(drawingMode);
+  const prevRoofEditToolRef = useRef<RoofTool | undefined>(roofEditTool);
   useEffect(() => {
-    if (prevDrawingModeRef.current !== drawingMode) {
+    const drawingChanged = prevDrawingModeRef.current !== drawingMode;
+    const toolChanged = prevRoofEditToolRef.current !== roofEditTool;
+    if (drawingChanged || toolChanged) {
       prevDrawingModeRef.current = drawingMode;
+      prevRoofEditToolRef.current = roofEditTool;
       setCurrentPoints([]);
       setMousePos(null);
       setSelectedPolygonId(null);
@@ -164,7 +244,7 @@ export default function CropPopup({
         longPressTimerRef.current = null;
       }
     }
-  }, [drawingMode]);
+  }, [drawingMode, roofEditTool]);
 
   // Cleanup long-press timer on unmount
   useEffect(() => {
@@ -304,6 +384,21 @@ export default function CropPopup({
       ctx.strokeStyle = isSelected ? COLOR_SELECTED : (isInstall ? COLOR_INSTALL : COLOR_EXCLUDE);
       ctx.lineWidth = isSelected ? 4 : 2;
       ctx.stroke();
+
+      // 처마(eave) 기준변 하이라이트 — install 폴리곤만
+      if (isInstall && typeof area.eaveEdgeIndex === "number") {
+        const i = area.eaveEdgeIndex;
+        if (i >= 0 && i < area.points.length) {
+          const p1 = area.points[i];
+          const p2 = area.points[(i + 1) % area.points.length];
+          ctx.beginPath();
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.strokeStyle = COLOR_EAVE;
+          ctx.lineWidth = 4;
+          ctx.stroke();
+        }
+      }
     }
 
     // Draw vertex handles when editing_vertices
@@ -423,6 +518,36 @@ export default function CropPopup({
     const pt = getCanvasCoords(e);
 
     // Selection / move / vertex editing mode
+    // 흐름설정(처마 기준선 변경) 모드: 가장 가까운 변을 찾아 eaveEdgeIndex 업데이트
+    if (roofEditTool === "flowSetting") {
+      const EDGE_HIT_THRESHOLD = 15;
+      for (let ai = areas.length - 1; ai >= 0; ai--) {
+        const area = areas[ai];
+        if (area.type !== "install" || area.points.length < 3) continue;
+        let bestDist = Infinity;
+        let bestIdx = -1;
+        for (let i = 0; i < area.points.length; i++) {
+          const p1 = area.points[i];
+          const p2 = area.points[(i + 1) % area.points.length];
+          const d = distanceToSegment(pt, p1, p2);
+          if (d < bestDist) {
+            bestDist = d;
+            bestIdx = i;
+          }
+        }
+        if (bestIdx >= 0 && bestDist <= EDGE_HIT_THRESHOLD && area.eaveEdgeIndex !== bestIdx) {
+          const updated = areas.map((a) =>
+            a.id === area.id ? { ...a, eaveEdgeIndex: bestIdx } : a,
+          );
+          setAreas(updated);
+          notifyParent(updated);
+          onEaveChange?.(area.id);
+          return;
+        }
+      }
+      return;
+    }
+
     if (drawingMode === null) {
       if (subMode === "idle") {
         // Check if click is inside any polygon (last to first for z-order)
@@ -497,11 +622,19 @@ export default function CropPopup({
                 const newPoints = [...selArea.points];
                 newPoints.splice(insertIdx, 0, { x: mx, y: my });
                 const updated = areas.map((a) =>
-                  a.id === selectedPolygonId ? { ...a, points: newPoints } : a,
+                  a.id === selectedPolygonId
+                    ? {
+                        ...a,
+                        points: newPoints,
+                        // 꼭짓점 편집 시 기준선을 가장 긴 변으로 자동 리셋 (install만)
+                        eaveEdgeIndex: a.type === "install" ? findLongestEdgeIndex(newPoints) : undefined,
+                      }
+                    : a,
                 );
                 setAreas(updated);
                 setDraggingVertexIdx(insertIdx);
                 e.currentTarget.setPointerCapture(e.pointerId);
+                onEaveChange?.(selectedPolygonId);
                 return;
               }
             }
@@ -522,26 +655,41 @@ export default function CropPopup({
     if (now - lastPointTimeRef.current < 300) return;
     lastPointTimeRef.current = now;
 
-    // Close polygon: near first point with >= 3 points
+    // 스냅 처리: 그리는 중인 폴리곤의 첫 점 또는 기존 install 폴리곤의 꼭짓점에 흡착
+    // 첫 점 스냅 시 폴리곤 닫기 실행, 기존 폴리곤 꼭짓점 스냅 시 해당 좌표로 점 추가
+    let snappedPt = pt;
+    let snappedToFirst = false;
     if (currentPoints.length >= 3) {
       const first = currentPoints[0];
-      const dist = Math.hypot(pt.x - first.x, pt.y - first.y);
-      if (dist <= 10) {
-        const newArea: AreaEntry = {
-          id: crypto.randomUUID(),
-          type: drawingMode,
-          points: [...currentPoints],
-        };
-        const updated = [...areas, newArea];
-        setAreas(updated);
-        setCurrentPoints([]);
-        setMousePos(null);
-        notifyParent(updated);
-        return;
+      if (Math.hypot(pt.x - first.x, pt.y - first.y) <= SNAP_RADIUS) {
+        snappedPt = first;
+        snappedToFirst = true;
       }
     }
+    if (!snappedToFirst) {
+      const nearest = findNearestSnapVertex(pt, areas);
+      if (nearest) snappedPt = nearest;
+    }
 
-    setCurrentPoints((prev) => [...prev, pt]);
+    // 첫 점으로 스냅된 경우 폴리곤 닫기
+    if (snappedToFirst) {
+      const closedPoints = [...currentPoints];
+      const newArea: AreaEntry = {
+        id: crypto.randomUUID(),
+        type: drawingMode,
+        points: closedPoints,
+        // install 타입만 eaveEdgeIndex 기본값(가장 긴 변) 설정
+        eaveEdgeIndex: drawingMode === "install" ? findLongestEdgeIndex(closedPoints) : undefined,
+      };
+      const updated = [...areas, newArea];
+      setAreas(updated);
+      setCurrentPoints([]);
+      setMousePos(null);
+      notifyParent(updated);
+      return;
+    }
+
+    setCurrentPoints((prev) => [...prev, snappedPt]);
   }
 
   /** 마지막으로 추가한 폴리곤 점을 되돌린다 */
@@ -554,6 +702,39 @@ export default function CropPopup({
       });
     }
   }
+
+  // 외부(툴바) undo 신호 수신 — 값이 바뀌면 undoLastPoint 실행
+  const prevUndoSignalRef = useRef<number | undefined>(undoSignal);
+  useEffect(() => {
+    if (undoSignal === undefined) return;
+    if (prevUndoSignalRef.current !== undoSignal) {
+      prevUndoSignalRef.current = undoSignal;
+      undoLastPoint();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- undoLastPoint는 currentPoints closure를 참조하므로 signal만 의존
+  }, [undoSignal]);
+
+  // 외부(툴바 deleteAll) 전체 초기화 신호 수신 — 내부 polygon 상태도 함께 비움
+  const prevClearSignalRef = useRef<number | undefined>(clearSignal);
+  useEffect(() => {
+    if (clearSignal === undefined) return;
+    if (prevClearSignalRef.current !== clearSignal) {
+      prevClearSignalRef.current = clearSignal;
+      setAreas([]);
+      setCurrentPoints([]);
+      setMousePos(null);
+      setSelectedPolygonId(null);
+      setSubMode("idle");
+      setTooltipPos(null);
+      setDraggingVertexIdx(null);
+      dragStartRef.current = null;
+      dragOriginalPointsRef.current = null;
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+      }
+    }
+  }, [clearSignal]);
 
   /** 캔버스에서 브라우저 기본 컨텍스트 메뉴를 차단한다 */
   function handleContextMenu(e: React.MouseEvent<HTMLCanvasElement>) {
@@ -600,11 +781,13 @@ export default function CropPopup({
         clearTimeout(longPressTimerRef.current);
         longPressTimerRef.current = null;
       }
+      // 스냅: 다른 install 폴리곤의 꼭짓점에 흡착 (자기 폴리곤은 제외)
+      const snapped = findNearestSnapVertex({ x: px, y: py }, areasRef.current, selectedPolygonId) ?? { x: px, y: py };
       setAreas((prev) =>
         prev.map((a) => {
           if (a.id !== selectedPolygonId) return a;
           const newPoints = [...a.points];
-          newPoints[draggingVertexIdx] = { x: px, y: py };
+          newPoints[draggingVertexIdx] = snapped;
           return { ...a, points: newPoints };
         }),
       );
@@ -635,10 +818,26 @@ export default function CropPopup({
     }
     // End vertex drag
     if (subMode === "editing_vertices" && draggingVertexIdx !== null) {
-      setDraggingVertexIdx(null);
-      notifyParent(areasRef.current);
+      finalizeVertexDrag();
       return;
     }
+  }
+
+  /**
+   * 꼭짓점 드래그 종료 시 상태 정리 + 처마 기준선 가장 긴 변으로 리셋.
+   * handlePointerUp(정상 종료)과 handlePointerCancel(강제 취소) 양쪽에서 호출된다.
+   */
+  function finalizeVertexDrag() {
+    setDraggingVertexIdx(null);
+    const movedId = selectedPolygonId;
+    const resetAreas = areasRef.current.map((a) =>
+      a.id === movedId && a.type === "install"
+        ? { ...a, eaveEdgeIndex: findLongestEdgeIndex(a.points) }
+        : a,
+    );
+    setAreas(resetAreas);
+    notifyParent(resetAreas);
+    if (movedId) onEaveChange?.(movedId);
   }
 
   /** 포인터 캡처가 강제 해제될 때 드래그 상태를 정리한다 */
@@ -650,8 +849,7 @@ export default function CropPopup({
     dragStartRef.current = null;
     dragOriginalPointsRef.current = null;
     if (draggingVertexIdx !== null) {
-      setDraggingVertexIdx(null);
-      notifyParent(areasRef.current);
+      finalizeVertexDrag();
     }
   }
 
@@ -670,8 +868,16 @@ export default function CropPopup({
     } else {
       const newPoints = selArea.points.filter((_, i) => i !== vertexIdx);
       updated = currentAreas.map((a) =>
-        a.id === selectedPolygonId ? { ...a, points: newPoints } : a,
+        a.id === selectedPolygonId
+          ? {
+              ...a,
+              points: newPoints,
+              // 꼭짓점 편집 시 기준선을 가장 긴 변으로 자동 리셋 (install만)
+              eaveEdgeIndex: a.type === "install" ? findLongestEdgeIndex(newPoints) : undefined,
+            }
+          : a,
       );
+      onEaveChange?.(selectedPolygonId);
     }
     setAreas(updated);
     notifyParent(updated);
@@ -895,33 +1101,6 @@ export default function CropPopup({
           );
         })()}
 
-        {/* Floating Undo button — bottom-right of popup card */}
-        {(drawingMode === "install" || drawingMode === "exclude") &&
-          currentPoints.length > 0 && (
-            <button
-              onClick={undoLastPoint}
-              aria-label={t("undoLastPoint", lang)}
-              style={{
-                position: "absolute",
-                bottom: 16,
-                right: 16,
-                zIndex: 10,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: 32,
-                height: 32,
-                border: "1px solid var(--border-primary)",
-                background: "rgba(255, 255, 255, 0.9)",
-                color: "var(--text-secondary)",
-                borderRadius: "var(--radius-md)",
-                cursor: "pointer",
-                backdropFilter: "blur(8px)",
-              }}
-            >
-              <Undo2 size={16} />
-            </button>
-          )}
       </div>
     </div>
   );
