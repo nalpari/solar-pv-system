@@ -1,0 +1,562 @@
+{
+  "communities": {
+    "0": [
+      "agents_md",
+      "agents_no_test_framework",
+      "agents_panel_placement_three_funcs",
+      "agents_props_down_callbacks_up",
+      "agents_workflow",
+      "architecture_address_search_flow",
+      "architecture_component_tree",
+      "architecture_coordinate_conversion",
+      "architecture_docker_deployment",
+      "architecture_external_dependencies",
+      "architecture_grid_placement_strategy",
+      "architecture_panel_placement_flow",
+      "architecture_polygon_drawing_flow",
+      "architecture_polygon_inset_algorithm",
+      "architecture_state_table",
+      "architecture_system_overview",
+      "architecture_type_system",
+      "readme_address_search",
+      "readme_auto_module_placement",
+      "readme_building_crop",
+      "readme_eave_parallel_layout",
+      "readme_i18n_toggle",
+      "readme_image_save",
+      "readme_module_preset",
+      "readme_module_preset_table",
+      "readme_placement_constants",
+      "readme_results_display",
+      "readme_roof_edit_toolbar",
+      "readme_satellite_map",
+      "readme_simulation_input",
+      "readme_solar_pv_planner",
+      "readme_styling_rules",
+      "readme_tech_stack",
+      "sequence_address_search",
+      "sequence_panel_placement",
+      "sequence_polygon_drawing",
+      "sequence_polygon_editing"
+    ],
+    "1": [
+      "components_croppopup_computemetersperpixel",
+      "components_croppopup_convertareas",
+      "components_croppopup_converttopixelpolygons",
+      "components_croppopup_distancetosegment",
+      "components_croppopup_finalizevertexdrag",
+      "components_croppopup_findlongestedgeindex",
+      "components_croppopup_findnearestsnapvertex",
+      "components_croppopup_getcanvascoords",
+      "components_croppopup_getrenderedimagerect",
+      "components_croppopup_handlecontextmenu",
+      "components_croppopup_handledeletepolygon",
+      "components_croppopup_handledoubleclick",
+      "components_croppopup_handleload",
+      "components_croppopup_handlepointercancel",
+      "components_croppopup_handlepointerdown",
+      "components_croppopup_handlepointermove",
+      "components_croppopup_handlepointerup",
+      "components_croppopup_handlesave",
+      "components_croppopup_notifyparent",
+      "components_croppopup_pixeltolatlng",
+      "components_croppopup_synccanvassize",
+      "components_croppopup_t",
+      "components_croppopup_tooltipbutton",
+      "components_croppopup_trydeletevertex",
+      "components_croppopup_undolastpoint",
+      "components_panelconfig_getpresetsizes",
+      "components_panelconfig_handlepresetchange",
+      "src_app_components_croppopup_tsx",
+      "src_app_components_panelconfig_tsx",
+      "utils_panelplacement_ispointinpolygon"
+    ],
+    "2": [
+      "addresssearch_addresssearch",
+      "addresssearch_handleselect",
+      "addresssearch_searchplaces",
+      "header_header",
+      "i18n_lang_type",
+      "i18n_t",
+      "i18n_translations",
+      "layout_rootlayout",
+      "mapview_cropoverlay",
+      "mapview_getcursorfortarget",
+      "mapview_hittest",
+      "mapview_mapview",
+      "mapview_viewupdater",
+      "mapview_wheelzoomcontroller",
+      "nextconfig_nextconfig",
+      "page_home",
+      "page_sectionheader",
+      "panelconfig_getpresetsizes",
+      "panelconfig_panelconfig",
+      "resultspanel_resultspanel",
+      "roofedittoolbar_roofaction",
+      "roofedittoolbar_roofedittoolbar",
+      "roofedittoolbar_rooftool",
+      "roofedittoolbar_tools",
+      "simulationpanel_compassdiagram",
+      "simulationpanel_simulationformstate",
+      "simulationpanel_simulationpanel",
+      "types_drawingmode",
+      "types_panelorientation",
+      "types_panelsize"
+    ],
+    "3": [
+      "claudemd_architecture_overview",
+      "claudemd_rule_components",
+      "claudemd_rule_docker",
+      "claudemd_rule_styles",
+      "claudemd_rule_utils",
+      "codemap_conn_types",
+      "codemap_layers_taxonomy",
+      "codemap_node_address_search",
+      "codemap_node_center_updater",
+      "codemap_node_coord_transform",
+      "codemap_node_domain_types",
+      "codemap_node_drawing_overlay",
+      "codemap_node_drawing_toolbar",
+      "codemap_node_geometry_api",
+      "codemap_node_header",
+      "codemap_node_home_page",
+      "codemap_node_i18n",
+      "codemap_node_inset_polygon",
+      "codemap_node_map_controls",
+      "codemap_node_map_view",
+      "codemap_node_maps_api",
+      "codemap_node_panel_config",
+      "codemap_node_panel_overlay",
+      "codemap_node_place_panels",
+      "codemap_node_places_api",
+      "codemap_node_point_in_polygon",
+      "codemap_node_results_panel",
+      "codemap_playground_app"
+    ],
+    "4": [
+      "croppopup_areaentry",
+      "croppopup_convertareas",
+      "croppopup_pixeltolatlng",
+      "mapview_handleconfirm",
+      "page_handlecropcomplete",
+      "page_handleplacepanels",
+      "panelplacement_ensureccw",
+      "panelplacement_insetpolygon",
+      "panelplacement_ispointinpolygon",
+      "panelplacement_lineintersection",
+      "panelplacement_meterperlng",
+      "panelplacement_placepanels",
+      "panelplacement_placepanelsoncanvas",
+      "panelplacement_placepanelsoncanvascm",
+      "panelplacement_rotate",
+      "panelplacement_signedarea",
+      "panelplacement_tolatlng",
+      "panelplacement_tolocal",
+      "types_cropbounds",
+      "types_cropdata",
+      "types_latlng",
+      "types_pixelpanel",
+      "types_pixelpoint",
+      "types_pixelpolygon",
+      "types_placedpanel",
+      "types_polygonarea"
+    ],
+    "5": [
+      "croppopup_computemeterperpixel",
+      "croppopup_converttopixelpolygons",
+      "croppopup_croppopup",
+      "croppopup_distancetosegment",
+      "croppopup_finalizevertexdrag",
+      "croppopup_findlongestedgeindex",
+      "croppopup_findnearestsnapvertex",
+      "croppopup_handledeletepolygon",
+      "croppopup_handledoubleclick",
+      "croppopup_handlepointercancel",
+      "croppopup_handlepointerdown",
+      "croppopup_handlepointermove",
+      "croppopup_handlepointerup",
+      "croppopup_handlesave",
+      "croppopup_notifyparent",
+      "croppopup_synccanvassize",
+      "croppopup_tooltipbutton",
+      "croppopup_trydeletevertex",
+      "page_handleareaschange",
+      "page_handledeleteall",
+      "page_handleeavechange",
+      "page_handlepixelareaschange",
+      "types_polygonsubmode"
+    ],
+    "6": [
+      "app_page_handledeleteall",
+      "app_page_handledeleteallpanels",
+      "app_page_handleplacepanels",
+      "app_page_handleplaceselect",
+      "app_page_sectionheader",
+      "app_page_switchtosimulation",
+      "app_page_t",
+      "src_app_page_tsx",
+      "src_app_utils_panelplacement_ts",
+      "utils_panelplacement_ensureccw",
+      "utils_panelplacement_insetpolygon",
+      "utils_panelplacement_lineintersection",
+      "utils_panelplacement_metersperlng",
+      "utils_panelplacement_placepanels",
+      "utils_panelplacement_placepanelsoncanvas",
+      "utils_panelplacement_placepanelsoncanvascm",
+      "utils_panelplacement_rotate",
+      "utils_panelplacement_signedarea",
+      "utils_panelplacement_tolatlng",
+      "utils_panelplacement_tolocal"
+    ],
+    "7": [
+      "claudemd_agents_md_reference",
+      "claudemd_claude_code_guidance",
+      "claudemd_google_maps_integration",
+      "claudemd_graphify_integration",
+      "claudemd_html2canvas_capture",
+      "claudemd_path_alias",
+      "claudemd_pnpm_commands",
+      "claudemd_react_compiler",
+      "claudemd_tech_stack",
+      "claudemd_workflow_memo",
+      "codemap_node_api_provider",
+      "codemap_node_layout"
+    ],
+    "8": [
+      "components_mapview_getcursorfortarget",
+      "components_mapview_handleconfirm",
+      "components_mapview_handlepointercancel",
+      "components_mapview_handlepointerdown",
+      "components_mapview_handlepointermove",
+      "components_mapview_handlepointerup",
+      "components_mapview_hittest",
+      "components_mapview_viewupdater",
+      "components_mapview_wheelzoomcontroller",
+      "src_app_components_mapview_tsx"
+    ],
+    "9": [
+      "plan_canvas_polygon_editor",
+      "plan_pixel_to_latlng_conversion",
+      "plan_polygon_selection_tooltip",
+      "plan_polygon_ux_design",
+      "plan_polygon_ux_improvements",
+      "plan_roof_crop_design",
+      "plan_roof_crop_polygon_editor",
+      "plan_undo_feature",
+      "plan_vertex_editing"
+    ],
+    "10": [
+      "graphify_setup_gitignore_policy",
+      "graphify_setup_overview",
+      "graphify_setup_project_integration",
+      "graphify_setup_query_commands",
+      "graphify_setup_skill_registration",
+      "graphify_setup_uv_install"
+    ],
+    "11": [
+      "components_addresssearch_handleclickoutside",
+      "components_addresssearch_handleinputchange",
+      "components_addresssearch_handlesearchclick",
+      "components_addresssearch_handleselect",
+      "src_app_components_addresssearch_tsx"
+    ],
+    "12": [
+      "context_manage_cockroachdb_case",
+      "context_manage_concept",
+      "context_manage_front_matter",
+      "context_manage_mcdonald_analogy",
+      "context_manage_trigger_dev_case"
+    ],
+    "13": [
+      "components_simulationpanel_formatcurrency",
+      "components_simulationpanel_handlecostchange",
+      "components_simulationpanel_update",
+      "src_app_components_simulationpanel_tsx"
+    ],
+    "14": [
+      "app_layout_rootlayout",
+      "src_app_layout_tsx"
+    ],
+    "15": [
+      "src_app_utils_i18n_ts",
+      "utils_i18n_t"
+    ],
+    "16": [
+      "components_roofedittoolbar_handletoolclick",
+      "src_app_components_roofedittoolbar_tsx"
+    ],
+    "17": [
+      "postcss_config_mjs"
+    ],
+    "18": [
+      "eslint_config_mjs"
+    ],
+    "19": [
+      "next_config_ts"
+    ],
+    "20": [
+      "src_app_types_index_ts"
+    ],
+    "21": [
+      "src_app_components_resultspanel_tsx"
+    ],
+    "22": [
+      "src_app_components_header_tsx"
+    ],
+    "23": [
+      "postcssconfig_config"
+    ],
+    "24": [
+      "eslintconfig_eslintconfig"
+    ],
+    "25": [
+      "page_handleplaceselect"
+    ],
+    "26": [
+      "page_handlecropclose"
+    ],
+    "27": [
+      "page_handledeleteallpanels"
+    ],
+    "28": [
+      "page_switchtosimulation"
+    ],
+    "29": [
+      "croppopup_undolastpoint"
+    ],
+    "30": [
+      "sequence_app_init"
+    ],
+    "31": [
+      "sequence_i18n_toggle"
+    ],
+    "32": [
+      "sequence_area_calculation"
+    ],
+    "33": [
+      "hanwha_japan_logo"
+    ],
+    "34": [
+      "hanwha_japan_brand"
+    ],
+    "35": [
+      "file_icon"
+    ],
+    "36": [
+      "map_point_marker"
+    ],
+    "37": [
+      "vercel_logo"
+    ],
+    "38": [
+      "next_logo"
+    ],
+    "39": [
+      "roof_one_line_diagram"
+    ],
+    "40": [
+      "roof_slope_categories"
+    ],
+    "41": [
+      "compass_azimuth_indicator"
+    ],
+    "42": [
+      "globe_icon"
+    ],
+    "43": [
+      "window_icon"
+    ]
+  },
+  "cohesion": {
+    "0": 0.06,
+    "1": 0.11,
+    "2": 0.09,
+    "3": 0.09,
+    "4": 0.1,
+    "5": 0.12,
+    "6": 0.16,
+    "7": 0.17,
+    "8": 0.27,
+    "9": 0.25,
+    "10": 0.33,
+    "11": 0.4,
+    "12": 0.4,
+    "13": 0.67,
+    "14": 1.0,
+    "15": 1.0,
+    "16": 1.0,
+    "17": 1.0,
+    "18": 1.0,
+    "19": 1.0,
+    "20": 1.0,
+    "21": 1.0,
+    "22": 1.0,
+    "23": 1.0,
+    "24": 1.0,
+    "25": 1.0,
+    "26": 1.0,
+    "27": 1.0,
+    "28": 1.0,
+    "29": 1.0,
+    "30": 1.0,
+    "31": 1.0,
+    "32": 1.0,
+    "33": 1.0,
+    "34": 1.0,
+    "35": 1.0,
+    "36": 1.0,
+    "37": 1.0,
+    "38": 1.0,
+    "39": 1.0,
+    "40": 1.0,
+    "41": 1.0,
+    "42": 1.0,
+    "43": 1.0
+  },
+  "gods": [
+    {
+      "id": "page_home",
+      "label": "Home (root page component)",
+      "degree": 21
+    },
+    {
+      "id": "croppopup_croppopup",
+      "label": "CropPopup component",
+      "degree": 19
+    },
+    {
+      "id": "readme_solar_pv_planner",
+      "label": "Solar PV Planner",
+      "degree": 15
+    },
+    {
+      "id": "i18n_t",
+      "label": "t (translation function)",
+      "degree": 12
+    },
+    {
+      "id": "codemap_node_home_page",
+      "label": "Home Page (src/app/page.tsx)",
+      "degree": 12
+    },
+    {
+      "id": "croppopup_notifyparent",
+      "label": "notifyParent",
+      "degree": 10
+    },
+    {
+      "id": "components_croppopup_notifyparent",
+      "label": "notifyParent()",
+      "degree": 9
+    },
+    {
+      "id": "panelplacement_placepanels",
+      "label": "placePanels (latlng/mm)",
+      "degree": 9
+    },
+    {
+      "id": "panelplacement_placepanelsoncanvas",
+      "label": "placePanelsOnCanvas (pixel/mm)",
+      "degree": 8
+    },
+    {
+      "id": "architecture_system_overview",
+      "label": "System Overview (SPA)",
+      "degree": 8
+    }
+  ],
+  "surprises": [
+    {
+      "source": "Eave Parallel Layout",
+      "target": "Grid Placement Strategy",
+      "source_files": [
+        "README.md",
+        "docs/architecture.md"
+      ],
+      "confidence": "INFERRED",
+      "relation": "semantically_similar_to",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; semantically similar concepts with no structural link"
+    },
+    {
+      "source": "Solar PV Rooftop Layout Planner Architecture",
+      "target": "Solar PV Code Map Playground (HTML)",
+      "source_files": [
+        "CLAUDE.md",
+        "docs/codemap-playground.html"
+      ],
+      "confidence": "INFERRED",
+      "relation": "semantically_similar_to",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; semantically similar concepts with no structural link"
+    },
+    {
+      "source": "Three Panel Placement Functions",
+      "target": "Panel Placement Calculation Flow",
+      "source_files": [
+        "AGENTS.md",
+        "docs/architecture.md"
+      ],
+      "confidence": "INFERRED",
+      "relation": "conceptually_related_to",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; peripheral node `Three Panel Placement Functions` unexpectedly reaches hub `Panel Placement Calculation Flow`"
+    },
+    {
+      "source": "Home Page (src/app/page.tsx)",
+      "target": "Rule: components.md",
+      "source_files": [
+        "docs/codemap-playground.html",
+        "CLAUDE.md"
+      ],
+      "confidence": "INFERRED",
+      "relation": "conceptually_related_to",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; peripheral node `Rule: components.md` unexpectedly reaches hub `Home Page (src/app/page.tsx)`"
+    },
+    {
+      "source": "placePanels() (utils/panelPlacement.ts)",
+      "target": "Rule: utils.md",
+      "source_files": [
+        "docs/codemap-playground.html",
+        "CLAUDE.md"
+      ],
+      "confidence": "INFERRED",
+      "relation": "conceptually_related_to",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; peripheral node `Rule: utils.md` unexpectedly reaches hub `placePanels() (utils/panelPlacement.ts)`"
+    }
+  ],
+  "questions": [
+    {
+      "type": "bridge_node",
+      "question": "Why does `CropPopup component` connect `Community 5` to `Community 2`, `Community 4`?",
+      "why": "High betweenness centrality (0.033) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `Home (root page component)` connect `Community 2` to `Community 4`, `Community 5`?",
+      "why": "High betweenness centrality (0.030) - this node is a cross-community bridge."
+    },
+    {
+      "type": "verify_inferred",
+      "question": "Are the 3 inferred relationships involving `Home (root page component)` (e.g. with `RootLayout` and `MapView component`) actually correct?",
+      "why": "`Home (root page component)` has 3 INFERRED edges - model-reasoned connections that need verification."
+    },
+    {
+      "type": "verify_inferred",
+      "question": "Are the 2 inferred relationships involving `CropPopup component` (e.g. with `Home (root page component)` and `handleDeleteAll`) actually correct?",
+      "why": "`CropPopup component` has 2 INFERRED edges - model-reasoned connections that need verification."
+    },
+    {
+      "type": "isolated_nodes",
+      "question": "What connects `PostCSS config (Tailwind v4)`, `ESLint flat config`, `Next.js config (standalone, reactCompiler)` to the rest of the system?",
+      "why": "102 weakly-connected nodes found - possible documentation gaps or missing edges."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `Community 0` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.06 - nodes in this community are weakly interconnected."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `Community 1` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.11 - nodes in this community are weakly interconnected."
+    }
+  ]
+}

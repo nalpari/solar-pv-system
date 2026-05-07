@@ -4,22 +4,6 @@
   "graph": {
     "hyperedges": [
       {
-        "id": "panel_placement_pipeline",
-        "label": "Panel placement pipeline (cm UI -> mm internal -> grid placement)",
-        "nodes": [
-          "page_handleplacepanels",
-          "panelplacement_placepanelsoncanvascm",
-          "panelplacement_placepanelsoncanvas",
-          "panelplacement_insetpolygon",
-          "panelplacement_ispointinpolygon",
-          "panelplacement_rotate"
-        ],
-        "relation": "participate_in",
-        "confidence": "EXTRACTED",
-        "confidence_score": 0.95,
-        "source_file": "src/app/utils/panelPlacement.ts"
-      },
-      {
         "id": "sidebar_components",
         "label": "Left sidebar UI components",
         "nodes": [
@@ -48,6 +32,22 @@
         "confidence": "INFERRED",
         "confidence_score": 0.85,
         "source_file": "src/app/page.tsx"
+      },
+      {
+        "id": "panel_placement_pipeline",
+        "label": "Panel placement pipeline (cm UI -> mm internal -> grid placement)",
+        "nodes": [
+          "page_handleplacepanels",
+          "panelplacement_placepanelsoncanvascm",
+          "panelplacement_placepanelsoncanvas",
+          "panelplacement_insetpolygon",
+          "panelplacement_ispointinpolygon",
+          "panelplacement_rotate"
+        ],
+        "relation": "participate_in",
+        "confidence": "EXTRACTED",
+        "confidence_score": 0.95,
+        "source_file": "src/app/utils/panelPlacement.ts"
       },
       {
         "nodes": [
@@ -81,6 +81,51 @@
         "confidence": "EXTRACTED",
         "confidence_score": 1.0,
         "source_file": "docs/plans/2026-03-20-polygon-ux-improvements-design.md"
+      },
+      {
+        "id": "home_orchestrates_ui_components",
+        "label": "Home page orchestrates UI components via props/callbacks",
+        "nodes": [
+          "codemap_node_home_page",
+          "codemap_node_address_search",
+          "codemap_node_drawing_toolbar",
+          "codemap_node_panel_config",
+          "codemap_node_results_panel",
+          "codemap_node_map_view"
+        ],
+        "relation": "participate_in",
+        "confidence": "EXTRACTED",
+        "confidence_score": 1.0,
+        "source_file": "docs/codemap-playground.html"
+      },
+      {
+        "id": "mapview_internal_overlays",
+        "label": "MapView composes internal map overlays",
+        "nodes": [
+          "codemap_node_map_view",
+          "codemap_node_center_updater",
+          "codemap_node_drawing_overlay",
+          "codemap_node_panel_overlay",
+          "codemap_node_map_controls"
+        ],
+        "relation": "form",
+        "confidence": "EXTRACTED",
+        "confidence_score": 1.0,
+        "source_file": "docs/codemap-playground.html"
+      },
+      {
+        "id": "panel_placement_geometry_pipeline",
+        "label": "Panel placement geometry pipeline",
+        "nodes": [
+          "codemap_node_place_panels",
+          "codemap_node_inset_polygon",
+          "codemap_node_point_in_polygon",
+          "codemap_node_coord_transform"
+        ],
+        "relation": "implement",
+        "confidence": "EXTRACTED",
+        "confidence_score": 1.0,
+        "source_file": "docs/codemap-playground.html"
       }
     ]
   },
@@ -118,7 +163,7 @@
       "source_file": "src/app/layout.tsx",
       "source_location": "L1",
       "id": "src_app_layout_tsx",
-      "community": 13,
+      "community": 14,
       "norm_label": "layout.tsx"
     },
     {
@@ -127,7 +172,7 @@
       "source_file": "src/app/layout.tsx",
       "source_location": "L26",
       "id": "app_layout_rootlayout",
-      "community": 13,
+      "community": 14,
       "norm_label": "rootlayout()"
     },
     {
@@ -136,7 +181,7 @@
       "source_file": "src/app/page.tsx",
       "source_location": "L1",
       "id": "src_app_page_tsx",
-      "community": 5,
+      "community": 6,
       "norm_label": "page.tsx"
     },
     {
@@ -145,7 +190,7 @@
       "source_file": "src/app/page.tsx",
       "source_location": "L43",
       "id": "app_page_sectionheader",
-      "community": 5,
+      "community": 6,
       "norm_label": "sectionheader()"
     },
     {
@@ -154,7 +199,7 @@
       "source_file": "src/app/page.tsx",
       "source_location": "L112",
       "id": "app_page_handleplaceselect",
-      "community": 5,
+      "community": 6,
       "norm_label": "handleplaceselect()"
     },
     {
@@ -163,7 +208,7 @@
       "source_file": "src/app/page.tsx",
       "source_location": "L153",
       "id": "app_page_handledeleteall",
-      "community": 5,
+      "community": 6,
       "norm_label": "handledeleteall()"
     },
     {
@@ -172,7 +217,7 @@
       "source_file": "src/app/page.tsx",
       "source_location": "L163",
       "id": "app_page_handledeleteallpanels",
-      "community": 5,
+      "community": 6,
       "norm_label": "handledeleteallpanels()"
     },
     {
@@ -181,7 +226,7 @@
       "source_file": "src/app/page.tsx",
       "source_location": "L174",
       "id": "app_page_switchtosimulation",
-      "community": 5,
+      "community": 6,
       "norm_label": "switchtosimulation()"
     },
     {
@@ -190,7 +235,7 @@
       "source_file": "src/app/page.tsx",
       "source_location": "L181",
       "id": "app_page_handleplacepanels",
-      "community": 5,
+      "community": 6,
       "norm_label": "handleplacepanels()"
     },
     {
@@ -199,7 +244,7 @@
       "source_file": "src/app/page.tsx",
       "source_location": "L383",
       "id": "app_page_t",
-      "community": 5,
+      "community": 6,
       "norm_label": "t()"
     },
     {
@@ -217,7 +262,7 @@
       "source_file": "src/app/utils/i18n.ts",
       "source_location": "L1",
       "id": "src_app_utils_i18n_ts",
-      "community": 14,
+      "community": 15,
       "norm_label": "i18n.ts"
     },
     {
@@ -226,7 +271,7 @@
       "source_file": "src/app/utils/i18n.ts",
       "source_location": "L199",
       "id": "utils_i18n_t",
-      "community": 14,
+      "community": 15,
       "norm_label": "t()"
     },
     {
@@ -235,7 +280,7 @@
       "source_file": "src/app/utils/panelPlacement.ts",
       "source_location": "L1",
       "id": "src_app_utils_panelplacement_ts",
-      "community": 5,
+      "community": 6,
       "norm_label": "panelplacement.ts"
     },
     {
@@ -244,7 +289,7 @@
       "source_file": "src/app/utils/panelPlacement.ts",
       "source_location": "L10",
       "id": "utils_panelplacement_metersperlng",
-      "community": 5,
+      "community": 6,
       "norm_label": "metersperlng()"
     },
     {
@@ -253,7 +298,7 @@
       "source_file": "src/app/utils/panelPlacement.ts",
       "source_location": "L14",
       "id": "utils_panelplacement_tolocal",
-      "community": 5,
+      "community": 6,
       "norm_label": "tolocal()"
     },
     {
@@ -262,7 +307,7 @@
       "source_file": "src/app/utils/panelPlacement.ts",
       "source_location": "L21",
       "id": "utils_panelplacement_tolatlng",
-      "community": 5,
+      "community": 6,
       "norm_label": "tolatlng()"
     },
     {
@@ -271,7 +316,7 @@
       "source_file": "src/app/utils/panelPlacement.ts",
       "source_location": "L28",
       "id": "utils_panelplacement_signedarea",
-      "community": 5,
+      "community": 6,
       "norm_label": "signedarea()"
     },
     {
@@ -280,7 +325,7 @@
       "source_file": "src/app/utils/panelPlacement.ts",
       "source_location": "L37",
       "id": "utils_panelplacement_lineintersection",
-      "community": 5,
+      "community": 6,
       "norm_label": "lineintersection()"
     },
     {
@@ -289,7 +334,7 @@
       "source_file": "src/app/utils/panelPlacement.ts",
       "source_location": "L49",
       "id": "utils_panelplacement_ensureccw",
-      "community": 5,
+      "community": 6,
       "norm_label": "ensureccw()"
     },
     {
@@ -298,7 +343,7 @@
       "source_file": "src/app/utils/panelPlacement.ts",
       "source_location": "L55",
       "id": "utils_panelplacement_insetpolygon",
-      "community": 5,
+      "community": 6,
       "norm_label": "insetpolygon()"
     },
     {
@@ -316,7 +361,7 @@
       "source_file": "src/app/utils/panelPlacement.ts",
       "source_location": "L110",
       "id": "utils_panelplacement_rotate",
-      "community": 5,
+      "community": 6,
       "norm_label": "rotate()"
     },
     {
@@ -325,7 +370,7 @@
       "source_file": "src/app/utils/panelPlacement.ts",
       "source_location": "L116",
       "id": "utils_panelplacement_placepanels",
-      "community": 5,
+      "community": 6,
       "norm_label": "placepanels()"
     },
     {
@@ -334,7 +379,7 @@
       "source_file": "src/app/utils/panelPlacement.ts",
       "source_location": "L231",
       "id": "utils_panelplacement_placepanelsoncanvas",
-      "community": 5,
+      "community": 6,
       "norm_label": "placepanelsoncanvas()"
     },
     {
@@ -343,7 +388,7 @@
       "source_file": "src/app/utils/panelPlacement.ts",
       "source_location": "L355",
       "id": "utils_panelplacement_placepanelsoncanvascm",
-      "community": 5,
+      "community": 6,
       "norm_label": "placepanelsoncanvascm()"
     },
     {
@@ -577,7 +622,7 @@
       "source_file": "src/app/components/CropPopup.tsx",
       "source_location": "L1097",
       "id": "components_croppopup_t",
-      "community": 11,
+      "community": 1,
       "norm_label": "t()"
     },
     {
@@ -586,7 +631,7 @@
       "source_file": "src/app/components/SimulationPanel.tsx",
       "source_location": "L1",
       "id": "src_app_components_simulationpanel_tsx",
-      "community": 12,
+      "community": 13,
       "norm_label": "simulationpanel.tsx"
     },
     {
@@ -595,7 +640,7 @@
       "source_file": "src/app/components/SimulationPanel.tsx",
       "source_location": "L100",
       "id": "components_simulationpanel_update",
-      "community": 12,
+      "community": 13,
       "norm_label": "update()"
     },
     {
@@ -604,7 +649,7 @@
       "source_file": "src/app/components/SimulationPanel.tsx",
       "source_location": "L106",
       "id": "components_simulationpanel_formatcurrency",
-      "community": 12,
+      "community": 13,
       "norm_label": "formatcurrency()"
     },
     {
@@ -613,7 +658,7 @@
       "source_file": "src/app/components/SimulationPanel.tsx",
       "source_location": "L112",
       "id": "components_simulationpanel_handlecostchange",
-      "community": 12,
+      "community": 13,
       "norm_label": "handlecostchange()"
     },
     {
@@ -721,7 +766,7 @@
       "source_file": "src/app/components/RoofEditToolbar.tsx",
       "source_location": "L1",
       "id": "src_app_components_roofedittoolbar_tsx",
-      "community": 15,
+      "community": 16,
       "norm_label": "roofedittoolbar.tsx"
     },
     {
@@ -730,7 +775,7 @@
       "source_file": "src/app/components/RoofEditToolbar.tsx",
       "source_location": "L52",
       "id": "components_roofedittoolbar_handletoolclick",
-      "community": 15,
+      "community": 16,
       "norm_label": "handletoolclick()"
     },
     {
@@ -748,7 +793,7 @@
       "source_file": "src/app/components/PanelConfig.tsx",
       "source_location": "L1",
       "id": "src_app_components_panelconfig_tsx",
-      "community": 11,
+      "community": 1,
       "norm_label": "panelconfig.tsx"
     },
     {
@@ -757,7 +802,7 @@
       "source_file": "src/app/components/PanelConfig.tsx",
       "source_location": "L9",
       "id": "components_panelconfig_getpresetsizes",
-      "community": 11,
+      "community": 1,
       "norm_label": "getpresetsizes()"
     },
     {
@@ -766,7 +811,7 @@
       "source_file": "src/app/components/PanelConfig.tsx",
       "source_location": "L32",
       "id": "components_panelconfig_handlepresetchange",
-      "community": 11,
+      "community": 1,
       "norm_label": "handlepresetchange()"
     },
     {
@@ -775,7 +820,7 @@
       "source_file": "src/app/components/AddressSearch.tsx",
       "source_location": "L1",
       "id": "src_app_components_addresssearch_tsx",
-      "community": 10,
+      "community": 11,
       "norm_label": "addresssearch.tsx"
     },
     {
@@ -784,7 +829,7 @@
       "source_file": "src/app/components/AddressSearch.tsx",
       "source_location": "L37",
       "id": "components_addresssearch_handleclickoutside",
-      "community": 10,
+      "community": 11,
       "norm_label": "handleclickoutside()"
     },
     {
@@ -793,7 +838,7 @@
       "source_file": "src/app/components/AddressSearch.tsx",
       "source_location": "L80",
       "id": "components_addresssearch_handleinputchange",
-      "community": 10,
+      "community": 11,
       "norm_label": "handleinputchange()"
     },
     {
@@ -802,7 +847,7 @@
       "source_file": "src/app/components/AddressSearch.tsx",
       "source_location": "L86",
       "id": "components_addresssearch_handlesearchclick",
-      "community": 10,
+      "community": 11,
       "norm_label": "handlesearchclick()"
     },
     {
@@ -811,8 +856,60 @@
       "source_file": "src/app/components/AddressSearch.tsx",
       "source_location": "L92",
       "id": "components_addresssearch_handleselect",
-      "community": 10,
+      "community": 11,
       "norm_label": "handleselect()"
+    },
+    {
+      "label": "PostCSS config (Tailwind v4)",
+      "file_type": "code",
+      "source_file": "postcss.config.mjs",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "postcssconfig_config",
+      "community": 23,
+      "norm_label": "postcss config (tailwind v4)"
+    },
+    {
+      "label": "ESLint flat config",
+      "file_type": "code",
+      "source_file": "eslint.config.mjs",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "eslintconfig_eslintconfig",
+      "community": 24,
+      "norm_label": "eslint flat config"
+    },
+    {
+      "label": "Next.js config (standalone, reactCompiler)",
+      "file_type": "code",
+      "source_file": "next.config.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "nextconfig_nextconfig",
+      "community": 2,
+      "norm_label": "next.js config (standalone, reactcompiler)"
+    },
+    {
+      "label": "RootLayout",
+      "file_type": "code",
+      "source_file": "src/app/layout.tsx",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "layout_rootlayout",
+      "community": 2,
+      "norm_label": "rootlayout"
     },
     {
       "label": "Home (root page component)",
@@ -824,7 +921,7 @@
       "author": null,
       "contributor": null,
       "id": "page_home",
-      "community": 0,
+      "community": 2,
       "norm_label": "home (root page component)"
     },
     {
@@ -837,7 +934,7 @@
       "author": null,
       "contributor": null,
       "id": "page_sectionheader",
-      "community": 0,
+      "community": 2,
       "norm_label": "sectionheader (sub-component)"
     },
     {
@@ -850,7 +947,7 @@
       "author": null,
       "contributor": null,
       "id": "page_handleplaceselect",
-      "community": 23,
+      "community": 25,
       "norm_label": "handleplaceselect"
     },
     {
@@ -863,7 +960,7 @@
       "author": null,
       "contributor": null,
       "id": "page_handlecropcomplete",
-      "community": 2,
+      "community": 4,
       "norm_label": "handlecropcomplete"
     },
     {
@@ -876,7 +973,7 @@
       "author": null,
       "contributor": null,
       "id": "page_handleareaschange",
-      "community": 3,
+      "community": 5,
       "norm_label": "handleareaschange"
     },
     {
@@ -889,7 +986,7 @@
       "author": null,
       "contributor": null,
       "id": "page_handlepixelareaschange",
-      "community": 3,
+      "community": 5,
       "norm_label": "handlepixelareaschange"
     },
     {
@@ -902,7 +999,7 @@
       "author": null,
       "contributor": null,
       "id": "page_handlecropclose",
-      "community": 24,
+      "community": 26,
       "norm_label": "handlecropclose"
     },
     {
@@ -915,7 +1012,7 @@
       "author": null,
       "contributor": null,
       "id": "page_handledeleteall",
-      "community": 3,
+      "community": 5,
       "norm_label": "handledeleteall"
     },
     {
@@ -928,7 +1025,7 @@
       "author": null,
       "contributor": null,
       "id": "page_handledeleteallpanels",
-      "community": 25,
+      "community": 27,
       "norm_label": "handledeleteallpanels"
     },
     {
@@ -941,7 +1038,7 @@
       "author": null,
       "contributor": null,
       "id": "page_handleeavechange",
-      "community": 3,
+      "community": 5,
       "norm_label": "handleeavechange"
     },
     {
@@ -954,7 +1051,7 @@
       "author": null,
       "contributor": null,
       "id": "page_switchtosimulation",
-      "community": 26,
+      "community": 28,
       "norm_label": "switchtosimulation"
     },
     {
@@ -967,203 +1064,8 @@
       "author": null,
       "contributor": null,
       "id": "page_handleplacepanels",
-      "community": 2,
+      "community": 4,
       "norm_label": "handleplacepanels"
-    },
-    {
-      "label": "placePanels (latlng/mm)",
-      "file_type": "code",
-      "source_file": "src/app/utils/panelPlacement.ts",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "panelplacement_placepanels",
-      "community": 2,
-      "norm_label": "placepanels (latlng/mm)"
-    },
-    {
-      "label": "placePanelsOnCanvas (pixel/mm)",
-      "file_type": "code",
-      "source_file": "src/app/utils/panelPlacement.ts",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "panelplacement_placepanelsoncanvas",
-      "community": 2,
-      "norm_label": "placepanelsoncanvas (pixel/mm)"
-    },
-    {
-      "label": "placePanelsOnCanvasCm (pixel/cm)",
-      "file_type": "code",
-      "source_file": "src/app/utils/panelPlacement.ts",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "panelplacement_placepanelsoncanvascm",
-      "community": 2,
-      "norm_label": "placepanelsoncanvascm (pixel/cm)"
-    },
-    {
-      "label": "isPointInPolygon",
-      "file_type": "code",
-      "source_file": "src/app/utils/panelPlacement.ts",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "panelplacement_ispointinpolygon",
-      "community": 2,
-      "norm_label": "ispointinpolygon"
-    },
-    {
-      "label": "insetPolygon",
-      "file_type": "code",
-      "source_file": "src/app/utils/panelPlacement.ts",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "panelplacement_insetpolygon",
-      "community": 2,
-      "norm_label": "insetpolygon"
-    },
-    {
-      "label": "signedArea",
-      "file_type": "code",
-      "source_file": "src/app/utils/panelPlacement.ts",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "panelplacement_signedarea",
-      "community": 2,
-      "norm_label": "signedarea"
-    },
-    {
-      "label": "ensureCCW",
-      "file_type": "code",
-      "source_file": "src/app/utils/panelPlacement.ts",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "panelplacement_ensureccw",
-      "community": 2,
-      "norm_label": "ensureccw"
-    },
-    {
-      "label": "lineIntersection",
-      "file_type": "code",
-      "source_file": "src/app/utils/panelPlacement.ts",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "panelplacement_lineintersection",
-      "community": 2,
-      "norm_label": "lineintersection"
-    },
-    {
-      "label": "toLocal (latlng->meters)",
-      "file_type": "code",
-      "source_file": "src/app/utils/panelPlacement.ts",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "panelplacement_tolocal",
-      "community": 2,
-      "norm_label": "tolocal (latlng->meters)"
-    },
-    {
-      "label": "toLatLng (meters->latlng)",
-      "file_type": "code",
-      "source_file": "src/app/utils/panelPlacement.ts",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "panelplacement_tolatlng",
-      "community": 2,
-      "norm_label": "tolatlng (meters->latlng)"
-    },
-    {
-      "label": "metersPerLng",
-      "file_type": "code",
-      "source_file": "src/app/utils/panelPlacement.ts",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "panelplacement_meterperlng",
-      "community": 2,
-      "norm_label": "metersperlng"
-    },
-    {
-      "label": "rotate (point rotation)",
-      "file_type": "code",
-      "source_file": "src/app/utils/panelPlacement.ts",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "panelplacement_rotate",
-      "community": 2,
-      "norm_label": "rotate (point rotation)"
-    },
-    {
-      "label": "t (translation function)",
-      "file_type": "code",
-      "source_file": "src/app/utils/i18n.ts",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "i18n_t",
-      "community": 0,
-      "norm_label": "t (translation function)"
-    },
-    {
-      "label": "translations table",
-      "file_type": "code",
-      "source_file": "src/app/utils/i18n.ts",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "i18n_translations",
-      "community": 0,
-      "norm_label": "translations table"
-    },
-    {
-      "label": "Lang type (ja|en)",
-      "file_type": "code",
-      "source_file": "src/app/utils/i18n.ts",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "i18n_lang_type",
-      "community": 0,
-      "norm_label": "lang type (ja|en)"
     },
     {
       "label": "LatLng type",
@@ -1175,7 +1077,7 @@
       "author": null,
       "contributor": null,
       "id": "types_latlng",
-      "community": 2,
+      "community": 4,
       "norm_label": "latlng type"
     },
     {
@@ -1188,7 +1090,7 @@
       "author": null,
       "contributor": null,
       "id": "types_panelsize",
-      "community": 0,
+      "community": 2,
       "norm_label": "panelsize type"
     },
     {
@@ -1201,7 +1103,7 @@
       "author": null,
       "contributor": null,
       "id": "types_panelorientation",
-      "community": 0,
+      "community": 2,
       "norm_label": "panelorientation type"
     },
     {
@@ -1214,7 +1116,7 @@
       "author": null,
       "contributor": null,
       "id": "types_drawingmode",
-      "community": 3,
+      "community": 2,
       "norm_label": "drawingmode type"
     },
     {
@@ -1227,7 +1129,7 @@
       "author": null,
       "contributor": null,
       "id": "types_polygonarea",
-      "community": 2,
+      "community": 4,
       "norm_label": "polygonarea type"
     },
     {
@@ -1240,7 +1142,7 @@
       "author": null,
       "contributor": null,
       "id": "types_placedpanel",
-      "community": 2,
+      "community": 4,
       "norm_label": "placedpanel type"
     },
     {
@@ -1253,7 +1155,7 @@
       "author": null,
       "contributor": null,
       "id": "types_cropbounds",
-      "community": 2,
+      "community": 4,
       "norm_label": "cropbounds type"
     },
     {
@@ -1266,7 +1168,7 @@
       "author": null,
       "contributor": null,
       "id": "types_cropdata",
-      "community": 2,
+      "community": 4,
       "norm_label": "cropdata type"
     },
     {
@@ -1279,7 +1181,7 @@
       "author": null,
       "contributor": null,
       "id": "types_pixelpoint",
-      "community": 2,
+      "community": 4,
       "norm_label": "pixelpoint type"
     },
     {
@@ -1292,7 +1194,7 @@
       "author": null,
       "contributor": null,
       "id": "types_pixelpolygon",
-      "community": 2,
+      "community": 4,
       "norm_label": "pixelpolygon type"
     },
     {
@@ -1305,7 +1207,7 @@
       "author": null,
       "contributor": null,
       "id": "types_pixelpanel",
-      "community": 2,
+      "community": 4,
       "norm_label": "pixelpanel type"
     },
     {
@@ -1318,8 +1220,203 @@
       "author": null,
       "contributor": null,
       "id": "types_polygonsubmode",
-      "community": 3,
+      "community": 5,
       "norm_label": "polygonsubmode type"
+    },
+    {
+      "label": "t (translation function)",
+      "file_type": "code",
+      "source_file": "src/app/utils/i18n.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "i18n_t",
+      "community": 2,
+      "norm_label": "t (translation function)"
+    },
+    {
+      "label": "translations table",
+      "file_type": "code",
+      "source_file": "src/app/utils/i18n.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "i18n_translations",
+      "community": 2,
+      "norm_label": "translations table"
+    },
+    {
+      "label": "Lang type (ja|en)",
+      "file_type": "code",
+      "source_file": "src/app/utils/i18n.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "i18n_lang_type",
+      "community": 2,
+      "norm_label": "lang type (ja|en)"
+    },
+    {
+      "label": "placePanels (latlng/mm)",
+      "file_type": "code",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "panelplacement_placepanels",
+      "community": 4,
+      "norm_label": "placepanels (latlng/mm)"
+    },
+    {
+      "label": "placePanelsOnCanvas (pixel/mm)",
+      "file_type": "code",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "panelplacement_placepanelsoncanvas",
+      "community": 4,
+      "norm_label": "placepanelsoncanvas (pixel/mm)"
+    },
+    {
+      "label": "placePanelsOnCanvasCm (pixel/cm)",
+      "file_type": "code",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "panelplacement_placepanelsoncanvascm",
+      "community": 4,
+      "norm_label": "placepanelsoncanvascm (pixel/cm)"
+    },
+    {
+      "label": "isPointInPolygon",
+      "file_type": "code",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "panelplacement_ispointinpolygon",
+      "community": 4,
+      "norm_label": "ispointinpolygon"
+    },
+    {
+      "label": "insetPolygon",
+      "file_type": "code",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "panelplacement_insetpolygon",
+      "community": 4,
+      "norm_label": "insetpolygon"
+    },
+    {
+      "label": "signedArea",
+      "file_type": "code",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "panelplacement_signedarea",
+      "community": 4,
+      "norm_label": "signedarea"
+    },
+    {
+      "label": "ensureCCW",
+      "file_type": "code",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "panelplacement_ensureccw",
+      "community": 4,
+      "norm_label": "ensureccw"
+    },
+    {
+      "label": "lineIntersection",
+      "file_type": "code",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "panelplacement_lineintersection",
+      "community": 4,
+      "norm_label": "lineintersection"
+    },
+    {
+      "label": "toLocal (latlng->meters)",
+      "file_type": "code",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "panelplacement_tolocal",
+      "community": 4,
+      "norm_label": "tolocal (latlng->meters)"
+    },
+    {
+      "label": "toLatLng (meters->latlng)",
+      "file_type": "code",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "panelplacement_tolatlng",
+      "community": 4,
+      "norm_label": "tolatlng (meters->latlng)"
+    },
+    {
+      "label": "metersPerLng",
+      "file_type": "code",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "panelplacement_meterperlng",
+      "community": 4,
+      "norm_label": "metersperlng"
+    },
+    {
+      "label": "rotate (point rotation)",
+      "file_type": "code",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "panelplacement_rotate",
+      "community": 4,
+      "norm_label": "rotate (point rotation)"
     },
     {
       "label": "CropPopup component",
@@ -1331,7 +1428,7 @@
       "author": null,
       "contributor": null,
       "id": "croppopup_croppopup",
-      "community": 3,
+      "community": 5,
       "norm_label": "croppopup component"
     },
     {
@@ -1344,7 +1441,7 @@
       "author": null,
       "contributor": null,
       "id": "croppopup_findnearestsnapvertex",
-      "community": 3,
+      "community": 5,
       "norm_label": "findnearestsnapvertex"
     },
     {
@@ -1357,7 +1454,7 @@
       "author": null,
       "contributor": null,
       "id": "croppopup_findlongestedgeindex",
-      "community": 3,
+      "community": 5,
       "norm_label": "findlongestedgeindex"
     },
     {
@@ -1370,7 +1467,7 @@
       "author": null,
       "contributor": null,
       "id": "croppopup_distancetosegment",
-      "community": 3,
+      "community": 5,
       "norm_label": "distancetosegment"
     },
     {
@@ -1383,7 +1480,7 @@
       "author": null,
       "contributor": null,
       "id": "croppopup_pixeltolatlng",
-      "community": 2,
+      "community": 4,
       "norm_label": "pixeltolatlng"
     },
     {
@@ -1396,7 +1493,7 @@
       "author": null,
       "contributor": null,
       "id": "croppopup_convertareas",
-      "community": 2,
+      "community": 4,
       "norm_label": "convertareas"
     },
     {
@@ -1409,7 +1506,7 @@
       "author": null,
       "contributor": null,
       "id": "croppopup_converttopixelpolygons",
-      "community": 3,
+      "community": 5,
       "norm_label": "converttopixelpolygons"
     },
     {
@@ -1422,7 +1519,7 @@
       "author": null,
       "contributor": null,
       "id": "croppopup_tooltipbutton",
-      "community": 3,
+      "community": 5,
       "norm_label": "tooltipbutton"
     },
     {
@@ -1435,7 +1532,7 @@
       "author": null,
       "contributor": null,
       "id": "croppopup_handlepointerdown",
-      "community": 3,
+      "community": 5,
       "norm_label": "handlepointerdown"
     },
     {
@@ -1448,7 +1545,7 @@
       "author": null,
       "contributor": null,
       "id": "croppopup_handlepointermove",
-      "community": 3,
+      "community": 5,
       "norm_label": "handlepointermove"
     },
     {
@@ -1461,7 +1558,7 @@
       "author": null,
       "contributor": null,
       "id": "croppopup_handlepointerup",
-      "community": 3,
+      "community": 5,
       "norm_label": "handlepointerup"
     },
     {
@@ -1474,7 +1571,7 @@
       "author": null,
       "contributor": null,
       "id": "croppopup_handlepointercancel",
-      "community": 3,
+      "community": 5,
       "norm_label": "handlepointercancel"
     },
     {
@@ -1487,7 +1584,7 @@
       "author": null,
       "contributor": null,
       "id": "croppopup_finalizevertexdrag",
-      "community": 3,
+      "community": 5,
       "norm_label": "finalizevertexdrag"
     },
     {
@@ -1500,7 +1597,7 @@
       "author": null,
       "contributor": null,
       "id": "croppopup_trydeletevertex",
-      "community": 3,
+      "community": 5,
       "norm_label": "trydeletevertex"
     },
     {
@@ -1513,7 +1610,7 @@
       "author": null,
       "contributor": null,
       "id": "croppopup_handledoubleclick",
-      "community": 3,
+      "community": 5,
       "norm_label": "handledoubleclick"
     },
     {
@@ -1526,7 +1623,7 @@
       "author": null,
       "contributor": null,
       "id": "croppopup_handlesave",
-      "community": 3,
+      "community": 5,
       "norm_label": "handlesave (png download)"
     },
     {
@@ -1539,7 +1636,7 @@
       "author": null,
       "contributor": null,
       "id": "croppopup_handledeletepolygon",
-      "community": 3,
+      "community": 5,
       "norm_label": "handledeletepolygon"
     },
     {
@@ -1552,7 +1649,7 @@
       "author": null,
       "contributor": null,
       "id": "croppopup_undolastpoint",
-      "community": 27,
+      "community": 29,
       "norm_label": "undolastpoint"
     },
     {
@@ -1565,7 +1662,7 @@
       "author": null,
       "contributor": null,
       "id": "croppopup_notifyparent",
-      "community": 3,
+      "community": 5,
       "norm_label": "notifyparent"
     },
     {
@@ -1578,7 +1675,7 @@
       "author": null,
       "contributor": null,
       "id": "croppopup_synccanvassize",
-      "community": 3,
+      "community": 5,
       "norm_label": "synccanvassize"
     },
     {
@@ -1591,7 +1688,7 @@
       "author": null,
       "contributor": null,
       "id": "croppopup_computemeterperpixel",
-      "community": 3,
+      "community": 5,
       "norm_label": "computemetersperpixel"
     },
     {
@@ -1604,7 +1701,7 @@
       "author": null,
       "contributor": null,
       "id": "croppopup_areaentry",
-      "community": 2,
+      "community": 4,
       "norm_label": "areaentry interface"
     },
     {
@@ -1617,7 +1714,7 @@
       "author": null,
       "contributor": null,
       "id": "simulationpanel_simulationpanel",
-      "community": 0,
+      "community": 2,
       "norm_label": "simulationpanel component"
     },
     {
@@ -1630,7 +1727,7 @@
       "author": null,
       "contributor": null,
       "id": "simulationpanel_compassdiagram",
-      "community": 0,
+      "community": 2,
       "norm_label": "compassdiagram"
     },
     {
@@ -1643,7 +1740,7 @@
       "author": null,
       "contributor": null,
       "id": "simulationpanel_simulationformstate",
-      "community": 0,
+      "community": 2,
       "norm_label": "simulationformstate type"
     },
     {
@@ -1656,7 +1753,7 @@
       "author": null,
       "contributor": null,
       "id": "resultspanel_resultspanel",
-      "community": 0,
+      "community": 2,
       "norm_label": "resultspanel component"
     },
     {
@@ -1669,7 +1766,7 @@
       "author": null,
       "contributor": null,
       "id": "mapview_mapview",
-      "community": 0,
+      "community": 2,
       "norm_label": "mapview component"
     },
     {
@@ -1682,7 +1779,7 @@
       "author": null,
       "contributor": null,
       "id": "mapview_viewupdater",
-      "community": 0,
+      "community": 2,
       "norm_label": "viewupdater"
     },
     {
@@ -1695,7 +1792,7 @@
       "author": null,
       "contributor": null,
       "id": "mapview_wheelzoomcontroller",
-      "community": 0,
+      "community": 2,
       "norm_label": "wheelzoomcontroller"
     },
     {
@@ -1708,7 +1805,7 @@
       "author": null,
       "contributor": null,
       "id": "mapview_cropoverlay",
-      "community": 0,
+      "community": 2,
       "norm_label": "cropoverlay"
     },
     {
@@ -1721,7 +1818,7 @@
       "author": null,
       "contributor": null,
       "id": "mapview_handleconfirm",
-      "community": 2,
+      "community": 4,
       "norm_label": "handleconfirm (crop confirm)"
     },
     {
@@ -1734,7 +1831,7 @@
       "author": null,
       "contributor": null,
       "id": "mapview_hittest",
-      "community": 0,
+      "community": 2,
       "norm_label": "hittest (crop handle)"
     },
     {
@@ -1747,7 +1844,7 @@
       "author": null,
       "contributor": null,
       "id": "mapview_getcursorfortarget",
-      "community": 0,
+      "community": 2,
       "norm_label": "getcursorfortarget"
     },
     {
@@ -1760,7 +1857,7 @@
       "author": null,
       "contributor": null,
       "id": "roofedittoolbar_roofedittoolbar",
-      "community": 0,
+      "community": 2,
       "norm_label": "roofedittoolbar component"
     },
     {
@@ -1773,7 +1870,7 @@
       "author": null,
       "contributor": null,
       "id": "roofedittoolbar_rooftool",
-      "community": 0,
+      "community": 2,
       "norm_label": "rooftool type"
     },
     {
@@ -1786,7 +1883,7 @@
       "author": null,
       "contributor": null,
       "id": "roofedittoolbar_roofaction",
-      "community": 0,
+      "community": 2,
       "norm_label": "roofaction type"
     },
     {
@@ -1799,7 +1896,7 @@
       "author": null,
       "contributor": null,
       "id": "roofedittoolbar_tools",
-      "community": 0,
+      "community": 2,
       "norm_label": "tools toolbar definition"
     },
     {
@@ -1812,7 +1909,7 @@
       "author": null,
       "contributor": null,
       "id": "header_header",
-      "community": 0,
+      "community": 2,
       "norm_label": "header component"
     },
     {
@@ -1825,7 +1922,7 @@
       "author": null,
       "contributor": null,
       "id": "panelconfig_panelconfig",
-      "community": 0,
+      "community": 2,
       "norm_label": "panelconfig component"
     },
     {
@@ -1838,7 +1935,7 @@
       "author": null,
       "contributor": null,
       "id": "panelconfig_getpresetsizes",
-      "community": 0,
+      "community": 2,
       "norm_label": "getpresetsizes"
     },
     {
@@ -1851,7 +1948,7 @@
       "author": null,
       "contributor": null,
       "id": "addresssearch_addresssearch",
-      "community": 0,
+      "community": 2,
       "norm_label": "addresssearch component"
     },
     {
@@ -1864,7 +1961,7 @@
       "author": null,
       "contributor": null,
       "id": "addresssearch_searchplaces",
-      "community": 0,
+      "community": 2,
       "norm_label": "searchplaces (places autocomplete)"
     },
     {
@@ -1877,60 +1974,8 @@
       "author": null,
       "contributor": null,
       "id": "addresssearch_handleselect",
-      "community": 0,
+      "community": 2,
       "norm_label": "handleselect (place getdetails)"
-    },
-    {
-      "label": "RootLayout",
-      "file_type": "code",
-      "source_file": "src/app/layout.tsx",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "layout_rootlayout",
-      "community": 0,
-      "norm_label": "rootlayout"
-    },
-    {
-      "label": "Next.js config (standalone, reactCompiler)",
-      "file_type": "code",
-      "source_file": "next.config.ts",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "nextconfig_nextconfig",
-      "community": 0,
-      "norm_label": "next.js config (standalone, reactcompiler)"
-    },
-    {
-      "label": "ESLint flat config",
-      "file_type": "code",
-      "source_file": "eslint.config.mjs",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "eslintconfig_eslintconfig",
-      "community": 28,
-      "norm_label": "eslint flat config"
-    },
-    {
-      "label": "PostCSS config (Tailwind v4)",
-      "file_type": "code",
-      "source_file": "postcss.config.mjs",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "postcssconfig_config",
-      "community": 29,
-      "norm_label": "postcss config (tailwind v4)"
     },
     {
       "label": "Solar PV Planner",
@@ -1942,7 +1987,7 @@
       "author": null,
       "contributor": null,
       "id": "readme_solar_pv_planner",
-      "community": 7,
+      "community": 0,
       "norm_label": "solar pv planner"
     },
     {
@@ -1955,7 +2000,7 @@
       "author": null,
       "contributor": null,
       "id": "readme_address_search",
-      "community": 7,
+      "community": 0,
       "norm_label": "address search feature"
     },
     {
@@ -1968,7 +2013,7 @@
       "author": null,
       "contributor": null,
       "id": "readme_satellite_map",
-      "community": 7,
+      "community": 0,
       "norm_label": "satellite map"
     },
     {
@@ -1981,7 +2026,7 @@
       "author": null,
       "contributor": null,
       "id": "readme_building_crop",
-      "community": 7,
+      "community": 0,
       "norm_label": "building crop feature"
     },
     {
@@ -1994,7 +2039,7 @@
       "author": null,
       "contributor": null,
       "id": "readme_roof_edit_toolbar",
-      "community": 7,
+      "community": 0,
       "norm_label": "roof edit toolbar"
     },
     {
@@ -2007,7 +2052,7 @@
       "author": null,
       "contributor": null,
       "id": "readme_module_preset",
-      "community": 7,
+      "community": 0,
       "norm_label": "module preset selection"
     },
     {
@@ -2021,7 +2066,7 @@
       "contributor": null,
       "rationale": "Tries Portrait and Landscape orientations and auto-adopts the one that fits more panels",
       "id": "readme_auto_module_placement",
-      "community": 7,
+      "community": 0,
       "norm_label": "auto module placement"
     },
     {
@@ -2035,7 +2080,7 @@
       "contributor": null,
       "rationale": "Aligns grid parallel to eave edge designated by flowSetting for natural water-flow direction",
       "id": "readme_eave_parallel_layout",
-      "community": 4,
+      "community": 0,
       "norm_label": "eave parallel layout"
     },
     {
@@ -2048,7 +2093,7 @@
       "author": null,
       "contributor": null,
       "id": "readme_results_display",
-      "community": 7,
+      "community": 0,
       "norm_label": "results display"
     },
     {
@@ -2061,7 +2106,7 @@
       "author": null,
       "contributor": null,
       "id": "readme_image_save",
-      "community": 7,
+      "community": 0,
       "norm_label": "image save (png export)"
     },
     {
@@ -2074,7 +2119,7 @@
       "author": null,
       "contributor": null,
       "id": "readme_simulation_input",
-      "community": 7,
+      "community": 0,
       "norm_label": "generation simulation input"
     },
     {
@@ -2087,7 +2132,7 @@
       "author": null,
       "contributor": null,
       "id": "readme_i18n_toggle",
-      "community": 7,
+      "community": 0,
       "norm_label": "japanese/english i18n toggle"
     },
     {
@@ -2100,7 +2145,7 @@
       "author": null,
       "contributor": null,
       "id": "readme_tech_stack",
-      "community": 7,
+      "community": 0,
       "norm_label": "tech stack"
     },
     {
@@ -2114,7 +2159,7 @@
       "contributor": null,
       "rationale": "GAP_CM=0.3 (3mm) and MARGIN_CM=30 (300mm) are hard-coded in page.tsx, not exposed as UI inputs",
       "id": "readme_placement_constants",
-      "community": 7,
+      "community": 0,
       "norm_label": "placement constants (gap_cm, margin_cm)"
     },
     {
@@ -2128,7 +2173,7 @@
       "contributor": null,
       "rationale": "Uses CSS custom properties via inline styles instead of Tailwind utility classes",
       "id": "readme_styling_rules",
-      "community": 7,
+      "community": 0,
       "norm_label": "styling rules (css custom properties)"
     },
     {
@@ -2141,7 +2186,7 @@
       "author": null,
       "contributor": null,
       "id": "readme_module_preset_table",
-      "community": 7,
+      "community": 0,
       "norm_label": "module preset table"
     },
     {
@@ -2154,7 +2199,7 @@
       "author": null,
       "contributor": null,
       "id": "agents_md",
-      "community": 4,
+      "community": 0,
       "norm_label": "agents.md ai agent guide"
     },
     {
@@ -2168,7 +2213,7 @@
       "contributor": null,
       "rationale": "page.tsx owns all state and passes via props to keep state management centralized",
       "id": "agents_props_down_callbacks_up",
-      "community": 4,
+      "community": 0,
       "norm_label": "props-down / callbacks-up pattern"
     },
     {
@@ -2181,7 +2226,7 @@
       "author": null,
       "contributor": null,
       "id": "agents_workflow",
-      "community": 4,
+      "community": 0,
       "norm_label": "app workflow"
     },
     {
@@ -2194,7 +2239,7 @@
       "author": null,
       "contributor": null,
       "id": "agents_panel_placement_three_funcs",
-      "community": 4,
+      "community": 0,
       "norm_label": "three panel placement functions"
     },
     {
@@ -2208,90 +2253,8 @@
       "contributor": null,
       "rationale": "Currently no test framework configured; verification via lint, tsc --noEmit, and pnpm build",
       "id": "agents_no_test_framework",
-      "community": 4,
+      "community": 0,
       "norm_label": "no test framework"
-    },
-    {
-      "label": "CLAUDE.md Project Instructions",
-      "file_type": "document",
-      "source_file": "CLAUDE.md",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "claude_md_main",
-      "community": 6,
-      "norm_label": "claude.md project instructions"
-    },
-    {
-      "label": "Conditional .claude/rules/ Loading",
-      "file_type": "document",
-      "source_file": "CLAUDE.md",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "rationale": "Detailed architecture info auto-loaded from .claude/rules/ based on work context to reduce noise",
-      "id": "claude_md_conditional_rules",
-      "community": 6,
-      "norm_label": "conditional .claude/rules/ loading"
-    },
-    {
-      "label": "Korean Response Rule",
-      "file_type": "document",
-      "source_file": "CLAUDE.md",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "rationale": "All answers and reasoning written in Korean per user preference",
-      "id": "claude_md_korean_response_rule",
-      "community": 6,
-      "norm_label": "korean response rule"
-    },
-    {
-      "label": "Post-Task Lint/Type/Build Checks",
-      "file_type": "document",
-      "source_file": "CLAUDE.md",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "rationale": "Sub-agent runs lint, type, and build checks at task completion to catch errors early",
-      "id": "claude_md_post_task_checks",
-      "community": 6,
-      "norm_label": "post-task lint/type/build checks"
-    },
-    {
-      "label": "Commit Message Convention",
-      "file_type": "document",
-      "source_file": "CLAUDE.md",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "rationale": "English prefix + Korean title/body for clarity in mixed-language team",
-      "id": "claude_md_commit_convention",
-      "community": 6,
-      "norm_label": "commit message convention"
-    },
-    {
-      "label": "Graphify Knowledge Graph Integration",
-      "file_type": "document",
-      "source_file": "CLAUDE.md",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "claude_md_graphify_integration",
-      "community": 6,
-      "norm_label": "graphify knowledge graph integration"
     },
     {
       "label": "System Overview (SPA)",
@@ -2303,7 +2266,7 @@
       "author": null,
       "contributor": null,
       "id": "architecture_system_overview",
-      "community": 4,
+      "community": 0,
       "norm_label": "system overview (spa)"
     },
     {
@@ -2316,7 +2279,7 @@
       "author": null,
       "contributor": null,
       "id": "architecture_component_tree",
-      "community": 4,
+      "community": 0,
       "norm_label": "component tree"
     },
     {
@@ -2329,7 +2292,7 @@
       "author": null,
       "contributor": null,
       "id": "architecture_state_table",
-      "community": 4,
+      "community": 0,
       "norm_label": "state ownership table"
     },
     {
@@ -2342,7 +2305,7 @@
       "author": null,
       "contributor": null,
       "id": "architecture_address_search_flow",
-      "community": 4,
+      "community": 0,
       "norm_label": "address search flow"
     },
     {
@@ -2355,7 +2318,7 @@
       "author": null,
       "contributor": null,
       "id": "architecture_polygon_drawing_flow",
-      "community": 4,
+      "community": 0,
       "norm_label": "polygon drawing flow"
     },
     {
@@ -2368,7 +2331,7 @@
       "author": null,
       "contributor": null,
       "id": "architecture_panel_placement_flow",
-      "community": 4,
+      "community": 0,
       "norm_label": "panel placement calculation flow"
     },
     {
@@ -2382,7 +2345,7 @@
       "contributor": null,
       "rationale": "Latitude correction (cos(lat)) preserves accurate distance calculations across globe",
       "id": "architecture_coordinate_conversion",
-      "community": 4,
+      "community": 0,
       "norm_label": "coordinate conversion (lat/lng <-> meters)"
     },
     {
@@ -2396,7 +2359,7 @@
       "contributor": null,
       "rationale": "ensureCCW + normal vector offset + line intersection prevents self-intersection via signedArea > 0 check",
       "id": "architecture_polygon_inset_algorithm",
-      "community": 4,
+      "community": 0,
       "norm_label": "polygon inset algorithm"
     },
     {
@@ -2410,7 +2373,7 @@
       "contributor": null,
       "rationale": "Aligns grid to longest edge to maximize panels along natural rectangular shape",
       "id": "architecture_grid_placement_strategy",
-      "community": 4,
+      "community": 0,
       "norm_label": "grid placement strategy"
     },
     {
@@ -2423,7 +2386,7 @@
       "author": null,
       "contributor": null,
       "id": "architecture_external_dependencies",
-      "community": 4,
+      "community": 0,
       "norm_label": "external dependencies"
     },
     {
@@ -2437,7 +2400,7 @@
       "contributor": null,
       "rationale": "Multi-stage build with non-root nextjs user for security and minimal runtime image",
       "id": "architecture_docker_deployment",
-      "community": 4,
+      "community": 0,
       "norm_label": "docker deployment architecture"
     },
     {
@@ -2450,7 +2413,7 @@
       "author": null,
       "contributor": null,
       "id": "architecture_type_system",
-      "community": 4,
+      "community": 0,
       "norm_label": "type system diagram"
     },
     {
@@ -2464,7 +2427,7 @@
       "contributor": null,
       "rationale": "AI performance degradation comes from irrelevant info obscuring core rules, not absolute info volume",
       "id": "context_manage_concept",
-      "community": 6,
+      "community": 12,
       "norm_label": "context management concept"
     },
     {
@@ -2478,7 +2441,7 @@
       "contributor": null,
       "rationale": "Role-based manual separation provides only relevant info to each worker, increasing focus",
       "id": "context_manage_mcdonald_analogy",
-      "community": 6,
+      "community": 12,
       "norm_label": "mcdonald's manual analogy"
     },
     {
@@ -2492,7 +2455,7 @@
       "contributor": null,
       "rationale": "Globs in .claude/rules/ activate rules only for matching file paths, reducing root memory size up to 80%",
       "id": "context_manage_front_matter",
-      "community": 6,
+      "community": 12,
       "norm_label": "front matter conditional loading"
     },
     {
@@ -2505,7 +2468,7 @@
       "author": null,
       "contributor": null,
       "id": "context_manage_trigger_dev_case",
-      "community": 6,
+      "community": 12,
       "norm_label": "trigger.dev case study"
     },
     {
@@ -2518,7 +2481,7 @@
       "author": null,
       "contributor": null,
       "id": "context_manage_cockroachdb_case",
-      "community": 6,
+      "community": 12,
       "norm_label": "cockroachdb case study"
     },
     {
@@ -2531,7 +2494,7 @@
       "author": null,
       "contributor": null,
       "id": "graphify_setup_overview",
-      "community": 6,
+      "community": 10,
       "norm_label": "graphify setup overview"
     },
     {
@@ -2545,7 +2508,7 @@
       "contributor": null,
       "rationale": "uv installs isolated Python 3.10+ without touching system Python (which is typically 3.9 on macOS)",
       "id": "graphify_setup_uv_install",
-      "community": 6,
+      "community": 10,
       "norm_label": "uv tool installation"
     },
     {
@@ -2558,7 +2521,7 @@
       "author": null,
       "contributor": null,
       "id": "graphify_setup_skill_registration",
-      "community": 6,
+      "community": 10,
       "norm_label": "global claude code skill registration"
     },
     {
@@ -2572,7 +2535,7 @@
       "contributor": null,
       "rationale": "PreToolUse hook injects graph guidance before grep/find calls so Claude consults graph before searching raw files",
       "id": "graphify_setup_project_integration",
-      "community": 6,
+      "community": 10,
       "norm_label": "project always-on integration"
     },
     {
@@ -2585,7 +2548,7 @@
       "author": null,
       "contributor": null,
       "id": "graphify_setup_query_commands",
-      "community": 6,
+      "community": 10,
       "norm_label": "graphify query commands"
     },
     {
@@ -2599,7 +2562,7 @@
       "contributor": null,
       "rationale": "Cache and manifest are local-only (mtime-based, invalid after clone); graph.json optionally committed for shared team context",
       "id": "graphify_setup_gitignore_policy",
-      "community": 6,
+      "community": 10,
       "norm_label": "graphify-out gitignore policy"
     },
     {
@@ -2626,7 +2589,7 @@
       "contributor": null,
       "rationale": "300ms debounce reduces API calls during rapid typing",
       "id": "sequence_address_search",
-      "community": 4,
+      "community": 0,
       "norm_label": "address search sequence"
     },
     {
@@ -2639,7 +2602,7 @@
       "author": null,
       "contributor": null,
       "id": "sequence_polygon_drawing",
-      "community": 4,
+      "community": 0,
       "norm_label": "polygon drawing sequence"
     },
     {
@@ -2653,7 +2616,7 @@
       "contributor": null,
       "rationale": "areasRef.current avoids stale closure when handling edit events",
       "id": "sequence_polygon_editing",
-      "community": 4,
+      "community": 0,
       "norm_label": "polygon editing sequence"
     },
     {
@@ -2666,7 +2629,7 @@
       "author": null,
       "contributor": null,
       "id": "sequence_panel_placement",
-      "community": 4,
+      "community": 0,
       "norm_label": "panel placement calculation sequence"
     },
     {
@@ -2710,31 +2673,18 @@
       "norm_label": "roof crop & polygon editor plan"
     },
     {
-      "label": "Roof Crop Design Document",
+      "label": "Pixel to Lat/Lng Conversion",
       "file_type": "document",
-      "source_file": "docs/plans/2026-03-20-roof-crop-polygon-editor-design.md",
+      "source_file": "docs/plans/2026-03-20-roof-crop-polygon-editor.md",
       "source_location": null,
       "source_url": null,
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "plan_roof_crop_design",
+      "rationale": "Proportional calculation based on crop bounds with y-axis flip handles canvas coordinate inversion",
+      "id": "plan_pixel_to_latlng_conversion",
       "community": 9,
-      "norm_label": "roof crop design document"
-    },
-    {
-      "label": "Polygon UX Improvements Plan",
-      "file_type": "document",
-      "source_file": "docs/plans/2026-03-20-polygon-ux-improvements.md",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "rationale": "State machine sub-mode (idle/selected/moving/editing_vertices) cleanly separates input handling logic",
-      "id": "plan_polygon_ux_improvements",
-      "community": 9,
-      "norm_label": "polygon ux improvements plan"
+      "norm_label": "pixel to lat/lng conversion"
     },
     {
       "label": "Polygon UX Improvements Design",
@@ -2791,6 +2741,33 @@
       "norm_label": "vertex editing (move/add/delete)"
     },
     {
+      "label": "Polygon UX Improvements Plan",
+      "file_type": "document",
+      "source_file": "docs/plans/2026-03-20-polygon-ux-improvements.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "State machine sub-mode (idle/selected/moving/editing_vertices) cleanly separates input handling logic",
+      "id": "plan_polygon_ux_improvements",
+      "community": 9,
+      "norm_label": "polygon ux improvements plan"
+    },
+    {
+      "label": "Roof Crop Design Document",
+      "file_type": "document",
+      "source_file": "docs/plans/2026-03-20-roof-crop-polygon-editor-design.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "plan_roof_crop_design",
+      "community": 9,
+      "norm_label": "roof crop design document"
+    },
+    {
       "label": "Canvas-Based Polygon Editor",
       "file_type": "document",
       "source_file": "docs/plans/2026-03-20-roof-crop-polygon-editor-design.md",
@@ -2805,20 +2782,6 @@
       "norm_label": "canvas-based polygon editor"
     },
     {
-      "label": "Pixel to Lat/Lng Conversion",
-      "file_type": "document",
-      "source_file": "docs/plans/2026-03-20-roof-crop-polygon-editor.md",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "rationale": "Proportional calculation based on crop bounds with y-axis flip handles canvas coordinate inversion",
-      "id": "plan_pixel_to_latlng_conversion",
-      "community": 9,
-      "norm_label": "pixel to lat/lng conversion"
-    },
-    {
       "label": "Hanwha Japan Logo",
       "file_type": "image",
       "source_file": "public/hanwha.png",
@@ -2828,7 +2791,7 @@
       "author": null,
       "contributor": null,
       "id": "hanwha_japan_logo",
-      "community": 16,
+      "community": 33,
       "norm_label": "hanwha japan logo"
     },
     {
@@ -2841,7 +2804,7 @@
       "author": null,
       "contributor": null,
       "id": "hanwha_japan_brand",
-      "community": 16,
+      "community": 34,
       "norm_label": "hanwha japan (brand entity)"
     },
     {
@@ -2854,7 +2817,7 @@
       "author": null,
       "contributor": null,
       "id": "file_icon",
-      "community": 33,
+      "community": 35,
       "norm_label": "file icon"
     },
     {
@@ -2869,7 +2832,7 @@
       "confidence_score": 1.0,
       "description": "Red gradient (F78488 to DD5155) teardrop-shaped map pin marker with white circular center, 43x61 SVG viewBox. Likely used as a Google Maps location/point marker in the solar PV planner UI.",
       "id": "map_point_marker",
-      "community": 34,
+      "community": 36,
       "norm_label": "map point marker"
     },
     {
@@ -2882,7 +2845,7 @@
       "author": null,
       "contributor": null,
       "id": "vercel_logo",
-      "community": 35,
+      "community": 37,
       "norm_label": "vercel logo"
     },
     {
@@ -2895,7 +2858,7 @@
       "author": null,
       "contributor": null,
       "id": "next_logo",
-      "community": 36,
+      "community": 38,
       "norm_label": "next.js logo"
     },
     {
@@ -2908,7 +2871,7 @@
       "author": null,
       "contributor": null,
       "id": "roof_one_line_diagram",
-      "community": 37,
+      "community": 39,
       "norm_label": "roof slope diagram (sun units)"
     },
     {
@@ -2921,7 +2884,7 @@
       "author": null,
       "contributor": null,
       "id": "roof_slope_categories",
-      "community": 38,
+      "community": 40,
       "norm_label": "roof slope categories: 6\u5bf8 / 3\u5bf8 / 4\u5bf8"
     },
     {
@@ -2934,7 +2897,7 @@
       "author": null,
       "contributor": null,
       "id": "compass_azimuth_indicator",
-      "community": 39,
+      "community": 41,
       "norm_label": "compass / azimuth indicator"
     },
     {
@@ -2947,7 +2910,7 @@
       "author": null,
       "contributor": null,
       "id": "globe_icon",
-      "community": 40,
+      "community": 42,
       "norm_label": "globe icon"
     },
     {
@@ -2960,8 +2923,528 @@
       "author": null,
       "contributor": null,
       "id": "window_icon",
-      "community": 41,
+      "community": 43,
       "norm_label": "window icon"
+    },
+    {
+      "label": "Claude Code Guidance Document",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "claudemd_claude_code_guidance",
+      "community": 7,
+      "norm_label": "claude code guidance document"
+    },
+    {
+      "label": "AGENTS.md Common Guide",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": "L5",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "claudemd_agents_md_reference",
+      "community": 7,
+      "norm_label": "agents.md common guide"
+    },
+    {
+      "label": "pnpm Commands (dev/build/start/lint)",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": "L7-L12",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "claudemd_pnpm_commands",
+      "community": 7,
+      "norm_label": "pnpm commands (dev/build/start/lint)"
+    },
+    {
+      "label": "Tech Stack (Next.js 16.2 / React 19 / TS / Tailwind v4)",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": "L14-L24",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "claudemd_tech_stack",
+      "community": 7,
+      "norm_label": "tech stack (next.js 16.2 / react 19 / ts / tailwind v4)"
+    },
+    {
+      "label": "React Compiler (reactCompiler: true)",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": "L17",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "claudemd_react_compiler",
+      "community": 7,
+      "norm_label": "react compiler (reactcompiler: true)"
+    },
+    {
+      "label": "Google Maps via @vis.gl/react-google-maps",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": "L20",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "claudemd_google_maps_integration",
+      "community": 7,
+      "norm_label": "google maps via @vis.gl/react-google-maps"
+    },
+    {
+      "label": "html2canvas Map Tile Capture",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": "L21",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "claudemd_html2canvas_capture",
+      "community": 7,
+      "norm_label": "html2canvas map tile capture"
+    },
+    {
+      "label": "Path Alias @/* -> ./src/*",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": "L23",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "claudemd_path_alias",
+      "community": 7,
+      "norm_label": "path alias @/* -> ./src/*"
+    },
+    {
+      "label": "Solar PV Rooftop Layout Planner Architecture",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": "L26-L34",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "claudemd_architecture_overview",
+      "community": 3,
+      "norm_label": "solar pv rooftop layout planner architecture"
+    },
+    {
+      "label": "Rule: components.md",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": "L31",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "claudemd_rule_components",
+      "community": 3,
+      "norm_label": "rule: components.md"
+    },
+    {
+      "label": "Rule: utils.md",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": "L32",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "claudemd_rule_utils",
+      "community": 3,
+      "norm_label": "rule: utils.md"
+    },
+    {
+      "label": "Rule: styles.md",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": "L33",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "claudemd_rule_styles",
+      "community": 3,
+      "norm_label": "rule: styles.md"
+    },
+    {
+      "label": "Rule: docker.md",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": "L34",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "claudemd_rule_docker",
+      "community": 3,
+      "norm_label": "rule: docker.md"
+    },
+    {
+      "label": "Workflow Memo (Korean answers, lint/type/build, commit prefix)",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": "L36-L45",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "claudemd_workflow_memo",
+      "community": 7,
+      "norm_label": "workflow memo (korean answers, lint/type/build, commit prefix)"
+    },
+    {
+      "label": "graphify Knowledge Graph Integration",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": "L47-L55",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "claudemd_graphify_integration",
+      "community": 7,
+      "norm_label": "graphify knowledge graph integration"
+    },
+    {
+      "label": "Solar PV Code Map Playground (HTML)",
+      "file_type": "document",
+      "source_file": "docs/codemap-playground.html",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "codemap_playground_app",
+      "community": 3,
+      "norm_label": "solar pv code map playground (html)"
+    },
+    {
+      "label": "Layer Taxonomy (framework/page/ui/map/logic/types/external)",
+      "file_type": "document",
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L137-L145",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "codemap_layers_taxonomy",
+      "community": 3,
+      "norm_label": "layer taxonomy (framework/page/ui/map/logic/types/external)"
+    },
+    {
+      "label": "Connection Types (data-flow/callback/api-call/import)",
+      "file_type": "document",
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L147-L152",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "codemap_conn_types",
+      "community": 3,
+      "norm_label": "connection types (data-flow/callback/api-call/import)"
+    },
+    {
+      "label": "RootLayout (src/app/layout.tsx)",
+      "file_type": "document",
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L155",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "codemap_node_layout",
+      "community": 7,
+      "norm_label": "rootlayout (src/app/layout.tsx)"
+    },
+    {
+      "label": "APIProvider (@vis.gl/react-google-maps)",
+      "file_type": "document",
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L156",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "codemap_node_api_provider",
+      "community": 7,
+      "norm_label": "apiprovider (@vis.gl/react-google-maps)"
+    },
+    {
+      "label": "Home Page (src/app/page.tsx)",
+      "file_type": "document",
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L157",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "codemap_node_home_page",
+      "community": 3,
+      "norm_label": "home page (src/app/page.tsx)"
+    },
+    {
+      "label": "Header Component",
+      "file_type": "document",
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L158",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "codemap_node_header",
+      "community": 3,
+      "norm_label": "header component"
+    },
+    {
+      "label": "AddressSearch Component",
+      "file_type": "document",
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L159",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "codemap_node_address_search",
+      "community": 3,
+      "norm_label": "addresssearch component"
+    },
+    {
+      "label": "DrawingToolbar Component",
+      "file_type": "document",
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L160",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "codemap_node_drawing_toolbar",
+      "community": 3,
+      "norm_label": "drawingtoolbar component"
+    },
+    {
+      "label": "PanelConfig Component",
+      "file_type": "document",
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L161",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "codemap_node_panel_config",
+      "community": 3,
+      "norm_label": "panelconfig component"
+    },
+    {
+      "label": "ResultsPanel Component",
+      "file_type": "document",
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L162",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "codemap_node_results_panel",
+      "community": 3,
+      "norm_label": "resultspanel component"
+    },
+    {
+      "label": "MapView Component",
+      "file_type": "document",
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L163",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "codemap_node_map_view",
+      "community": 3,
+      "norm_label": "mapview component"
+    },
+    {
+      "label": "CenterUpdater (inside MapView)",
+      "file_type": "document",
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L164",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "codemap_node_center_updater",
+      "community": 3,
+      "norm_label": "centerupdater (inside mapview)"
+    },
+    {
+      "label": "DrawingOverlay (inside MapView)",
+      "file_type": "document",
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L165",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "codemap_node_drawing_overlay",
+      "community": 3,
+      "norm_label": "drawingoverlay (inside mapview)"
+    },
+    {
+      "label": "PanelOverlay (inside MapView)",
+      "file_type": "document",
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L166",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "codemap_node_panel_overlay",
+      "community": 3,
+      "norm_label": "paneloverlay (inside mapview)"
+    },
+    {
+      "label": "MapControls (inside MapView)",
+      "file_type": "document",
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L167",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "codemap_node_map_controls",
+      "community": 3,
+      "norm_label": "mapcontrols (inside mapview)"
+    },
+    {
+      "label": "placePanels() (utils/panelPlacement.ts)",
+      "file_type": "document",
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L168",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "codemap_node_place_panels",
+      "community": 3,
+      "norm_label": "placepanels() (utils/panelplacement.ts)"
+    },
+    {
+      "label": "insetPolygon()",
+      "file_type": "document",
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L169",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "codemap_node_inset_polygon",
+      "community": 3,
+      "norm_label": "insetpolygon()"
+    },
+    {
+      "label": "isPointInPolygon()",
+      "file_type": "document",
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L170",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "codemap_node_point_in_polygon",
+      "community": 3,
+      "norm_label": "ispointinpolygon()"
+    },
+    {
+      "label": "toLocal / toLatLng (coord transform)",
+      "file_type": "document",
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L171",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "codemap_node_coord_transform",
+      "community": 3,
+      "norm_label": "tolocal / tolatlng (coord transform)"
+    },
+    {
+      "label": "Domain Types (types/index.ts)",
+      "file_type": "document",
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L172",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "codemap_node_domain_types",
+      "community": 3,
+      "norm_label": "domain types (types/index.ts)"
+    },
+    {
+      "label": "i18n t() (utils/i18n.ts ja/en)",
+      "file_type": "document",
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L173",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "codemap_node_i18n",
+      "community": 3,
+      "norm_label": "i18n t() (utils/i18n.ts ja/en)"
+    },
+    {
+      "label": "Google Maps JS API",
+      "file_type": "document",
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L174",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "codemap_node_maps_api",
+      "community": 3,
+      "norm_label": "google maps js api"
+    },
+    {
+      "label": "Google Places API",
+      "file_type": "document",
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L175",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "codemap_node_places_api",
+      "community": 3,
+      "norm_label": "google places api"
+    },
+    {
+      "label": "Google Maps Geometry API (spherical.computeArea)",
+      "file_type": "document",
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L176",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "codemap_node_geometry_api",
+      "community": 3,
+      "norm_label": "google maps geometry api (spherical.computearea)"
     }
   ],
   "links": [
@@ -4178,6 +4661,30 @@
       "confidence_score": 1.0
     },
     {
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": "next.config.ts",
+      "source_location": null,
+      "weight": 1.0,
+      "_src": "nextconfig_nextconfig",
+      "_tgt": "layout_rootlayout",
+      "source": "nextconfig_nextconfig",
+      "target": "layout_rootlayout"
+    },
+    {
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "src/app/layout.tsx",
+      "source_location": null,
+      "weight": 1.0,
+      "_src": "layout_rootlayout",
+      "_tgt": "page_home",
+      "source": "layout_rootlayout",
+      "target": "page_home"
+    },
+    {
       "relation": "calls",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
@@ -4418,18 +4925,6 @@
       "target": "simulationpanel_simulationformstate"
     },
     {
-      "relation": "conceptually_related_to",
-      "confidence": "INFERRED",
-      "confidence_score": 0.85,
-      "source_file": "src/app/layout.tsx",
-      "source_location": null,
-      "weight": 1.0,
-      "_src": "layout_rootlayout",
-      "_tgt": "page_home",
-      "source": "page_home",
-      "target": "layout_rootlayout"
-    },
-    {
       "relation": "shares_data_with",
       "confidence": "INFERRED",
       "confidence_score": 0.85,
@@ -4526,6 +5021,378 @@
       "target": "i18n_t"
     },
     {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/types/index.ts",
+      "source_location": null,
+      "weight": 1.0,
+      "_src": "types_polygonarea",
+      "_tgt": "types_latlng",
+      "source": "types_latlng",
+      "target": "types_polygonarea"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/types/index.ts",
+      "source_location": null,
+      "weight": 1.0,
+      "_src": "types_placedpanel",
+      "_tgt": "types_latlng",
+      "source": "types_latlng",
+      "target": "types_placedpanel"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/types/index.ts",
+      "source_location": null,
+      "weight": 1.0,
+      "_src": "types_cropbounds",
+      "_tgt": "types_latlng",
+      "source": "types_latlng",
+      "target": "types_cropbounds"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/components/ResultsPanel.tsx",
+      "source_location": null,
+      "weight": 1.0,
+      "_src": "resultspanel_resultspanel",
+      "_tgt": "types_panelsize",
+      "source": "types_panelsize",
+      "target": "resultspanel_resultspanel"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/components/PanelConfig.tsx",
+      "source_location": null,
+      "weight": 1.0,
+      "_src": "panelconfig_panelconfig",
+      "_tgt": "types_panelsize",
+      "source": "types_panelsize",
+      "target": "panelconfig_panelconfig"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/components/ResultsPanel.tsx",
+      "source_location": null,
+      "weight": 1.0,
+      "_src": "resultspanel_resultspanel",
+      "_tgt": "types_panelorientation",
+      "source": "types_panelorientation",
+      "target": "resultspanel_resultspanel"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": null,
+      "weight": 1.0,
+      "_src": "croppopup_croppopup",
+      "_tgt": "types_drawingmode",
+      "source": "types_drawingmode",
+      "target": "croppopup_croppopup"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": null,
+      "weight": 1.0,
+      "_src": "panelplacement_placepanels",
+      "_tgt": "types_polygonarea",
+      "source": "types_polygonarea",
+      "target": "panelplacement_placepanels"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": null,
+      "weight": 1.0,
+      "_src": "croppopup_croppopup",
+      "_tgt": "types_polygonarea",
+      "source": "types_polygonarea",
+      "target": "croppopup_croppopup"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": null,
+      "weight": 1.0,
+      "_src": "panelplacement_placepanels",
+      "_tgt": "types_placedpanel",
+      "source": "types_placedpanel",
+      "target": "panelplacement_placepanels"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/types/index.ts",
+      "source_location": null,
+      "weight": 1.0,
+      "_src": "types_cropdata",
+      "_tgt": "types_cropbounds",
+      "source": "types_cropbounds",
+      "target": "types_cropdata"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": null,
+      "weight": 1.0,
+      "_src": "croppopup_croppopup",
+      "_tgt": "types_cropdata",
+      "source": "types_cropdata",
+      "target": "croppopup_croppopup"
+    },
+    {
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "src/app/components/MapView.tsx",
+      "source_location": null,
+      "weight": 1.0,
+      "_src": "mapview_handleconfirm",
+      "_tgt": "types_cropdata",
+      "source": "types_cropdata",
+      "target": "mapview_handleconfirm"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/types/index.ts",
+      "source_location": null,
+      "weight": 1.0,
+      "_src": "types_pixelpolygon",
+      "_tgt": "types_pixelpoint",
+      "source": "types_pixelpoint",
+      "target": "types_pixelpolygon"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/types/index.ts",
+      "source_location": null,
+      "weight": 1.0,
+      "_src": "types_pixelpanel",
+      "_tgt": "types_pixelpoint",
+      "source": "types_pixelpoint",
+      "target": "types_pixelpanel"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": null,
+      "weight": 1.0,
+      "_src": "croppopup_areaentry",
+      "_tgt": "types_pixelpoint",
+      "source": "types_pixelpoint",
+      "target": "croppopup_areaentry"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": null,
+      "weight": 1.0,
+      "_src": "panelplacement_placepanelsoncanvas",
+      "_tgt": "types_pixelpolygon",
+      "source": "types_pixelpolygon",
+      "target": "panelplacement_placepanelsoncanvas"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": null,
+      "weight": 1.0,
+      "_src": "croppopup_croppopup",
+      "_tgt": "types_pixelpolygon",
+      "source": "types_pixelpolygon",
+      "target": "croppopup_croppopup"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": null,
+      "weight": 1.0,
+      "_src": "panelplacement_placepanelsoncanvas",
+      "_tgt": "types_pixelpanel",
+      "source": "types_pixelpanel",
+      "target": "panelplacement_placepanelsoncanvas"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": null,
+      "weight": 1.0,
+      "_src": "croppopup_croppopup",
+      "_tgt": "types_pixelpanel",
+      "source": "types_pixelpanel",
+      "target": "croppopup_croppopup"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": null,
+      "weight": 1.0,
+      "_src": "croppopup_croppopup",
+      "_tgt": "types_polygonsubmode",
+      "source": "types_polygonsubmode",
+      "target": "croppopup_croppopup"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/utils/i18n.ts",
+      "source_location": null,
+      "weight": 1.0,
+      "_src": "i18n_t",
+      "_tgt": "i18n_translations",
+      "source": "i18n_t",
+      "target": "i18n_translations"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/utils/i18n.ts",
+      "source_location": null,
+      "weight": 1.0,
+      "_src": "i18n_t",
+      "_tgt": "i18n_lang_type",
+      "source": "i18n_t",
+      "target": "i18n_lang_type"
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": null,
+      "weight": 1.0,
+      "_src": "croppopup_croppopup",
+      "_tgt": "i18n_t",
+      "source": "i18n_t",
+      "target": "croppopup_croppopup"
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/components/SimulationPanel.tsx",
+      "source_location": null,
+      "weight": 1.0,
+      "_src": "simulationpanel_simulationpanel",
+      "_tgt": "i18n_t",
+      "source": "i18n_t",
+      "target": "simulationpanel_simulationpanel"
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/components/ResultsPanel.tsx",
+      "source_location": null,
+      "weight": 1.0,
+      "_src": "resultspanel_resultspanel",
+      "_tgt": "i18n_t",
+      "source": "i18n_t",
+      "target": "resultspanel_resultspanel"
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/components/MapView.tsx",
+      "source_location": null,
+      "weight": 1.0,
+      "_src": "mapview_cropoverlay",
+      "_tgt": "i18n_t",
+      "source": "i18n_t",
+      "target": "mapview_cropoverlay"
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/components/RoofEditToolbar.tsx",
+      "source_location": null,
+      "weight": 1.0,
+      "_src": "roofedittoolbar_roofedittoolbar",
+      "_tgt": "i18n_t",
+      "source": "i18n_t",
+      "target": "roofedittoolbar_roofedittoolbar"
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/components/PanelConfig.tsx",
+      "source_location": null,
+      "weight": 1.0,
+      "_src": "panelconfig_panelconfig",
+      "_tgt": "i18n_t",
+      "source": "i18n_t",
+      "target": "panelconfig_panelconfig"
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/components/PanelConfig.tsx",
+      "source_location": null,
+      "weight": 1.0,
+      "_src": "panelconfig_getpresetsizes",
+      "_tgt": "i18n_t",
+      "source": "i18n_t",
+      "target": "panelconfig_getpresetsizes"
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/components/AddressSearch.tsx",
+      "source_location": null,
+      "weight": 1.0,
+      "_src": "addresssearch_addresssearch",
+      "_tgt": "i18n_t",
+      "source": "i18n_t",
+      "target": "addresssearch_addresssearch"
+    },
+    {
       "relation": "calls",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
@@ -4586,30 +5453,6 @@
       "target": "panelplacement_tolatlng"
     },
     {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/app/utils/panelPlacement.ts",
-      "source_location": null,
-      "weight": 1.0,
-      "_src": "panelplacement_placepanels",
-      "_tgt": "types_polygonarea",
-      "source": "panelplacement_placepanels",
-      "target": "types_polygonarea"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/app/utils/panelPlacement.ts",
-      "source_location": null,
-      "weight": 1.0,
-      "_src": "panelplacement_placepanels",
-      "_tgt": "types_placedpanel",
-      "source": "panelplacement_placepanels",
-      "target": "types_placedpanel"
-    },
-    {
       "relation": "semantically_similar_to",
       "confidence": "INFERRED",
       "confidence_score": 0.92,
@@ -4668,30 +5511,6 @@
       "_tgt": "panelplacement_rotate",
       "source": "panelplacement_placepanelsoncanvas",
       "target": "panelplacement_rotate"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/app/utils/panelPlacement.ts",
-      "source_location": null,
-      "weight": 1.0,
-      "_src": "panelplacement_placepanelsoncanvas",
-      "_tgt": "types_pixelpolygon",
-      "source": "panelplacement_placepanelsoncanvas",
-      "target": "types_pixelpolygon"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/app/utils/panelPlacement.ts",
-      "source_location": null,
-      "weight": 1.0,
-      "_src": "panelplacement_placepanelsoncanvas",
-      "_tgt": "types_pixelpanel",
-      "source": "panelplacement_placepanelsoncanvas",
-      "target": "types_pixelpanel"
     },
     {
       "relation": "semantically_similar_to",
@@ -4812,330 +5631,6 @@
       "_tgt": "panelplacement_meterperlng",
       "source": "panelplacement_meterperlng",
       "target": "mapview_handleconfirm"
-    },
-    {
-      "relation": "calls",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/app/components/CropPopup.tsx",
-      "source_location": null,
-      "weight": 1.0,
-      "_src": "croppopup_croppopup",
-      "_tgt": "i18n_t",
-      "source": "i18n_t",
-      "target": "croppopup_croppopup"
-    },
-    {
-      "relation": "calls",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/app/components/MapView.tsx",
-      "source_location": null,
-      "weight": 1.0,
-      "_src": "mapview_cropoverlay",
-      "_tgt": "i18n_t",
-      "source": "i18n_t",
-      "target": "mapview_cropoverlay"
-    },
-    {
-      "relation": "calls",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/app/components/RoofEditToolbar.tsx",
-      "source_location": null,
-      "weight": 1.0,
-      "_src": "roofedittoolbar_roofedittoolbar",
-      "_tgt": "i18n_t",
-      "source": "i18n_t",
-      "target": "roofedittoolbar_roofedittoolbar"
-    },
-    {
-      "relation": "calls",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/app/components/PanelConfig.tsx",
-      "source_location": null,
-      "weight": 1.0,
-      "_src": "panelconfig_panelconfig",
-      "_tgt": "i18n_t",
-      "source": "i18n_t",
-      "target": "panelconfig_panelconfig"
-    },
-    {
-      "relation": "calls",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/app/components/PanelConfig.tsx",
-      "source_location": null,
-      "weight": 1.0,
-      "_src": "panelconfig_getpresetsizes",
-      "_tgt": "i18n_t",
-      "source": "i18n_t",
-      "target": "panelconfig_getpresetsizes"
-    },
-    {
-      "relation": "calls",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/app/components/ResultsPanel.tsx",
-      "source_location": null,
-      "weight": 1.0,
-      "_src": "resultspanel_resultspanel",
-      "_tgt": "i18n_t",
-      "source": "i18n_t",
-      "target": "resultspanel_resultspanel"
-    },
-    {
-      "relation": "calls",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/app/components/SimulationPanel.tsx",
-      "source_location": null,
-      "weight": 1.0,
-      "_src": "simulationpanel_simulationpanel",
-      "_tgt": "i18n_t",
-      "source": "i18n_t",
-      "target": "simulationpanel_simulationpanel"
-    },
-    {
-      "relation": "calls",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/app/components/AddressSearch.tsx",
-      "source_location": null,
-      "weight": 1.0,
-      "_src": "addresssearch_addresssearch",
-      "_tgt": "i18n_t",
-      "source": "i18n_t",
-      "target": "addresssearch_addresssearch"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/app/utils/i18n.ts",
-      "source_location": null,
-      "weight": 1.0,
-      "_src": "i18n_t",
-      "_tgt": "i18n_translations",
-      "source": "i18n_t",
-      "target": "i18n_translations"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/app/utils/i18n.ts",
-      "source_location": null,
-      "weight": 1.0,
-      "_src": "i18n_t",
-      "_tgt": "i18n_lang_type",
-      "source": "i18n_t",
-      "target": "i18n_lang_type"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/app/types/index.ts",
-      "source_location": null,
-      "weight": 1.0,
-      "_src": "types_polygonarea",
-      "_tgt": "types_latlng",
-      "source": "types_latlng",
-      "target": "types_polygonarea"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/app/types/index.ts",
-      "source_location": null,
-      "weight": 1.0,
-      "_src": "types_placedpanel",
-      "_tgt": "types_latlng",
-      "source": "types_latlng",
-      "target": "types_placedpanel"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/app/types/index.ts",
-      "source_location": null,
-      "weight": 1.0,
-      "_src": "types_cropbounds",
-      "_tgt": "types_latlng",
-      "source": "types_latlng",
-      "target": "types_cropbounds"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/app/components/PanelConfig.tsx",
-      "source_location": null,
-      "weight": 1.0,
-      "_src": "panelconfig_panelconfig",
-      "_tgt": "types_panelsize",
-      "source": "types_panelsize",
-      "target": "panelconfig_panelconfig"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/app/components/ResultsPanel.tsx",
-      "source_location": null,
-      "weight": 1.0,
-      "_src": "resultspanel_resultspanel",
-      "_tgt": "types_panelsize",
-      "source": "types_panelsize",
-      "target": "resultspanel_resultspanel"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/app/components/ResultsPanel.tsx",
-      "source_location": null,
-      "weight": 1.0,
-      "_src": "resultspanel_resultspanel",
-      "_tgt": "types_panelorientation",
-      "source": "types_panelorientation",
-      "target": "resultspanel_resultspanel"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/app/components/CropPopup.tsx",
-      "source_location": null,
-      "weight": 1.0,
-      "_src": "croppopup_croppopup",
-      "_tgt": "types_drawingmode",
-      "source": "types_drawingmode",
-      "target": "croppopup_croppopup"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/app/components/CropPopup.tsx",
-      "source_location": null,
-      "weight": 1.0,
-      "_src": "croppopup_croppopup",
-      "_tgt": "types_polygonarea",
-      "source": "types_polygonarea",
-      "target": "croppopup_croppopup"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/app/types/index.ts",
-      "source_location": null,
-      "weight": 1.0,
-      "_src": "types_cropdata",
-      "_tgt": "types_cropbounds",
-      "source": "types_cropbounds",
-      "target": "types_cropdata"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/app/components/CropPopup.tsx",
-      "source_location": null,
-      "weight": 1.0,
-      "_src": "croppopup_croppopup",
-      "_tgt": "types_cropdata",
-      "source": "types_cropdata",
-      "target": "croppopup_croppopup"
-    },
-    {
-      "relation": "references",
-      "confidence": "INFERRED",
-      "confidence_score": 0.85,
-      "source_file": "src/app/components/MapView.tsx",
-      "source_location": null,
-      "weight": 1.0,
-      "_src": "mapview_handleconfirm",
-      "_tgt": "types_cropdata",
-      "source": "types_cropdata",
-      "target": "mapview_handleconfirm"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/app/components/CropPopup.tsx",
-      "source_location": null,
-      "weight": 1.0,
-      "_src": "croppopup_areaentry",
-      "_tgt": "types_pixelpoint",
-      "source": "types_pixelpoint",
-      "target": "croppopup_areaentry"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/app/types/index.ts",
-      "source_location": null,
-      "weight": 1.0,
-      "_src": "types_pixelpolygon",
-      "_tgt": "types_pixelpoint",
-      "source": "types_pixelpoint",
-      "target": "types_pixelpolygon"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/app/types/index.ts",
-      "source_location": null,
-      "weight": 1.0,
-      "_src": "types_pixelpanel",
-      "_tgt": "types_pixelpoint",
-      "source": "types_pixelpoint",
-      "target": "types_pixelpanel"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/app/components/CropPopup.tsx",
-      "source_location": null,
-      "weight": 1.0,
-      "_src": "croppopup_croppopup",
-      "_tgt": "types_pixelpolygon",
-      "source": "types_pixelpolygon",
-      "target": "croppopup_croppopup"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/app/components/CropPopup.tsx",
-      "source_location": null,
-      "weight": 1.0,
-      "_src": "croppopup_croppopup",
-      "_tgt": "types_pixelpanel",
-      "source": "types_pixelpanel",
-      "target": "croppopup_croppopup"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/app/components/CropPopup.tsx",
-      "source_location": null,
-      "weight": 1.0,
-      "_src": "croppopup_croppopup",
-      "_tgt": "types_polygonsubmode",
-      "source": "types_polygonsubmode",
-      "target": "croppopup_croppopup"
     },
     {
       "relation": "calls",
@@ -5654,18 +6149,6 @@
       "target": "addresssearch_handleselect"
     },
     {
-      "relation": "conceptually_related_to",
-      "confidence": "INFERRED",
-      "confidence_score": 0.7,
-      "source_file": "next.config.ts",
-      "source_location": null,
-      "weight": 1.0,
-      "_src": "nextconfig_nextconfig",
-      "_tgt": "layout_rootlayout",
-      "source": "layout_rootlayout",
-      "target": "nextconfig_nextconfig"
-    },
-    {
       "relation": "references",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
@@ -5846,18 +6329,6 @@
       "target": "agents_md"
     },
     {
-      "relation": "cites",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "README.md",
-      "source_location": null,
-      "weight": 1.0,
-      "_src": "readme_solar_pv_planner",
-      "_tgt": "claude_md_main",
-      "source": "readme_solar_pv_planner",
-      "target": "claude_md_main"
-    },
-    {
       "relation": "references",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
@@ -5930,18 +6401,6 @@
       "target": "agents_no_test_framework"
     },
     {
-      "relation": "cites",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "CLAUDE.md",
-      "source_location": null,
-      "weight": 1.0,
-      "_src": "claude_md_main",
-      "_tgt": "agents_md",
-      "source": "agents_md",
-      "target": "claude_md_main"
-    },
-    {
       "relation": "conceptually_related_to",
       "confidence": "INFERRED",
       "confidence_score": 0.9,
@@ -5964,90 +6423,6 @@
       "_tgt": "architecture_panel_placement_flow",
       "source": "agents_panel_placement_three_funcs",
       "target": "architecture_panel_placement_flow"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "CLAUDE.md",
-      "source_location": null,
-      "weight": 1.0,
-      "_src": "claude_md_main",
-      "_tgt": "claude_md_conditional_rules",
-      "source": "claude_md_main",
-      "target": "claude_md_conditional_rules"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "CLAUDE.md",
-      "source_location": null,
-      "weight": 1.0,
-      "_src": "claude_md_main",
-      "_tgt": "claude_md_korean_response_rule",
-      "source": "claude_md_main",
-      "target": "claude_md_korean_response_rule"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "CLAUDE.md",
-      "source_location": null,
-      "weight": 1.0,
-      "_src": "claude_md_main",
-      "_tgt": "claude_md_post_task_checks",
-      "source": "claude_md_main",
-      "target": "claude_md_post_task_checks"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "CLAUDE.md",
-      "source_location": null,
-      "weight": 1.0,
-      "_src": "claude_md_main",
-      "_tgt": "claude_md_commit_convention",
-      "source": "claude_md_main",
-      "target": "claude_md_commit_convention"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "CLAUDE.md",
-      "source_location": null,
-      "weight": 1.0,
-      "_src": "claude_md_main",
-      "_tgt": "claude_md_graphify_integration",
-      "source": "claude_md_main",
-      "target": "claude_md_graphify_integration"
-    },
-    {
-      "relation": "conceptually_related_to",
-      "confidence": "INFERRED",
-      "confidence_score": 0.9,
-      "source_file": "CLAUDE.md",
-      "source_location": null,
-      "weight": 1.0,
-      "_src": "claude_md_conditional_rules",
-      "_tgt": "context_manage_front_matter",
-      "source": "claude_md_conditional_rules",
-      "target": "context_manage_front_matter"
-    },
-    {
-      "relation": "conceptually_related_to",
-      "confidence": "INFERRED",
-      "confidence_score": 0.85,
-      "source_file": "CLAUDE.md",
-      "source_location": null,
-      "weight": 1.0,
-      "_src": "claude_md_graphify_integration",
-      "_tgt": "graphify_setup_overview",
-      "source": "claude_md_graphify_integration",
-      "target": "graphify_setup_overview"
     },
     {
       "relation": "references",
@@ -6401,30 +6776,6 @@
       "relation": "references",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
-      "source_file": "docs/plans/2026-03-20-roof-crop-polygon-editor-design.md",
-      "source_location": null,
-      "weight": 1.0,
-      "_src": "plan_roof_crop_design",
-      "_tgt": "plan_canvas_polygon_editor",
-      "source": "plan_roof_crop_design",
-      "target": "plan_canvas_polygon_editor"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "docs/plans/2026-03-20-polygon-ux-improvements.md",
-      "source_location": null,
-      "weight": 1.0,
-      "_src": "plan_polygon_ux_improvements",
-      "_tgt": "plan_polygon_ux_design",
-      "source": "plan_polygon_ux_improvements",
-      "target": "plan_polygon_ux_design"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "source_file": "docs/plans/2026-03-20-polygon-ux-improvements-design.md",
       "source_location": null,
       "weight": 1.0,
@@ -6458,32 +6809,607 @@
       "target": "plan_vertex_editing"
     },
     {
-      "label": "represents",
+      "relation": "references",
+      "confidence": "EXTRACTED",
       "confidence_score": 1.0,
-      "extraction_type": "EXTRACTED",
-      "_src": "hanwha_japan_logo",
-      "_tgt": "hanwha_japan_brand",
-      "source": "hanwha_japan_logo",
-      "target": "hanwha_japan_brand"
+      "source_file": "docs/plans/2026-03-20-polygon-ux-improvements.md",
+      "source_location": null,
+      "weight": 1.0,
+      "_src": "plan_polygon_ux_improvements",
+      "_tgt": "plan_polygon_ux_design",
+      "source": "plan_polygon_ux_design",
+      "target": "plan_polygon_ux_improvements"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/plans/2026-03-20-roof-crop-polygon-editor-design.md",
+      "source_location": null,
+      "weight": 1.0,
+      "_src": "plan_roof_crop_design",
+      "_tgt": "plan_canvas_polygon_editor",
+      "source": "plan_roof_crop_design",
+      "target": "plan_canvas_polygon_editor"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "CLAUDE.md",
+      "source_location": "L5",
+      "weight": 1.0,
+      "_src": "claudemd_claude_code_guidance",
+      "_tgt": "claudemd_agents_md_reference",
+      "source": "claudemd_claude_code_guidance",
+      "target": "claudemd_agents_md_reference"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "CLAUDE.md",
+      "source_location": "L7",
+      "weight": 1.0,
+      "_src": "claudemd_claude_code_guidance",
+      "_tgt": "claudemd_pnpm_commands",
+      "source": "claudemd_claude_code_guidance",
+      "target": "claudemd_pnpm_commands"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "CLAUDE.md",
+      "source_location": "L14",
+      "weight": 1.0,
+      "_src": "claudemd_claude_code_guidance",
+      "_tgt": "claudemd_tech_stack",
+      "source": "claudemd_claude_code_guidance",
+      "target": "claudemd_tech_stack"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "CLAUDE.md",
+      "source_location": "L26",
+      "weight": 1.0,
+      "_src": "claudemd_claude_code_guidance",
+      "_tgt": "claudemd_architecture_overview",
+      "source": "claudemd_claude_code_guidance",
+      "target": "claudemd_architecture_overview"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "CLAUDE.md",
+      "source_location": "L36",
+      "weight": 1.0,
+      "_src": "claudemd_claude_code_guidance",
+      "_tgt": "claudemd_workflow_memo",
+      "source": "claudemd_claude_code_guidance",
+      "target": "claudemd_workflow_memo"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "CLAUDE.md",
+      "source_location": "L47",
+      "weight": 1.0,
+      "_src": "claudemd_claude_code_guidance",
+      "_tgt": "claudemd_graphify_integration",
+      "source": "claudemd_claude_code_guidance",
+      "target": "claudemd_graphify_integration"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "CLAUDE.md",
+      "source_location": "L17",
+      "weight": 1.0,
+      "_src": "claudemd_tech_stack",
+      "_tgt": "claudemd_react_compiler",
+      "source": "claudemd_tech_stack",
+      "target": "claudemd_react_compiler"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "CLAUDE.md",
+      "source_location": "L20",
+      "weight": 1.0,
+      "_src": "claudemd_tech_stack",
+      "_tgt": "claudemd_google_maps_integration",
+      "source": "claudemd_tech_stack",
+      "target": "claudemd_google_maps_integration"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "CLAUDE.md",
+      "source_location": "L21",
+      "weight": 1.0,
+      "_src": "claudemd_tech_stack",
+      "_tgt": "claudemd_html2canvas_capture",
+      "source": "claudemd_tech_stack",
+      "target": "claudemd_html2canvas_capture"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "CLAUDE.md",
+      "source_location": "L23",
+      "weight": 1.0,
+      "_src": "claudemd_tech_stack",
+      "_tgt": "claudemd_path_alias",
+      "source": "claudemd_tech_stack",
+      "target": "claudemd_path_alias"
+    },
+    {
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "CLAUDE.md",
+      "source_location": "L20",
+      "weight": 1.0,
+      "_src": "claudemd_google_maps_integration",
+      "_tgt": "codemap_node_api_provider",
+      "source": "claudemd_google_maps_integration",
+      "target": "codemap_node_api_provider"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "CLAUDE.md",
+      "source_location": "L31",
+      "weight": 1.0,
+      "_src": "claudemd_architecture_overview",
+      "_tgt": "claudemd_rule_components",
+      "source": "claudemd_architecture_overview",
+      "target": "claudemd_rule_components"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "CLAUDE.md",
+      "source_location": "L32",
+      "weight": 1.0,
+      "_src": "claudemd_architecture_overview",
+      "_tgt": "claudemd_rule_utils",
+      "source": "claudemd_architecture_overview",
+      "target": "claudemd_rule_utils"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "CLAUDE.md",
+      "source_location": "L33",
+      "weight": 1.0,
+      "_src": "claudemd_architecture_overview",
+      "_tgt": "claudemd_rule_styles",
+      "source": "claudemd_architecture_overview",
+      "target": "claudemd_rule_styles"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "CLAUDE.md",
+      "source_location": "L34",
+      "weight": 1.0,
+      "_src": "claudemd_architecture_overview",
+      "_tgt": "claudemd_rule_docker",
+      "source": "claudemd_architecture_overview",
+      "target": "claudemd_rule_docker"
+    },
+    {
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "CLAUDE.md",
+      "source_location": null,
+      "weight": 1.0,
+      "_src": "claudemd_architecture_overview",
+      "_tgt": "codemap_playground_app",
+      "source": "claudemd_architecture_overview",
+      "target": "codemap_playground_app"
+    },
+    {
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "docs/codemap-playground.html",
+      "source_location": null,
+      "weight": 1.0,
+      "_src": "codemap_node_home_page",
+      "_tgt": "claudemd_rule_components",
+      "source": "claudemd_rule_components",
+      "target": "codemap_node_home_page"
+    },
+    {
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "docs/codemap-playground.html",
+      "source_location": null,
+      "weight": 1.0,
+      "_src": "codemap_node_place_panels",
+      "_tgt": "claudemd_rule_utils",
+      "source": "claudemd_rule_utils",
+      "target": "codemap_node_place_panels"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L137",
+      "weight": 1.0,
+      "_src": "codemap_playground_app",
+      "_tgt": "codemap_layers_taxonomy",
+      "source": "codemap_playground_app",
+      "target": "codemap_layers_taxonomy"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L147",
+      "weight": 1.0,
+      "_src": "codemap_playground_app",
+      "_tgt": "codemap_conn_types",
+      "source": "codemap_playground_app",
+      "target": "codemap_conn_types"
+    },
+    {
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L180",
+      "weight": 1.0,
+      "_src": "codemap_node_layout",
+      "_tgt": "codemap_node_api_provider",
+      "source": "codemap_node_layout",
+      "target": "codemap_node_api_provider"
+    },
+    {
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L181",
+      "weight": 1.0,
+      "_src": "codemap_node_api_provider",
+      "_tgt": "codemap_node_home_page",
+      "source": "codemap_node_api_provider",
+      "target": "codemap_node_home_page"
+    },
+    {
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L182",
+      "weight": 1.0,
+      "_src": "codemap_node_home_page",
+      "_tgt": "codemap_node_header",
+      "source": "codemap_node_home_page",
+      "target": "codemap_node_header"
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L188",
+      "weight": 1.0,
+      "_src": "codemap_node_address_search",
+      "_tgt": "codemap_node_home_page",
+      "source": "codemap_node_home_page",
+      "target": "codemap_node_address_search"
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L189",
+      "weight": 1.0,
+      "_src": "codemap_node_drawing_toolbar",
+      "_tgt": "codemap_node_home_page",
+      "source": "codemap_node_home_page",
+      "target": "codemap_node_drawing_toolbar"
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L190",
+      "weight": 1.0,
+      "_src": "codemap_node_panel_config",
+      "_tgt": "codemap_node_home_page",
+      "source": "codemap_node_home_page",
+      "target": "codemap_node_panel_config"
+    },
+    {
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L186",
+      "weight": 1.0,
+      "_src": "codemap_node_home_page",
+      "_tgt": "codemap_node_results_panel",
+      "source": "codemap_node_home_page",
+      "target": "codemap_node_results_panel"
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L191",
+      "weight": 1.0,
+      "_src": "codemap_node_map_view",
+      "_tgt": "codemap_node_home_page",
+      "source": "codemap_node_home_page",
+      "target": "codemap_node_map_view"
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L197",
+      "weight": 1.0,
+      "_src": "codemap_node_home_page",
+      "_tgt": "codemap_node_place_panels",
+      "source": "codemap_node_home_page",
+      "target": "codemap_node_place_panels"
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L205",
+      "weight": 1.0,
+      "_src": "codemap_node_home_page",
+      "_tgt": "codemap_node_geometry_api",
+      "source": "codemap_node_home_page",
+      "target": "codemap_node_geometry_api"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L206",
+      "weight": 1.0,
+      "_src": "codemap_node_home_page",
+      "_tgt": "codemap_node_domain_types",
+      "source": "codemap_node_home_page",
+      "target": "codemap_node_domain_types"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L207",
+      "weight": 1.0,
+      "_src": "codemap_node_home_page",
+      "_tgt": "codemap_node_i18n",
+      "source": "codemap_node_home_page",
+      "target": "codemap_node_i18n"
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L201",
+      "weight": 1.0,
+      "_src": "codemap_node_address_search",
+      "_tgt": "codemap_node_places_api",
+      "source": "codemap_node_address_search",
+      "target": "codemap_node_places_api"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L208",
+      "weight": 1.0,
+      "_src": "codemap_node_address_search",
+      "_tgt": "codemap_node_i18n",
+      "source": "codemap_node_address_search",
+      "target": "codemap_node_i18n"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L209",
+      "weight": 1.0,
+      "_src": "codemap_node_drawing_toolbar",
+      "_tgt": "codemap_node_i18n",
+      "source": "codemap_node_drawing_toolbar",
+      "target": "codemap_node_i18n"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L210",
+      "weight": 1.0,
+      "_src": "codemap_node_panel_config",
+      "_tgt": "codemap_node_i18n",
+      "source": "codemap_node_panel_config",
+      "target": "codemap_node_i18n"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L211",
+      "weight": 1.0,
+      "_src": "codemap_node_results_panel",
+      "_tgt": "codemap_node_i18n",
+      "source": "codemap_node_results_panel",
+      "target": "codemap_node_i18n"
+    },
+    {
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L192",
+      "weight": 1.0,
+      "_src": "codemap_node_map_view",
+      "_tgt": "codemap_node_center_updater",
+      "source": "codemap_node_map_view",
+      "target": "codemap_node_center_updater"
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L196",
+      "weight": 1.0,
+      "_src": "codemap_node_drawing_overlay",
+      "_tgt": "codemap_node_map_view",
+      "source": "codemap_node_map_view",
+      "target": "codemap_node_drawing_overlay"
+    },
+    {
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L194",
+      "weight": 1.0,
+      "_src": "codemap_node_map_view",
+      "_tgt": "codemap_node_panel_overlay",
+      "source": "codemap_node_map_view",
+      "target": "codemap_node_panel_overlay"
+    },
+    {
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L195",
+      "weight": 1.0,
+      "_src": "codemap_node_map_view",
+      "_tgt": "codemap_node_map_controls",
+      "source": "codemap_node_map_view",
+      "target": "codemap_node_map_controls"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L212",
+      "weight": 1.0,
+      "_src": "codemap_node_map_view",
+      "_tgt": "codemap_node_i18n",
+      "source": "codemap_node_map_view",
+      "target": "codemap_node_i18n"
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L202",
+      "weight": 1.0,
+      "_src": "codemap_node_center_updater",
+      "_tgt": "codemap_node_maps_api",
+      "source": "codemap_node_center_updater",
+      "target": "codemap_node_maps_api"
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L203",
+      "weight": 1.0,
+      "_src": "codemap_node_drawing_overlay",
+      "_tgt": "codemap_node_maps_api",
+      "source": "codemap_node_drawing_overlay",
+      "target": "codemap_node_maps_api"
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L204",
+      "weight": 1.0,
+      "_src": "codemap_node_panel_overlay",
+      "_tgt": "codemap_node_maps_api",
+      "source": "codemap_node_panel_overlay",
+      "target": "codemap_node_maps_api"
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L198",
+      "weight": 1.0,
+      "_src": "codemap_node_place_panels",
+      "_tgt": "codemap_node_inset_polygon",
+      "source": "codemap_node_place_panels",
+      "target": "codemap_node_inset_polygon"
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L199",
+      "weight": 1.0,
+      "_src": "codemap_node_place_panels",
+      "_tgt": "codemap_node_point_in_polygon",
+      "source": "codemap_node_place_panels",
+      "target": "codemap_node_point_in_polygon"
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/codemap-playground.html",
+      "source_location": "L200",
+      "weight": 1.0,
+      "_src": "codemap_node_place_panels",
+      "_tgt": "codemap_node_coord_transform",
+      "source": "codemap_node_place_panels",
+      "target": "codemap_node_coord_transform"
     }
   ],
   "hyperedges": [
-    {
-      "id": "panel_placement_pipeline",
-      "label": "Panel placement pipeline (cm UI -> mm internal -> grid placement)",
-      "nodes": [
-        "page_handleplacepanels",
-        "panelplacement_placepanelsoncanvascm",
-        "panelplacement_placepanelsoncanvas",
-        "panelplacement_insetpolygon",
-        "panelplacement_ispointinpolygon",
-        "panelplacement_rotate"
-      ],
-      "relation": "participate_in",
-      "confidence": "EXTRACTED",
-      "confidence_score": 0.95,
-      "source_file": "src/app/utils/panelPlacement.ts"
-    },
     {
       "id": "sidebar_components",
       "label": "Left sidebar UI components",
@@ -6513,6 +7439,22 @@
       "confidence": "INFERRED",
       "confidence_score": 0.85,
       "source_file": "src/app/page.tsx"
+    },
+    {
+      "id": "panel_placement_pipeline",
+      "label": "Panel placement pipeline (cm UI -> mm internal -> grid placement)",
+      "nodes": [
+        "page_handleplacepanels",
+        "panelplacement_placepanelsoncanvascm",
+        "panelplacement_placepanelsoncanvas",
+        "panelplacement_insetpolygon",
+        "panelplacement_ispointinpolygon",
+        "panelplacement_rotate"
+      ],
+      "relation": "participate_in",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.95,
+      "source_file": "src/app/utils/panelPlacement.ts"
     },
     {
       "nodes": [
@@ -6546,6 +7488,51 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/plans/2026-03-20-polygon-ux-improvements-design.md"
+    },
+    {
+      "id": "home_orchestrates_ui_components",
+      "label": "Home page orchestrates UI components via props/callbacks",
+      "nodes": [
+        "codemap_node_home_page",
+        "codemap_node_address_search",
+        "codemap_node_drawing_toolbar",
+        "codemap_node_panel_config",
+        "codemap_node_results_panel",
+        "codemap_node_map_view"
+      ],
+      "relation": "participate_in",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/codemap-playground.html"
+    },
+    {
+      "id": "mapview_internal_overlays",
+      "label": "MapView composes internal map overlays",
+      "nodes": [
+        "codemap_node_map_view",
+        "codemap_node_center_updater",
+        "codemap_node_drawing_overlay",
+        "codemap_node_panel_overlay",
+        "codemap_node_map_controls"
+      ],
+      "relation": "form",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/codemap-playground.html"
+    },
+    {
+      "id": "panel_placement_geometry_pipeline",
+      "label": "Panel placement geometry pipeline",
+      "nodes": [
+        "codemap_node_place_panels",
+        "codemap_node_inset_polygon",
+        "codemap_node_point_in_polygon",
+        "codemap_node_coord_transform"
+      ],
+      "relation": "implement",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/codemap-playground.html"
     }
   ]
 }

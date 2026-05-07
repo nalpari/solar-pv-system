@@ -1,0 +1,2037 @@
+{
+  "nodes": [
+    {
+      "id": "postcss_config_mjs",
+      "label": "postcss.config.mjs",
+      "file_type": "code",
+      "source_file": "postcss.config.mjs",
+      "source_location": "L1"
+    },
+    {
+      "id": "eslint_config_mjs",
+      "label": "eslint.config.mjs",
+      "file_type": "code",
+      "source_file": "eslint.config.mjs",
+      "source_location": "L1"
+    },
+    {
+      "id": "next_config_ts",
+      "label": "next.config.ts",
+      "file_type": "code",
+      "source_file": "next.config.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_app_layout_tsx",
+      "label": "layout.tsx",
+      "file_type": "code",
+      "source_file": "src/app/layout.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "app_layout_rootlayout",
+      "label": "RootLayout()",
+      "file_type": "code",
+      "source_file": "src/app/layout.tsx",
+      "source_location": "L26"
+    },
+    {
+      "id": "src_app_page_tsx",
+      "label": "page.tsx",
+      "file_type": "code",
+      "source_file": "src/app/page.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "app_page_sectionheader",
+      "label": "SectionHeader()",
+      "file_type": "code",
+      "source_file": "src/app/page.tsx",
+      "source_location": "L43"
+    },
+    {
+      "id": "app_page_handleplaceselect",
+      "label": "handlePlaceSelect()",
+      "file_type": "code",
+      "source_file": "src/app/page.tsx",
+      "source_location": "L112"
+    },
+    {
+      "id": "app_page_handledeleteall",
+      "label": "handleDeleteAll()",
+      "file_type": "code",
+      "source_file": "src/app/page.tsx",
+      "source_location": "L153"
+    },
+    {
+      "id": "app_page_handledeleteallpanels",
+      "label": "handleDeleteAllPanels()",
+      "file_type": "code",
+      "source_file": "src/app/page.tsx",
+      "source_location": "L163"
+    },
+    {
+      "id": "app_page_switchtosimulation",
+      "label": "switchToSimulation()",
+      "file_type": "code",
+      "source_file": "src/app/page.tsx",
+      "source_location": "L174"
+    },
+    {
+      "id": "app_page_handleplacepanels",
+      "label": "handlePlacePanels()",
+      "file_type": "code",
+      "source_file": "src/app/page.tsx",
+      "source_location": "L181"
+    },
+    {
+      "id": "app_page_t",
+      "label": "t()",
+      "file_type": "code",
+      "source_file": "src/app/page.tsx",
+      "source_location": "L383"
+    },
+    {
+      "id": "src_app_types_index_ts",
+      "label": "index.ts",
+      "file_type": "code",
+      "source_file": "src/app/types/index.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_app_utils_i18n_ts",
+      "label": "i18n.ts",
+      "file_type": "code",
+      "source_file": "src/app/utils/i18n.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "utils_i18n_t",
+      "label": "t()",
+      "file_type": "code",
+      "source_file": "src/app/utils/i18n.ts",
+      "source_location": "L199"
+    },
+    {
+      "id": "src_app_utils_panelplacement_ts",
+      "label": "panelPlacement.ts",
+      "file_type": "code",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "utils_panelplacement_metersperlng",
+      "label": "metersPerLng()",
+      "file_type": "code",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": "L10"
+    },
+    {
+      "id": "utils_panelplacement_tolocal",
+      "label": "toLocal()",
+      "file_type": "code",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": "L14"
+    },
+    {
+      "id": "utils_panelplacement_tolatlng",
+      "label": "toLatLng()",
+      "file_type": "code",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": "L21"
+    },
+    {
+      "id": "utils_panelplacement_signedarea",
+      "label": "signedArea()",
+      "file_type": "code",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": "L28"
+    },
+    {
+      "id": "utils_panelplacement_lineintersection",
+      "label": "lineIntersection()",
+      "file_type": "code",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": "L37"
+    },
+    {
+      "id": "utils_panelplacement_ensureccw",
+      "label": "ensureCCW()",
+      "file_type": "code",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": "L49"
+    },
+    {
+      "id": "utils_panelplacement_insetpolygon",
+      "label": "insetPolygon()",
+      "file_type": "code",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": "L55"
+    },
+    {
+      "id": "utils_panelplacement_ispointinpolygon",
+      "label": "isPointInPolygon()",
+      "file_type": "code",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": "L95"
+    },
+    {
+      "id": "utils_panelplacement_rotate",
+      "label": "rotate()",
+      "file_type": "code",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": "L110"
+    },
+    {
+      "id": "utils_panelplacement_placepanels",
+      "label": "placePanels()",
+      "file_type": "code",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": "L116"
+    },
+    {
+      "id": "utils_panelplacement_placepanelsoncanvas",
+      "label": "placePanelsOnCanvas()",
+      "file_type": "code",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": "L231"
+    },
+    {
+      "id": "utils_panelplacement_placepanelsoncanvascm",
+      "label": "placePanelsOnCanvasCm()",
+      "file_type": "code",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": "L355"
+    },
+    {
+      "id": "src_app_components_croppopup_tsx",
+      "label": "CropPopup.tsx",
+      "file_type": "code",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "components_croppopup_findnearestsnapvertex",
+      "label": "findNearestSnapVertex()",
+      "file_type": "code",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L53"
+    },
+    {
+      "id": "components_croppopup_findlongestedgeindex",
+      "label": "findLongestEdgeIndex()",
+      "file_type": "code",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L75"
+    },
+    {
+      "id": "components_croppopup_distancetosegment",
+      "label": "distanceToSegment()",
+      "file_type": "code",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L92"
+    },
+    {
+      "id": "components_croppopup_pixeltolatlng",
+      "label": "pixelToLatLng()",
+      "file_type": "code",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L105"
+    },
+    {
+      "id": "components_croppopup_convertareas",
+      "label": "convertAreas()",
+      "file_type": "code",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L121"
+    },
+    {
+      "id": "components_croppopup_converttopixelpolygons",
+      "label": "convertToPixelPolygons()",
+      "file_type": "code",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L140"
+    },
+    {
+      "id": "components_croppopup_tooltipbutton",
+      "label": "TooltipButton()",
+      "file_type": "code",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L152"
+    },
+    {
+      "id": "components_croppopup_getrenderedimagerect",
+      "label": "getRenderedImageRect()",
+      "file_type": "code",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L259"
+    },
+    {
+      "id": "components_croppopup_synccanvassize",
+      "label": "syncCanvasSize()",
+      "file_type": "code",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L283"
+    },
+    {
+      "id": "components_croppopup_handleload",
+      "label": "handleLoad()",
+      "file_type": "code",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L306"
+    },
+    {
+      "id": "components_croppopup_computemetersperpixel",
+      "label": "computeMetersPerPixel()",
+      "file_type": "code",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L329"
+    },
+    {
+      "id": "components_croppopup_notifyparent",
+      "label": "notifyParent()",
+      "file_type": "code",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L338"
+    },
+    {
+      "id": "components_croppopup_handledeletepolygon",
+      "label": "handleDeletePolygon()",
+      "file_type": "code",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L350"
+    },
+    {
+      "id": "components_croppopup_getcanvascoords",
+      "label": "getCanvasCoords()",
+      "file_type": "code",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L505"
+    },
+    {
+      "id": "components_croppopup_handlepointerdown",
+      "label": "handlePointerDown()",
+      "file_type": "code",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L514"
+    },
+    {
+      "id": "components_croppopup_undolastpoint",
+      "label": "undoLastPoint()",
+      "file_type": "code",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L696"
+    },
+    {
+      "id": "components_croppopup_handlecontextmenu",
+      "label": "handleContextMenu()",
+      "file_type": "code",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L740"
+    },
+    {
+      "id": "components_croppopup_handlepointermove",
+      "label": "handlePointerMove()",
+      "file_type": "code",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L745"
+    },
+    {
+      "id": "components_croppopup_handlepointerup",
+      "label": "handlePointerUp()",
+      "file_type": "code",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L804"
+    },
+    {
+      "id": "components_croppopup_finalizevertexdrag",
+      "label": "finalizeVertexDrag()",
+      "file_type": "code",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L830"
+    },
+    {
+      "id": "components_croppopup_handlepointercancel",
+      "label": "handlePointerCancel()",
+      "file_type": "code",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L844"
+    },
+    {
+      "id": "components_croppopup_trydeletevertex",
+      "label": "tryDeleteVertex()",
+      "file_type": "code",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L857"
+    },
+    {
+      "id": "components_croppopup_handledoubleclick",
+      "label": "handleDoubleClick()",
+      "file_type": "code",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L887"
+    },
+    {
+      "id": "components_croppopup_handlesave",
+      "label": "handleSave()",
+      "file_type": "code",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L904"
+    },
+    {
+      "id": "components_croppopup_t",
+      "label": "t()",
+      "file_type": "code",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L1097"
+    },
+    {
+      "id": "src_app_components_simulationpanel_tsx",
+      "label": "SimulationPanel.tsx",
+      "file_type": "code",
+      "source_file": "src/app/components/SimulationPanel.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "components_simulationpanel_update",
+      "label": "update()",
+      "file_type": "code",
+      "source_file": "src/app/components/SimulationPanel.tsx",
+      "source_location": "L100"
+    },
+    {
+      "id": "components_simulationpanel_formatcurrency",
+      "label": "formatCurrency()",
+      "file_type": "code",
+      "source_file": "src/app/components/SimulationPanel.tsx",
+      "source_location": "L106"
+    },
+    {
+      "id": "components_simulationpanel_handlecostchange",
+      "label": "handleCostChange()",
+      "file_type": "code",
+      "source_file": "src/app/components/SimulationPanel.tsx",
+      "source_location": "L112"
+    },
+    {
+      "id": "src_app_components_resultspanel_tsx",
+      "label": "ResultsPanel.tsx",
+      "file_type": "code",
+      "source_file": "src/app/components/ResultsPanel.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_app_components_mapview_tsx",
+      "label": "MapView.tsx",
+      "file_type": "code",
+      "source_file": "src/app/components/MapView.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "components_mapview_viewupdater",
+      "label": "ViewUpdater()",
+      "file_type": "code",
+      "source_file": "src/app/components/MapView.tsx",
+      "source_location": "L24"
+    },
+    {
+      "id": "components_mapview_wheelzoomcontroller",
+      "label": "WheelZoomController()",
+      "file_type": "code",
+      "source_file": "src/app/components/MapView.tsx",
+      "source_location": "L52"
+    },
+    {
+      "id": "components_mapview_getcursorfortarget",
+      "label": "getCursorForTarget()",
+      "file_type": "code",
+      "source_file": "src/app/components/MapView.tsx",
+      "source_location": "L93"
+    },
+    {
+      "id": "components_mapview_hittest",
+      "label": "hitTest()",
+      "file_type": "code",
+      "source_file": "src/app/components/MapView.tsx",
+      "source_location": "L153"
+    },
+    {
+      "id": "components_mapview_handlepointerdown",
+      "label": "handlePointerDown()",
+      "file_type": "code",
+      "source_file": "src/app/components/MapView.tsx",
+      "source_location": "L179"
+    },
+    {
+      "id": "components_mapview_handlepointermove",
+      "label": "handlePointerMove()",
+      "file_type": "code",
+      "source_file": "src/app/components/MapView.tsx",
+      "source_location": "L196"
+    },
+    {
+      "id": "components_mapview_handlepointerup",
+      "label": "handlePointerUp()",
+      "file_type": "code",
+      "source_file": "src/app/components/MapView.tsx",
+      "source_location": "L275"
+    },
+    {
+      "id": "components_mapview_handlepointercancel",
+      "label": "handlePointerCancel()",
+      "file_type": "code",
+      "source_file": "src/app/components/MapView.tsx",
+      "source_location": "L282"
+    },
+    {
+      "id": "components_mapview_handleconfirm",
+      "label": "handleConfirm()",
+      "file_type": "code",
+      "source_file": "src/app/components/MapView.tsx",
+      "source_location": "L289"
+    },
+    {
+      "id": "src_app_components_roofedittoolbar_tsx",
+      "label": "RoofEditToolbar.tsx",
+      "file_type": "code",
+      "source_file": "src/app/components/RoofEditToolbar.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "components_roofedittoolbar_handletoolclick",
+      "label": "handleToolClick()",
+      "file_type": "code",
+      "source_file": "src/app/components/RoofEditToolbar.tsx",
+      "source_location": "L52"
+    },
+    {
+      "id": "src_app_components_header_tsx",
+      "label": "Header.tsx",
+      "file_type": "code",
+      "source_file": "src/app/components/Header.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_app_components_panelconfig_tsx",
+      "label": "PanelConfig.tsx",
+      "file_type": "code",
+      "source_file": "src/app/components/PanelConfig.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "components_panelconfig_getpresetsizes",
+      "label": "getPresetSizes()",
+      "file_type": "code",
+      "source_file": "src/app/components/PanelConfig.tsx",
+      "source_location": "L9"
+    },
+    {
+      "id": "components_panelconfig_handlepresetchange",
+      "label": "handlePresetChange()",
+      "file_type": "code",
+      "source_file": "src/app/components/PanelConfig.tsx",
+      "source_location": "L32"
+    },
+    {
+      "id": "src_app_components_addresssearch_tsx",
+      "label": "AddressSearch.tsx",
+      "file_type": "code",
+      "source_file": "src/app/components/AddressSearch.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "components_addresssearch_handleclickoutside",
+      "label": "handleClickOutside()",
+      "file_type": "code",
+      "source_file": "src/app/components/AddressSearch.tsx",
+      "source_location": "L37"
+    },
+    {
+      "id": "components_addresssearch_handleinputchange",
+      "label": "handleInputChange()",
+      "file_type": "code",
+      "source_file": "src/app/components/AddressSearch.tsx",
+      "source_location": "L80"
+    },
+    {
+      "id": "components_addresssearch_handlesearchclick",
+      "label": "handleSearchClick()",
+      "file_type": "code",
+      "source_file": "src/app/components/AddressSearch.tsx",
+      "source_location": "L86"
+    },
+    {
+      "id": "components_addresssearch_handleselect",
+      "label": "handleSelect()",
+      "file_type": "code",
+      "source_file": "src/app/components/AddressSearch.tsx",
+      "source_location": "L92"
+    }
+  ],
+  "edges": [
+    {
+      "source": "eslint_config_mjs",
+      "target": "config",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "eslint.config.mjs",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "eslint_config_mjs",
+      "target": "core_web_vitals",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "eslint.config.mjs",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "eslint_config_mjs",
+      "target": "typescript",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "eslint.config.mjs",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "next_config_ts",
+      "target": "next",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "next.config.ts",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_layout_tsx",
+      "target": "next",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/layout.tsx",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_layout_tsx",
+      "target": "google",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/layout.tsx",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_layout_tsx",
+      "target": "users_devgrr_dev_interplug_solar_pv_system_src_app_globals_css",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/layout.tsx",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_layout_tsx",
+      "target": "app_layout_rootlayout",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/layout.tsx",
+      "source_location": "L26",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_page_tsx",
+      "target": "react",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/page.tsx",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_page_tsx",
+      "target": "react_google_maps",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/page.tsx",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_page_tsx",
+      "target": "lucide_react",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/page.tsx",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_page_tsx",
+      "target": "users_devgrr_dev_interplug_solar_pv_system_src_app_components_header",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/page.tsx",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_page_tsx",
+      "target": "users_devgrr_dev_interplug_solar_pv_system_src_app_components_addresssearch",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/page.tsx",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_page_tsx",
+      "target": "users_devgrr_dev_interplug_solar_pv_system_src_app_components_panelconfig",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/page.tsx",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_page_tsx",
+      "target": "users_devgrr_dev_interplug_solar_pv_system_src_app_components_resultspanel",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/page.tsx",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_page_tsx",
+      "target": "users_devgrr_dev_interplug_solar_pv_system_src_app_components_simulationpanel",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/page.tsx",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_page_tsx",
+      "target": "users_devgrr_dev_interplug_solar_pv_system_src_app_components_simulationpanel",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/page.tsx",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_page_tsx",
+      "target": "users_devgrr_dev_interplug_solar_pv_system_src_app_components_roofedittoolbar",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/page.tsx",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_page_tsx",
+      "target": "users_devgrr_dev_interplug_solar_pv_system_src_app_components_roofedittoolbar",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/page.tsx",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_page_tsx",
+      "target": "users_devgrr_dev_interplug_solar_pv_system_src_app_components_mapview",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/page.tsx",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_page_tsx",
+      "target": "users_devgrr_dev_interplug_solar_pv_system_src_app_utils_panelplacement",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/page.tsx",
+      "source_location": "L15",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_page_tsx",
+      "target": "users_devgrr_dev_interplug_solar_pv_system_src_app_utils_i18n",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/page.tsx",
+      "source_location": "L16",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_page_tsx",
+      "target": "users_devgrr_dev_interplug_solar_pv_system_src_app_utils_i18n",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/page.tsx",
+      "source_location": "L17",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_page_tsx",
+      "target": "users_devgrr_dev_interplug_solar_pv_system_src_app_components_croppopup",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/page.tsx",
+      "source_location": "L18",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_page_tsx",
+      "target": "users_devgrr_dev_interplug_solar_pv_system_src_app_types",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/page.tsx",
+      "source_location": "L19",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_page_tsx",
+      "target": "app_page_sectionheader",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/page.tsx",
+      "source_location": "L43",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_page_tsx",
+      "target": "app_page_handleplaceselect",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/page.tsx",
+      "source_location": "L112",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_page_tsx",
+      "target": "app_page_handledeleteall",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/page.tsx",
+      "source_location": "L153",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_page_tsx",
+      "target": "app_page_handledeleteallpanels",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/page.tsx",
+      "source_location": "L163",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_page_tsx",
+      "target": "app_page_switchtosimulation",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/page.tsx",
+      "source_location": "L174",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_page_tsx",
+      "target": "app_page_handleplacepanels",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/page.tsx",
+      "source_location": "L181",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_page_tsx",
+      "target": "app_page_t",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/page.tsx",
+      "source_location": "L383",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_page_tsx",
+      "target": "app_page_t",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/page.tsx",
+      "source_location": "L443",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_page_tsx",
+      "target": "app_page_t",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/page.tsx",
+      "source_location": "L556",
+      "weight": 1.0
+    },
+    {
+      "source": "app_page_handleplacepanels",
+      "target": "app_page_t",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/page.tsx",
+      "source_location": "L210",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_utils_i18n_ts",
+      "target": "utils_i18n_t",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/utils/i18n.ts",
+      "source_location": "L199",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_utils_panelplacement_ts",
+      "target": "users_devgrr_dev_interplug_solar_pv_system_src_app_types",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_utils_panelplacement_ts",
+      "target": "utils_panelplacement_metersperlng",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_utils_panelplacement_ts",
+      "target": "utils_panelplacement_tolocal",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_utils_panelplacement_ts",
+      "target": "utils_panelplacement_tolatlng",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": "L21",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_utils_panelplacement_ts",
+      "target": "utils_panelplacement_signedarea",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": "L28",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_utils_panelplacement_ts",
+      "target": "utils_panelplacement_lineintersection",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": "L37",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_utils_panelplacement_ts",
+      "target": "utils_panelplacement_ensureccw",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": "L49",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_utils_panelplacement_ts",
+      "target": "utils_panelplacement_insetpolygon",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": "L55",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_utils_panelplacement_ts",
+      "target": "utils_panelplacement_ispointinpolygon",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": "L95",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_utils_panelplacement_ts",
+      "target": "utils_panelplacement_rotate",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": "L110",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_utils_panelplacement_ts",
+      "target": "utils_panelplacement_placepanels",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": "L116",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_utils_panelplacement_ts",
+      "target": "utils_panelplacement_placepanelsoncanvas",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": "L231",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_utils_panelplacement_ts",
+      "target": "utils_panelplacement_placepanelsoncanvascm",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": "L355",
+      "weight": 1.0
+    },
+    {
+      "source": "utils_panelplacement_tolocal",
+      "target": "utils_panelplacement_metersperlng",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": "L16",
+      "weight": 1.0
+    },
+    {
+      "source": "utils_panelplacement_tolatlng",
+      "target": "utils_panelplacement_metersperlng",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": "L24",
+      "weight": 1.0
+    },
+    {
+      "source": "utils_panelplacement_ensureccw",
+      "target": "utils_panelplacement_signedarea",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": "L50",
+      "weight": 1.0
+    },
+    {
+      "source": "utils_panelplacement_insetpolygon",
+      "target": "utils_panelplacement_ensureccw",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": "L59",
+      "weight": 1.0
+    },
+    {
+      "source": "utils_panelplacement_insetpolygon",
+      "target": "utils_panelplacement_lineintersection",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": "L80",
+      "weight": 1.0
+    },
+    {
+      "source": "utils_panelplacement_insetpolygon",
+      "target": "utils_panelplacement_signedarea",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": "L90",
+      "weight": 1.0
+    },
+    {
+      "source": "utils_panelplacement_placepanels",
+      "target": "utils_panelplacement_insetpolygon",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": "L146",
+      "weight": 1.0
+    },
+    {
+      "source": "utils_panelplacement_placepanelsoncanvas",
+      "target": "utils_panelplacement_insetpolygon",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": "L269",
+      "weight": 1.0
+    },
+    {
+      "source": "utils_panelplacement_placepanelsoncanvascm",
+      "target": "utils_panelplacement_placepanelsoncanvas",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/utils/panelPlacement.ts",
+      "source_location": "L366",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_croppopup_tsx",
+      "target": "react",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_croppopup_tsx",
+      "target": "lucide_react",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_croppopup_tsx",
+      "target": "users_devgrr_dev_interplug_solar_pv_system_src_app_types",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_croppopup_tsx",
+      "target": "users_devgrr_dev_interplug_solar_pv_system_src_app_utils_i18n",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_croppopup_tsx",
+      "target": "users_devgrr_dev_interplug_solar_pv_system_src_app_components_roofedittoolbar",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_croppopup_tsx",
+      "target": "users_devgrr_dev_interplug_solar_pv_system_src_app_utils_i18n",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_croppopup_tsx",
+      "target": "users_devgrr_dev_interplug_solar_pv_system_src_app_utils_panelplacement",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_croppopup_tsx",
+      "target": "components_croppopup_findnearestsnapvertex",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L53",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_croppopup_tsx",
+      "target": "components_croppopup_findlongestedgeindex",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L75",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_croppopup_tsx",
+      "target": "components_croppopup_distancetosegment",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L92",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_croppopup_tsx",
+      "target": "components_croppopup_pixeltolatlng",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L105",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_croppopup_tsx",
+      "target": "components_croppopup_convertareas",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L121",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_croppopup_tsx",
+      "target": "components_croppopup_converttopixelpolygons",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L140",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_croppopup_tsx",
+      "target": "components_croppopup_tooltipbutton",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L152",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_croppopup_tsx",
+      "target": "components_croppopup_getrenderedimagerect",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L259",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_croppopup_tsx",
+      "target": "components_croppopup_synccanvassize",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L283",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_croppopup_tsx",
+      "target": "components_croppopup_handleload",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L306",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_croppopup_tsx",
+      "target": "components_croppopup_computemetersperpixel",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L329",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_croppopup_tsx",
+      "target": "components_croppopup_notifyparent",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L338",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_croppopup_tsx",
+      "target": "components_croppopup_handledeletepolygon",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L350",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_croppopup_tsx",
+      "target": "components_croppopup_getcanvascoords",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L505",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_croppopup_tsx",
+      "target": "components_croppopup_handlepointerdown",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L514",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_croppopup_tsx",
+      "target": "components_croppopup_undolastpoint",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L696",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_croppopup_tsx",
+      "target": "components_croppopup_handlecontextmenu",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L740",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_croppopup_tsx",
+      "target": "components_croppopup_handlepointermove",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L745",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_croppopup_tsx",
+      "target": "components_croppopup_handlepointerup",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L804",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_croppopup_tsx",
+      "target": "components_croppopup_finalizevertexdrag",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L830",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_croppopup_tsx",
+      "target": "components_croppopup_handlepointercancel",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L844",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_croppopup_tsx",
+      "target": "components_croppopup_trydeletevertex",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L857",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_croppopup_tsx",
+      "target": "components_croppopup_handledoubleclick",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L887",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_croppopup_tsx",
+      "target": "components_croppopup_handlesave",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L904",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_croppopup_tsx",
+      "target": "components_croppopup_t",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L1097",
+      "weight": 1.0
+    },
+    {
+      "source": "components_croppopup_synccanvassize",
+      "target": "components_croppopup_getrenderedimagerect",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L285",
+      "weight": 1.0
+    },
+    {
+      "source": "components_croppopup_handleload",
+      "target": "components_croppopup_synccanvassize",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L306",
+      "weight": 1.0
+    },
+    {
+      "source": "components_croppopup_notifyparent",
+      "target": "components_croppopup_convertareas",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L341",
+      "weight": 1.0
+    },
+    {
+      "source": "components_croppopup_notifyparent",
+      "target": "components_croppopup_computemetersperpixel",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L342",
+      "weight": 1.0
+    },
+    {
+      "source": "components_croppopup_notifyparent",
+      "target": "components_croppopup_converttopixelpolygons",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L344",
+      "weight": 1.0
+    },
+    {
+      "source": "components_croppopup_handledeletepolygon",
+      "target": "components_croppopup_notifyparent",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L357",
+      "weight": 1.0
+    },
+    {
+      "source": "components_croppopup_handlepointerdown",
+      "target": "components_croppopup_getcanvascoords",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L518",
+      "weight": 1.0
+    },
+    {
+      "source": "components_croppopup_handlepointerdown",
+      "target": "components_croppopup_distancetosegment",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L532",
+      "weight": 1.0
+    },
+    {
+      "source": "components_croppopup_handlepointerdown",
+      "target": "components_croppopup_notifyparent",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L543",
+      "weight": 1.0
+    },
+    {
+      "source": "components_croppopup_handlepointerdown",
+      "target": "components_croppopup_findnearestsnapvertex",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L670",
+      "weight": 1.0
+    },
+    {
+      "source": "components_croppopup_handlepointerdown",
+      "target": "components_croppopup_findlongestedgeindex",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L682",
+      "weight": 1.0
+    },
+    {
+      "source": "components_croppopup_handlepointermove",
+      "target": "components_croppopup_findnearestsnapvertex",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L785",
+      "weight": 1.0
+    },
+    {
+      "source": "components_croppopup_handlepointerup",
+      "target": "components_croppopup_notifyparent",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L814",
+      "weight": 1.0
+    },
+    {
+      "source": "components_croppopup_handlepointerup",
+      "target": "components_croppopup_finalizevertexdrag",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L821",
+      "weight": 1.0
+    },
+    {
+      "source": "components_croppopup_finalizevertexdrag",
+      "target": "components_croppopup_notifyparent",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L839",
+      "weight": 1.0
+    },
+    {
+      "source": "components_croppopup_handlepointercancel",
+      "target": "components_croppopup_finalizevertexdrag",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L852",
+      "weight": 1.0
+    },
+    {
+      "source": "components_croppopup_trydeletevertex",
+      "target": "components_croppopup_notifyparent",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L883",
+      "weight": 1.0
+    },
+    {
+      "source": "components_croppopup_handledoubleclick",
+      "target": "components_croppopup_trydeletevertex",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L897",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_simulationpanel_tsx",
+      "target": "lucide_react",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/SimulationPanel.tsx",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_simulationpanel_tsx",
+      "target": "users_devgrr_dev_interplug_solar_pv_system_src_app_utils_i18n",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/SimulationPanel.tsx",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_simulationpanel_tsx",
+      "target": "users_devgrr_dev_interplug_solar_pv_system_src_app_utils_i18n",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/SimulationPanel.tsx",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_simulationpanel_tsx",
+      "target": "components_simulationpanel_update",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/SimulationPanel.tsx",
+      "source_location": "L100",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_simulationpanel_tsx",
+      "target": "components_simulationpanel_formatcurrency",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/SimulationPanel.tsx",
+      "source_location": "L106",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_simulationpanel_tsx",
+      "target": "components_simulationpanel_handlecostchange",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/SimulationPanel.tsx",
+      "source_location": "L112",
+      "weight": 1.0
+    },
+    {
+      "source": "components_simulationpanel_handlecostchange",
+      "target": "components_simulationpanel_update",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/SimulationPanel.tsx",
+      "source_location": "L114",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_resultspanel_tsx",
+      "target": "lucide_react",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/ResultsPanel.tsx",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_resultspanel_tsx",
+      "target": "users_devgrr_dev_interplug_solar_pv_system_src_app_utils_i18n",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/ResultsPanel.tsx",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_resultspanel_tsx",
+      "target": "users_devgrr_dev_interplug_solar_pv_system_src_app_utils_i18n",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/ResultsPanel.tsx",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_resultspanel_tsx",
+      "target": "users_devgrr_dev_interplug_solar_pv_system_src_app_types",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/ResultsPanel.tsx",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_mapview_tsx",
+      "target": "react",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/MapView.tsx",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_mapview_tsx",
+      "target": "react_google_maps",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/MapView.tsx",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_mapview_tsx",
+      "target": "html2canvas",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/MapView.tsx",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_mapview_tsx",
+      "target": "users_devgrr_dev_interplug_solar_pv_system_src_app_utils_i18n",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/MapView.tsx",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_mapview_tsx",
+      "target": "users_devgrr_dev_interplug_solar_pv_system_src_app_utils_i18n",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/MapView.tsx",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_mapview_tsx",
+      "target": "users_devgrr_dev_interplug_solar_pv_system_src_app_types",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/MapView.tsx",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_mapview_tsx",
+      "target": "components_mapview_viewupdater",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/MapView.tsx",
+      "source_location": "L24",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_mapview_tsx",
+      "target": "components_mapview_wheelzoomcontroller",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/MapView.tsx",
+      "source_location": "L52",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_mapview_tsx",
+      "target": "components_mapview_getcursorfortarget",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/MapView.tsx",
+      "source_location": "L93",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_mapview_tsx",
+      "target": "components_mapview_hittest",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/MapView.tsx",
+      "source_location": "L153",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_mapview_tsx",
+      "target": "components_mapview_handlepointerdown",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/MapView.tsx",
+      "source_location": "L179",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_mapview_tsx",
+      "target": "components_mapview_handlepointermove",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/MapView.tsx",
+      "source_location": "L196",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_mapview_tsx",
+      "target": "components_mapview_handlepointerup",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/MapView.tsx",
+      "source_location": "L275",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_mapview_tsx",
+      "target": "components_mapview_handlepointercancel",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/MapView.tsx",
+      "source_location": "L282",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_mapview_tsx",
+      "target": "components_mapview_handleconfirm",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/MapView.tsx",
+      "source_location": "L289",
+      "weight": 1.0
+    },
+    {
+      "source": "components_mapview_handlepointerdown",
+      "target": "components_mapview_hittest",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/MapView.tsx",
+      "source_location": "L186",
+      "weight": 1.0
+    },
+    {
+      "source": "components_mapview_handlepointermove",
+      "target": "components_mapview_hittest",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/MapView.tsx",
+      "source_location": "L204",
+      "weight": 1.0
+    },
+    {
+      "source": "components_mapview_handlepointermove",
+      "target": "components_mapview_getcursorfortarget",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/MapView.tsx",
+      "source_location": "L205",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_roofedittoolbar_tsx",
+      "target": "lucide_react",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/RoofEditToolbar.tsx",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_roofedittoolbar_tsx",
+      "target": "users_devgrr_dev_interplug_solar_pv_system_src_app_utils_i18n",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/RoofEditToolbar.tsx",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_roofedittoolbar_tsx",
+      "target": "users_devgrr_dev_interplug_solar_pv_system_src_app_utils_i18n",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/RoofEditToolbar.tsx",
+      "source_location": "L15",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_roofedittoolbar_tsx",
+      "target": "components_roofedittoolbar_handletoolclick",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/RoofEditToolbar.tsx",
+      "source_location": "L52",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_header_tsx",
+      "target": "image",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/Header.tsx",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_header_tsx",
+      "target": "navigation",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/Header.tsx",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_panelconfig_tsx",
+      "target": "react",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/PanelConfig.tsx",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_panelconfig_tsx",
+      "target": "lucide_react",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/PanelConfig.tsx",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_panelconfig_tsx",
+      "target": "users_devgrr_dev_interplug_solar_pv_system_src_app_utils_i18n",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/PanelConfig.tsx",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_panelconfig_tsx",
+      "target": "users_devgrr_dev_interplug_solar_pv_system_src_app_utils_i18n",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/PanelConfig.tsx",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_panelconfig_tsx",
+      "target": "users_devgrr_dev_interplug_solar_pv_system_src_app_types",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/PanelConfig.tsx",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_panelconfig_tsx",
+      "target": "components_panelconfig_getpresetsizes",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/PanelConfig.tsx",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_panelconfig_tsx",
+      "target": "components_panelconfig_handlepresetchange",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/PanelConfig.tsx",
+      "source_location": "L32",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_addresssearch_tsx",
+      "target": "react",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/AddressSearch.tsx",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_addresssearch_tsx",
+      "target": "lucide_react",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/AddressSearch.tsx",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_addresssearch_tsx",
+      "target": "users_devgrr_dev_interplug_solar_pv_system_src_app_utils_i18n",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/AddressSearch.tsx",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_addresssearch_tsx",
+      "target": "users_devgrr_dev_interplug_solar_pv_system_src_app_utils_i18n",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/AddressSearch.tsx",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_addresssearch_tsx",
+      "target": "components_addresssearch_handleclickoutside",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/AddressSearch.tsx",
+      "source_location": "L37",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_addresssearch_tsx",
+      "target": "components_addresssearch_handleinputchange",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/AddressSearch.tsx",
+      "source_location": "L80",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_addresssearch_tsx",
+      "target": "components_addresssearch_handlesearchclick",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/AddressSearch.tsx",
+      "source_location": "L86",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_components_addresssearch_tsx",
+      "target": "components_addresssearch_handleselect",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/components/AddressSearch.tsx",
+      "source_location": "L92",
+      "weight": 1.0
+    },
+    {
+      "source": "app_page_handleplacepanels",
+      "target": "utils_panelplacement_placepanelsoncanvascm",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/app/page.tsx",
+      "source_location": "L195",
+      "weight": 1.0
+    },
+    {
+      "source": "app_page_handleplacepanels",
+      "target": "utils_panelplacement_placepanels",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/app/page.tsx",
+      "source_location": "L218",
+      "weight": 1.0
+    },
+    {
+      "source": "components_croppopup_handlepointerdown",
+      "target": "utils_panelplacement_ispointinpolygon",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/app/components/CropPopup.tsx",
+      "source_location": "L555",
+      "weight": 1.0
+    },
+    {
+      "source": "components_panelconfig_getpresetsizes",
+      "target": "components_croppopup_t",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/app/components/PanelConfig.tsx",
+      "source_location": "L11",
+      "weight": 1.0
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

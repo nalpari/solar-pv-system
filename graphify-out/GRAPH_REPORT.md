@@ -1,162 +1,167 @@
-# Graph Report - .  (2026-04-30)
+# Graph Report - /Users/devgrr/dev/interplug/solar-pv-system  (2026-05-07)
 
 ## Corpus Check
-- Corpus is ~29,396 words - fits in a single context window. You may not need a graph.
+- Corpus is ~29,412 words - fits in a single context window. You may not need a graph.
 
 ## Summary
-- 244 nodes · 292 edges · 32 communities detected
-- Extraction: 90% EXTRACTED · 10% INFERRED · 0% AMBIGUOUS · INFERRED: 30 edges (avg confidence: 0.82)
+- 278 nodes · 330 edges · 34 communities detected
+- Extraction: 90% EXTRACTED · 10% INFERRED · 0% AMBIGUOUS · INFERRED: 32 edges (avg confidence: 0.82)
 - Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
-- [[_COMMUNITY_Address Search & i18n Shell|Address Search & i18n Shell]]
-- [[_COMMUNITY_Pixel Geometry Helpers|Pixel Geometry Helpers]]
-- [[_COMMUNITY_Crop & Panel Placement Pipeline|Crop & Panel Placement Pipeline]]
-- [[_COMMUNITY_CropPopup Editor Internals|CropPopup Editor Internals]]
-- [[_COMMUNITY_Project Architecture Doc|Project Architecture Doc]]
-- [[_COMMUNITY_page.tsx State Handlers|page.tsx State Handlers]]
-- [[_COMMUNITY_AI Agent Conventions|AI Agent Conventions]]
-- [[_COMMUNITY_Feature Set Documentation|Feature Set Documentation]]
-- [[_COMMUNITY_Map Pointer  Drag Interactions|Map Pointer / Drag Interactions]]
-- [[_COMMUNITY_Polygon Editor Plans|Polygon Editor Plans]]
-- [[_COMMUNITY_PanelConfig Module|PanelConfig Module]]
-- [[_COMMUNITY_SimulationPanel Module|SimulationPanel Module]]
-- [[_COMMUNITY_Hanwha Brand Asset|Hanwha Brand Asset]]
-- [[_COMMUNITY_Place Select Handler|Place Select Handler]]
-- [[_COMMUNITY_Crop Close Handler|Crop Close Handler]]
-- [[_COMMUNITY_Delete All Panels Handler|Delete All Panels Handler]]
-- [[_COMMUNITY_Simulation Tab Switch|Simulation Tab Switch]]
-- [[_COMMUNITY_Undo Last Point|Undo Last Point]]
-- [[_COMMUNITY_ESLint Flat Config Detail|ESLint Flat Config Detail]]
-- [[_COMMUNITY_PostCSS Tailwind v4 Config|PostCSS Tailwind v4 Config]]
-- [[_COMMUNITY_App Initialization Sequence|App Initialization Sequence]]
+- [[_COMMUNITY_Architecture & Workflow Docs|Architecture & Workflow Docs]]
+- [[_COMMUNITY_Canvas Polygon Editor Logic|Canvas Polygon Editor Logic]]
+- [[_COMMUNITY_Map, Search & i18n Components|Map, Search & i18n Components]]
+- [[_COMMUNITY_High-Level Architecture Map|High-Level Architecture Map]]
+- [[_COMMUNITY_Panel Placement Geometry|Panel Placement Geometry]]
+- [[_COMMUNITY_CropPopup Editor|CropPopup Editor]]
+- [[_COMMUNITY_Page Orchestration Handlers|Page Orchestration Handlers]]
+- [[_COMMUNITY_Tech Stack & Tooling|Tech Stack & Tooling]]
+- [[_COMMUNITY_MapView Pointer Handlers|MapView Pointer Handlers]]
+- [[_COMMUNITY_Polygon UX Design Docs|Polygon UX Design Docs]]
+- [[_COMMUNITY_Graphify Integration|Graphify Integration]]
+- [[_COMMUNITY_Context Management Concepts|Context Management Concepts]]
+- [[_COMMUNITY_Simulation Panel|Simulation Panel]]
+- [[_COMMUNITY_PostCSS Doc|PostCSS Doc]]
+- [[_COMMUNITY_ESLint Doc|ESLint Doc]]
+- [[_COMMUNITY_handlePlaceSelect|handlePlaceSelect]]
+- [[_COMMUNITY_handleCropClose|handleCropClose]]
+- [[_COMMUNITY_handleDeleteAllPanels|handleDeleteAllPanels]]
+- [[_COMMUNITY_switchToSimulation|switchToSimulation]]
+- [[_COMMUNITY_undoLastPoint|undoLastPoint]]
+- [[_COMMUNITY_App Init Sequence|App Init Sequence]]
 - [[_COMMUNITY_i18n Toggle Sequence|i18n Toggle Sequence]]
-- [[_COMMUNITY_Area Calculation Sequence|Area Calculation Sequence]]
+- [[_COMMUNITY_Area Calc Sequence|Area Calc Sequence]]
+- [[_COMMUNITY_Hanwha Japan Logo|Hanwha Japan Logo]]
+- [[_COMMUNITY_Hanwha Japan Brand|Hanwha Japan Brand]]
 - [[_COMMUNITY_File Icon Asset|File Icon Asset]]
-- [[_COMMUNITY_Map Point Marker Asset|Map Point Marker Asset]]
+- [[_COMMUNITY_Map Marker Asset|Map Marker Asset]]
 - [[_COMMUNITY_Vercel Logo Asset|Vercel Logo Asset]]
 - [[_COMMUNITY_Next.js Logo Asset|Next.js Logo Asset]]
 - [[_COMMUNITY_Roof Slope Diagram|Roof Slope Diagram]]
 - [[_COMMUNITY_Roof Slope Categories|Roof Slope Categories]]
-- [[_COMMUNITY_Compass Azimuth Asset|Compass Azimuth Asset]]
+- [[_COMMUNITY_Compass  Azimuth Indicator|Compass / Azimuth Indicator]]
 - [[_COMMUNITY_Globe Icon Asset|Globe Icon Asset]]
 - [[_COMMUNITY_Window Icon Asset|Window Icon Asset]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `Home (root page component)` - 21 edges
 2. `CropPopup component` - 19 edges
-3. `Solar PV Planner` - 16 edges
+3. `Solar PV Planner` - 15 edges
 4. `t (translation function)` - 12 edges
-5. `notifyParent` - 10 edges
-6. `notifyParent()` - 9 edges
-7. `placePanels (latlng/mm)` - 9 edges
-8. `placePanelsOnCanvas (pixel/mm)` - 8 edges
-9. `System Overview (SPA)` - 8 edges
-10. `handlePointerDown()` - 7 edges
+5. `Home Page (src/app/page.tsx)` - 12 edges
+6. `notifyParent` - 10 edges
+7. `notifyParent()` - 9 edges
+8. `placePanels (latlng/mm)` - 9 edges
+9. `placePanelsOnCanvas (pixel/mm)` - 8 edges
+10. `System Overview (SPA)` - 8 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `Eave Parallel Layout` --semantically_similar_to--> `Grid Placement Strategy`  [INFERRED] [semantically similar]
   README.md → docs/architecture.md
+- `Solar PV Rooftop Layout Planner Architecture` --semantically_similar_to--> `Solar PV Code Map Playground (HTML)`  [INFERRED] [semantically similar]
+  CLAUDE.md → docs/codemap-playground.html
 - `Three Panel Placement Functions` --conceptually_related_to--> `Panel Placement Calculation Flow`  [INFERRED]
   AGENTS.md → docs/architecture.md
-- `Graphify Knowledge Graph Integration` --conceptually_related_to--> `Graphify Setup Overview`  [INFERRED]
-  CLAUDE.md → docs/graphify-setup.md
-- `findLongestEdgeIndex` --semantically_similar_to--> `placePanelsOnCanvas (pixel/mm)`  [INFERRED] [semantically similar]
-  src/app/components/CropPopup.tsx → src/app/utils/panelPlacement.ts
-- `Next.js config (standalone, reactCompiler)` --conceptually_related_to--> `RootLayout`  [INFERRED]
-  next.config.ts → src/app/layout.tsx
+- `Home Page (src/app/page.tsx)` --conceptually_related_to--> `Rule: components.md`  [INFERRED]
+  docs/codemap-playground.html → CLAUDE.md
+- `placePanels() (utils/panelPlacement.ts)` --conceptually_related_to--> `Rule: utils.md`  [INFERRED]
+  docs/codemap-playground.html → CLAUDE.md
 
 ## Hyperedges (group relationships)
-- **Panel placement pipeline (cm UI -> mm internal -> grid placement)** — page_handleplacepanels, panelplacement_placepanelsoncanvascm, panelplacement_placepanelsoncanvas, panelplacement_insetpolygon, panelplacement_ispointinpolygon, panelplacement_rotate [EXTRACTED 0.95]
 - **Left sidebar UI components** — header_header, addresssearch_addresssearch, panelconfig_panelconfig, resultspanel_resultspanel, simulationpanel_simulationpanel [EXTRACTED 0.90]
 - **Crop selection -> capture -> roof edit flow** — mapview_cropoverlay, mapview_handleconfirm, page_handlecropcomplete, croppopup_croppopup, roofedittoolbar_roofedittoolbar [INFERRED 0.85]
+- **Panel placement pipeline (cm UI -> mm internal -> grid placement)** — page_handleplacepanels, panelplacement_placepanelsoncanvascm, panelplacement_placepanelsoncanvas, panelplacement_insetpolygon, panelplacement_ispointinpolygon, panelplacement_rotate [EXTRACTED 0.95]
 - **Panel Placement Algorithm Pipeline** — architecture_coordinate_conversion, architecture_polygon_inset_algorithm, architecture_grid_placement_strategy [EXTRACTED 1.00]
 - **Crop & Polygon Editor Workflow** — plan_canvas_polygon_editor, plan_pixel_to_latlng_conversion, readme_building_crop [EXTRACTED 1.00]
 - **Polygon UX Improvement Suite** — plan_undo_feature, plan_polygon_selection_tooltip, plan_vertex_editing [EXTRACTED 1.00]
+- **Home page orchestrates UI components via props/callbacks** — codemap_node_home_page, codemap_node_address_search, codemap_node_drawing_toolbar, codemap_node_panel_config, codemap_node_results_panel, codemap_node_map_view [EXTRACTED 1.00]
+- **MapView composes internal map overlays** — codemap_node_map_view, codemap_node_center_updater, codemap_node_drawing_overlay, codemap_node_panel_overlay, codemap_node_map_controls [EXTRACTED 1.00]
+- **Panel placement geometry pipeline** — codemap_node_place_panels, codemap_node_inset_polygon, codemap_node_point_in_polygon, codemap_node_coord_transform [EXTRACTED 1.00]
 
 ## Communities
 
-### Community 0 - "Address Search & i18n Shell"
-Cohesion: 0.1
-Nodes (29): AddressSearch component, handleSelect (place getDetails), searchPlaces (Places autocomplete), Header component, Lang type (ja|en), t (translation function), translations table, RootLayout (+21 more)
+### Community 0 - "Architecture & Workflow Docs"
+Cohesion: 0.06
+Nodes (37): AGENTS.md AI Agent Guide, No Test Framework, Three Panel Placement Functions, Props-Down / Callbacks-Up Pattern, App Workflow, Address Search Flow, Component Tree, Coordinate Conversion (lat/lng <-> meters) (+29 more)
 
-### Community 1 - "Pixel Geometry Helpers"
-Cohesion: 0.13
-Nodes (20): computeMetersPerPixel(), convertAreas(), convertToPixelPolygons(), distanceToSegment(), finalizeVertexDrag(), findLongestEdgeIndex(), findNearestSnapVertex(), getCanvasCoords() (+12 more)
+### Community 1 - "Canvas Polygon Editor Logic"
+Cohesion: 0.11
+Nodes (22): computeMetersPerPixel(), convertAreas(), convertToPixelPolygons(), distanceToSegment(), finalizeVertexDrag(), findLongestEdgeIndex(), findNearestSnapVertex(), getCanvasCoords() (+14 more)
 
-### Community 2 - "Crop & Panel Placement Pipeline"
+### Community 2 - "Map, Search & i18n Components"
+Cohesion: 0.09
+Nodes (30): AddressSearch component, handleSelect (place getDetails), searchPlaces (Places autocomplete), Header component, Lang type (ja|en), t (translation function), translations table, RootLayout (+22 more)
+
+### Community 3 - "High-Level Architecture Map"
+Cohesion: 0.09
+Nodes (26): Solar PV Rooftop Layout Planner Architecture, Rule: components.md, Rule: docker.md, Rule: styles.md, Rule: utils.md, Connection Types (data-flow/callback/api-call/import), Layer Taxonomy (framework/page/ui/map/logic/types/external), AddressSearch Component (+18 more)
+
+### Community 4 - "Panel Placement Geometry"
 Cohesion: 0.1
 Nodes (26): AreaEntry interface, convertAreas, pixelToLatLng, handleConfirm (crop confirm), handleCropComplete, handlePlacePanels, ensureCCW, insetPolygon (+18 more)
 
-### Community 3 - "CropPopup Editor Internals"
+### Community 5 - "CropPopup Editor"
 Cohesion: 0.12
-Nodes (24): computeMetersPerPixel, convertToPixelPolygons, CropPopup component, distanceToSegment, finalizeVertexDrag, findLongestEdgeIndex, findNearestSnapVertex, handleDeletePolygon (+16 more)
+Nodes (23): computeMetersPerPixel, convertToPixelPolygons, CropPopup component, distanceToSegment, finalizeVertexDrag, findLongestEdgeIndex, findNearestSnapVertex, handleDeletePolygon (+15 more)
 
-### Community 4 - "Project Architecture Doc"
-Cohesion: 0.1
-Nodes (22): AGENTS.md AI Agent Guide, No Test Framework, Three Panel Placement Functions, Props-Down / Callbacks-Up Pattern, App Workflow, Address Search Flow, Component Tree, Coordinate Conversion (lat/lng <-> meters) (+14 more)
-
-### Community 5 - "page.tsx State Handlers"
+### Community 6 - "Page Orchestration Handlers"
 Cohesion: 0.16
 Nodes (12): handlePlacePanels(), t(), ensureCCW(), insetPolygon(), lineIntersection(), metersPerLng(), placePanels(), placePanelsOnCanvas() (+4 more)
 
-### Community 6 - "AI Agent Conventions"
-Cohesion: 0.12
-Nodes (17): Commit Message Convention, Conditional .claude/rules/ Loading, Graphify Knowledge Graph Integration, Korean Response Rule, CLAUDE.md Project Instructions, Post-Task Lint/Type/Build Checks, CockroachDB Case Study, Context Management Concept (+9 more)
+### Community 7 - "Tech Stack & Tooling"
+Cohesion: 0.17
+Nodes (12): AGENTS.md Common Guide, Claude Code Guidance Document, Google Maps via @vis.gl/react-google-maps, graphify Knowledge Graph Integration, html2canvas Map Tile Capture, Path Alias @/* -> ./src/*, pnpm Commands (dev/build/start/lint), React Compiler (reactCompiler: true) (+4 more)
 
-### Community 7 - "Feature Set Documentation"
-Cohesion: 0.13
-Nodes (15): Address Search Feature, Auto Module Placement, Building Crop Feature, Japanese/English i18n Toggle, Image Save (PNG Export), Module Preset Selection, Module Preset Table, Placement Constants (GAP_CM, MARGIN_CM) (+7 more)
-
-### Community 8 - "Map Pointer / Drag Interactions"
+### Community 8 - "MapView Pointer Handlers"
 Cohesion: 0.27
 Nodes (4): getCursorForTarget(), handlePointerDown(), handlePointerMove(), hitTest()
 
-### Community 9 - "Polygon Editor Plans"
+### Community 9 - "Polygon UX Design Docs"
 Cohesion: 0.25
 Nodes (9): Canvas-Based Polygon Editor, Pixel to Lat/Lng Conversion, Polygon Selection Tooltip, Polygon UX Improvements Design, Polygon UX Improvements Plan, Roof Crop Design Document, Roof Crop & Polygon Editor Plan, Drawing Undo Feature (+1 more)
 
-### Community 11 - "PanelConfig Module"
-Cohesion: 0.5
-Nodes (2): t(), getPresetSizes()
+### Community 10 - "Graphify Integration"
+Cohesion: 0.33
+Nodes (6): graphify-out gitignore Policy, Graphify Setup Overview, Project Always-On Integration, Graphify Query Commands, Global Claude Code Skill Registration, uv Tool Installation
 
-### Community 12 - "SimulationPanel Module"
+### Community 12 - "Context Management Concepts"
+Cohesion: 0.4
+Nodes (5): CockroachDB Case Study, Context Management Concept, Front Matter Conditional Loading, McDonald's Manual Analogy, Trigger.dev Case Study
+
+### Community 13 - "Simulation Panel"
 Cohesion: 0.67
 Nodes (2): handleCostChange(), update()
 
-### Community 16 - "Hanwha Brand Asset"
-Cohesion: 1.0
-Nodes (2): Hanwha Japan (Brand Entity), Hanwha Japan Logo
-
-### Community 23 - "Place Select Handler"
-Cohesion: 1.0
-Nodes (1): handlePlaceSelect
-
-### Community 24 - "Crop Close Handler"
-Cohesion: 1.0
-Nodes (1): handleCropClose
-
-### Community 25 - "Delete All Panels Handler"
-Cohesion: 1.0
-Nodes (1): handleDeleteAllPanels
-
-### Community 26 - "Simulation Tab Switch"
-Cohesion: 1.0
-Nodes (1): switchToSimulation
-
-### Community 27 - "Undo Last Point"
-Cohesion: 1.0
-Nodes (1): undoLastPoint
-
-### Community 28 - "ESLint Flat Config Detail"
-Cohesion: 1.0
-Nodes (1): ESLint flat config
-
-### Community 29 - "PostCSS Tailwind v4 Config"
+### Community 23 - "PostCSS Doc"
 Cohesion: 1.0
 Nodes (1): PostCSS config (Tailwind v4)
 
-### Community 30 - "App Initialization Sequence"
+### Community 24 - "ESLint Doc"
+Cohesion: 1.0
+Nodes (1): ESLint flat config
+
+### Community 25 - "handlePlaceSelect"
+Cohesion: 1.0
+Nodes (1): handlePlaceSelect
+
+### Community 26 - "handleCropClose"
+Cohesion: 1.0
+Nodes (1): handleCropClose
+
+### Community 27 - "handleDeleteAllPanels"
+Cohesion: 1.0
+Nodes (1): handleDeleteAllPanels
+
+### Community 28 - "switchToSimulation"
+Cohesion: 1.0
+Nodes (1): switchToSimulation
+
+### Community 29 - "undoLastPoint"
+Cohesion: 1.0
+Nodes (1): undoLastPoint
+
+### Community 30 - "App Init Sequence"
 Cohesion: 1.0
 Nodes (1): App Initialization Sequence
 
@@ -164,78 +169,86 @@ Nodes (1): App Initialization Sequence
 Cohesion: 1.0
 Nodes (1): i18n Language Toggle Sequence
 
-### Community 32 - "Area Calculation Sequence"
+### Community 32 - "Area Calc Sequence"
 Cohesion: 1.0
 Nodes (1): Area Calculation Sequence
 
-### Community 33 - "File Icon Asset"
+### Community 33 - "Hanwha Japan Logo"
+Cohesion: 1.0
+Nodes (1): Hanwha Japan Logo
+
+### Community 34 - "Hanwha Japan Brand"
+Cohesion: 1.0
+Nodes (1): Hanwha Japan (Brand Entity)
+
+### Community 35 - "File Icon Asset"
 Cohesion: 1.0
 Nodes (1): File Icon
 
-### Community 34 - "Map Point Marker Asset"
+### Community 36 - "Map Marker Asset"
 Cohesion: 1.0
 Nodes (1): Map Point Marker
 
-### Community 35 - "Vercel Logo Asset"
+### Community 37 - "Vercel Logo Asset"
 Cohesion: 1.0
 Nodes (1): Vercel Logo
 
-### Community 36 - "Next.js Logo Asset"
+### Community 38 - "Next.js Logo Asset"
 Cohesion: 1.0
 Nodes (1): Next.js Logo
 
-### Community 37 - "Roof Slope Diagram"
+### Community 39 - "Roof Slope Diagram"
 Cohesion: 1.0
 Nodes (1): Roof Slope Diagram (Sun Units)
 
-### Community 38 - "Roof Slope Categories"
+### Community 40 - "Roof Slope Categories"
 Cohesion: 1.0
 Nodes (1): Roof Slope Categories: 6寸 / 3寸 / 4寸
 
-### Community 39 - "Compass Azimuth Asset"
+### Community 41 - "Compass / Azimuth Indicator"
 Cohesion: 1.0
 Nodes (1): Compass / Azimuth Indicator
 
-### Community 40 - "Globe Icon Asset"
+### Community 42 - "Globe Icon Asset"
 Cohesion: 1.0
 Nodes (1): Globe Icon
 
-### Community 41 - "Window Icon Asset"
+### Community 43 - "Window Icon Asset"
 Cohesion: 1.0
 Nodes (1): Window Icon
 
 ## Knowledge Gaps
-- **87 isolated node(s):** `SectionHeader (sub-component)`, `handlePlaceSelect`, `handleCropComplete`, `handleAreasChange`, `handlePixelAreasChange` (+82 more)
+- **102 isolated node(s):** `PostCSS config (Tailwind v4)`, `ESLint flat config`, `Next.js config (standalone, reactCompiler)`, `SectionHeader (sub-component)`, `handlePlaceSelect` (+97 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **Thin community `PanelConfig Module`** (4 nodes): `t()`, `getPresetSizes()`, `handlePresetChange()`, `PanelConfig.tsx`
+- **Thin community `Simulation Panel`** (4 nodes): `formatCurrency()`, `handleCostChange()`, `update()`, `SimulationPanel.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `SimulationPanel Module`** (4 nodes): `formatCurrency()`, `handleCostChange()`, `update()`, `SimulationPanel.tsx`
+- **Thin community `PostCSS Doc`** (1 nodes): `PostCSS config (Tailwind v4)`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Hanwha Brand Asset`** (2 nodes): `Hanwha Japan (Brand Entity)`, `Hanwha Japan Logo`
+- **Thin community `ESLint Doc`** (1 nodes): `ESLint flat config`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Place Select Handler`** (1 nodes): `handlePlaceSelect`
+- **Thin community `handlePlaceSelect`** (1 nodes): `handlePlaceSelect`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Crop Close Handler`** (1 nodes): `handleCropClose`
+- **Thin community `handleCropClose`** (1 nodes): `handleCropClose`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Delete All Panels Handler`** (1 nodes): `handleDeleteAllPanels`
+- **Thin community `handleDeleteAllPanels`** (1 nodes): `handleDeleteAllPanels`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Simulation Tab Switch`** (1 nodes): `switchToSimulation`
+- **Thin community `switchToSimulation`** (1 nodes): `switchToSimulation`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Undo Last Point`** (1 nodes): `undoLastPoint`
+- **Thin community `undoLastPoint`** (1 nodes): `undoLastPoint`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `ESLint Flat Config Detail`** (1 nodes): `ESLint flat config`
-  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `PostCSS Tailwind v4 Config`** (1 nodes): `PostCSS config (Tailwind v4)`
-  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `App Initialization Sequence`** (1 nodes): `App Initialization Sequence`
+- **Thin community `App Init Sequence`** (1 nodes): `App Initialization Sequence`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `i18n Toggle Sequence`** (1 nodes): `i18n Language Toggle Sequence`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Area Calculation Sequence`** (1 nodes): `Area Calculation Sequence`
+- **Thin community `Area Calc Sequence`** (1 nodes): `Area Calculation Sequence`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Hanwha Japan Logo`** (1 nodes): `Hanwha Japan Logo`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Hanwha Japan Brand`** (1 nodes): `Hanwha Japan (Brand Entity)`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `File Icon Asset`** (1 nodes): `File Icon`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Map Point Marker Asset`** (1 nodes): `Map Point Marker`
+- **Thin community `Map Marker Asset`** (1 nodes): `Map Point Marker`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Vercel Logo Asset`** (1 nodes): `Vercel Logo`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
@@ -245,7 +258,7 @@ Nodes (1): Window Icon
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Roof Slope Categories`** (1 nodes): `Roof Slope Categories: 6寸 / 3寸 / 4寸`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Compass Azimuth Asset`** (1 nodes): `Compass / Azimuth Indicator`
+- **Thin community `Compass / Azimuth Indicator`** (1 nodes): `Compass / Azimuth Indicator`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Globe Icon Asset`** (1 nodes): `Globe Icon`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
@@ -255,17 +268,17 @@ Nodes (1): Window Icon
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `CropPopup component` connect `CropPopup Editor Internals` to `Address Search & i18n Shell`, `Crop & Panel Placement Pipeline`?**
-  _High betweenness centrality (0.043) - this node is a cross-community bridge._
-- **Why does `Home (root page component)` connect `Address Search & i18n Shell` to `Crop & Panel Placement Pipeline`, `CropPopup Editor Internals`?**
-  _High betweenness centrality (0.039) - this node is a cross-community bridge._
-- **Why does `Solar PV Planner` connect `Feature Set Documentation` to `Project Architecture Doc`, `AI Agent Conventions`?**
-  _High betweenness centrality (0.023) - this node is a cross-community bridge._
-- **Are the 3 inferred relationships involving `Home (root page component)` (e.g. with `MapView component` and `CropPopup component`) actually correct?**
+- **Why does `CropPopup component` connect `CropPopup Editor` to `Map, Search & i18n Components`, `Panel Placement Geometry`?**
+  _High betweenness centrality (0.033) - this node is a cross-community bridge._
+- **Why does `Home (root page component)` connect `Map, Search & i18n Components` to `Panel Placement Geometry`, `CropPopup Editor`?**
+  _High betweenness centrality (0.030) - this node is a cross-community bridge._
+- **Are the 3 inferred relationships involving `Home (root page component)` (e.g. with `RootLayout` and `MapView component`) actually correct?**
   _`Home (root page component)` has 3 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 2 inferred relationships involving `CropPopup component` (e.g. with `Home (root page component)` and `handleDeleteAll`) actually correct?**
   _`CropPopup component` has 2 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 2 inferred relationships involving `notifyParent` (e.g. with `handleAreasChange` and `handlePixelAreasChange`) actually correct?**
-  _`notifyParent` has 2 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `SectionHeader (sub-component)`, `handlePlaceSelect`, `handleCropComplete` to the rest of the system?**
-  _87 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **What connects `PostCSS config (Tailwind v4)`, `ESLint flat config`, `Next.js config (standalone, reactCompiler)` to the rest of the system?**
+  _102 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Should `Architecture & Workflow Docs` be split into smaller, more focused modules?**
+  _Cohesion score 0.06 - nodes in this community are weakly interconnected._
+- **Should `Canvas Polygon Editor Logic` be split into smaller, more focused modules?**
+  _Cohesion score 0.11 - nodes in this community are weakly interconnected._
