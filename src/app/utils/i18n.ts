@@ -189,8 +189,8 @@ const translations = {
   },
 
   requiredApis: {
-    ja: "必要なAPI: Maps JavaScript, Places, Drawing, Geometry",
-    en: "Required APIs: Maps JavaScript, Places, Drawing, Geometry",
+    ja: "必要なAPI: Maps JavaScript, Places, Geometry",
+    en: "Required APIs: Maps JavaScript, Places, Geometry",
   },
 } as const;
 

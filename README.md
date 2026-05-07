@@ -37,7 +37,7 @@
 
 - Node.js 20+
 - pnpm
-- Google Maps API 키 (Maps JavaScript API, Places API, Drawing API, Geometry API 활성화 필요)
+- Google Maps API 키 (Maps JavaScript API, Places API, Geometry API 활성화 필요)
 
 ### 설치 및 실행
 
@@ -192,7 +192,7 @@ src/app/
 
 | 변수 | 필수 | 설명 |
 |------|------|------|
-| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | ✅ | Google Maps API 키 (Maps JS / Places / Drawing / Geometry) |
+| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | ✅ | Google Maps API 키 (Maps JS / Places / Geometry) |
 
 ## 추가 문서
 

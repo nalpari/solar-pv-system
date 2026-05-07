@@ -10,30 +10,46 @@ Solar PV rooftop panel layout planner — a single-page web application that let
 
 ```bash
 pnpm install
-cp .env.example .env.local  # Set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+echo 'NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_api_key' > .env.local
 pnpm dev                     # http://localhost:3000
 ```
+
+## Always Do
+
+- 모든 답변과 추론과정은 한국어로 작성한다.
+- 가급적 react 19.2 버전의 최신 문법을 사용한다.
+- task가 끝나면 서브 에이전트를 사용해서 린트체크, 타입체크, 빌드체크를 수행한다.
+- 린트체크시 오류가 있으면 반드시 해결하고 넘어가도록 하고, 경고가 있더라도 해결하려고 노력한다.
+- 커밋시에 접두사는 영어로 나머지 타이틀과 내용은 한국어로 작성한다.
+- task 완료시 CLAUDE.md, AGENTS.md 및 README.md 문서에 업데이트가 필요하면 진행한다.
+- 작업시 한 문장으로 설명되는 의미있는 단위로 commit 한다.
+
+## Always Do Not
+
+- graphify update는 수동으로 진행할 예정이니 절대 실행하지 않는다.
 
 ## Commands
 
 | Command | Description |
 |---------|-------------|
-| `pnpm dev` | Start development server (Turbopack) |
-| `pnpm build` | Production build |
+| `pnpm dev` | Start development server |
+| `pnpm build` | Production build (`output: "standalone"`) |
 | `pnpm start` | Serve production build |
 | `pnpm lint` | Run ESLint (flat config) |
+| `npx tsc --noEmit` | TypeScript type-check |
 | `docker compose up --build` | Docker build & run |
+| `graphify update .` | AST-only knowledge graph refresh |
 
 ## Tech Stack
 
-- **Next.js 16.2** — App Router, React Compiler enabled, Turbopack
-- **React 19.2** — React Compiler (`reactCompiler: true` in next.config.ts)
+- **Next.js 16.2** — App Router, `output: "standalone"`, React Compiler enabled
+- **React 19.2** — React Compiler (`reactCompiler: true` in `next.config.ts`, `babel-plugin-react-compiler` 1.0.0)
 - **TypeScript** — strict mode
 - **Tailwind CSS v4** — via `@tailwindcss/postcss` (CSS custom properties used for styling, not utility classes)
-- **Google Maps** — `@vis.gl/react-google-maps` (Maps, Places, Drawing, Geometry APIs)
-- **html2canvas** — Map tile capture for crop popup
-- **lucide-react** — Icons
-- **Docker** — Multi-stage standalone build
+- **Google Maps** — `@vis.gl/react-google-maps` ^1.7.1 (Maps JS, Places, Geometry APIs)
+- **html2canvas** ^1.4.1 — Map tile capture for crop popup + PNG export
+- **lucide-react** ^0.577.0 — Icons
+- **Docker** — Multi-stage standalone build (see `Dockerfile`, `docker-compose.yml`)
 
 ## Architecture
 
@@ -43,30 +59,36 @@ pnpm dev                     # http://localhost:3000
 src/app/
 ├── components/          # UI components (all "use client")
 │   ├── AddressSearch    # Google Places autocomplete
-│   ├── CropPopup        # Crop image popup with Canvas polygon editor + panel rendering
-│   ├── DrawingToolbar   # Crop mode toggle / polygon drawing mode controls
-│   ├── Header           # App header with logo
-│   ├── MapView          # Google Maps + crop area selection overlay
-│   ├── PanelConfig      # Panel size(mm)/orientation/gap(cm)/margin(cm)
-│   └── ResultsPanel     # Panel count & area statistics
+│   ├── CropPopup        # Crop image popup with Canvas polygon editor, panel rendering, PNG save
+│   ├── Header           # App header with Hanwha Japan logo
+│   ├── MapView          # Google Maps satellite view + crop overlay + zoom/recenter controls
+│   ├── PanelConfig      # Panel size preset (60-cell / 72-cell / Large / Custom, mm)
+│   ├── ResultsPanel     # Panel count, capacity, area, coverage ratio
+│   ├── RoofEditToolbar  # Floating toolbar over map (select / drawRoof / drawOpening / flowSetting / editRoof / undo / delete)
+│   └── SimulationPanel  # Generation simulation inputs (azimuth, battery, monthly electric cost)
 ├── utils/
 │   ├── panelPlacement   # Computational geometry (lat/lng + pixel-based panel layout)
 │   └── i18n             # Japanese/English translation system
 ├── types/               # Domain types (LatLng, CropData, PixelPanel, etc.)
 ├── globals.css          # CSS custom properties theme
-├── layout.tsx           # Root layout (Server Component)
-└── page.tsx             # Main page (Client Component, owns all state)
+├── layout.tsx           # Root layout (Server Component, html lang="ja")
+└── page.tsx             # Main page (Client Component, owns all state, hosts design/simulation tabs)
 ```
 
 ### Key Patterns
 
-- **State Management**: `page.tsx` owns all state, passes via props (Props-Down / Callbacks-Up)
+- **State Management**: `page.tsx` owns all state, passes via props (Props-Down / Callbacks-Up). Sidebar tabs (`design` | `simulation`) are also held there.
 - **Styling**: CSS custom properties in `globals.css`, inline styles — NOT Tailwind utility classes
-- **i18n**: `utils/i18n.ts` with `t(key, lang)` function, `Lang` type (`"ja" | "en"`), toggle in sidebar footer
-- **Workflow**: Address search → map crop → popup polygon editor → panel placement → save as image
-- **Panel Placement**: Three functions — lat/lng-based (`placePanels`, mm), pixel-based (`placePanelsOnCanvas`, mm), pixel-based (`placePanelsOnCanvasCm`, cm — UI에서 사용)
+- **i18n**: `utils/i18n.ts` with `t(key, lang)` function, `Lang` type (`"ja" | "en"`), sidebar footer toggle synced to `<html lang>` in `page.tsx`
+- **Workflow**: Address search → confirm building (drag crop on map, captured via `html2canvas`) → CropPopup polygon editor (drawRoof / drawOpening / flowSetting / editRoof) → set slope (寸 단위, 0.5–10) and module preset → place modules (auto picks portrait or landscape, whichever fits more) → results panel + PNG save → optional Simulation tab input
+- **Panel Placement**: Three functions in `utils/panelPlacement.ts`
+  - `placePanels` — lat/lng-based (mm internal)
+  - `placePanelsOnCanvas` — pixel-based (mm internal)
+  - `placePanelsOnCanvasCm` — pixel-based, **cm UI-facing entry** used by `page.tsx`; internally calls the mm version
+- **Eave-parallel layout**: Each install polygon's `eaveEdgeIndex` (set via `flowSetting` tool) drives grid orientation so modules align with the chosen eave edge; without it, the longest edge is used.
+- **Constants**: `GAP_CM = 0.3`, `MARGIN_CM = 30` are hardcoded in `page.tsx` (not part of `PanelConfig` UI).
 
-### Domain Types
+### Domain Types (`src/app/types/index.ts`)
 
 | Type | Description |
 |------|-------------|
@@ -74,20 +96,22 @@ src/app/
 | `PanelSize` | Panel dimensions (label, width, height in mm) |
 | `PanelOrientation` | `"portrait"` or `"landscape"` |
 | `DrawingMode` | `"install"`, `"exclude"`, or `null` |
-| `PolygonArea` | Install/exclude polygon (id, type, paths) |
-| `PlacedPanel` | Placed panel with 4 lat/lng corner coordinates |
+| `PolygonArea` | Install/exclude polygon (id, type, paths, optional `eaveEdgeIndex`) |
+| `PlacedPanel` | Placed panel (`polygonId` + 4 lat/lng corners) |
 | `CropData` | Crop result (image data URL, bounds, address, zoom, sizeMeters) |
 | `CropBounds` | SW/NE lat/lng bounds of cropped area |
 | `PixelPoint` | x/y coordinate in pixel space |
-| `PixelPolygon` | Install/exclude polygon in pixel coordinates |
-| `PixelPanel` | Placed panel with 4 pixel corner coordinates |
+| `PixelPolygon` | Install/exclude polygon in pixel coordinates (optional `eaveEdgeIndex`) |
+| `PixelPanel` | Placed panel (`polygonId` + 4 pixel corners) |
+| `PolygonSubMode` | `"idle"` \| `"selected"` \| `"moving"` \| `"editing_vertices"` |
 
 ## Coding Conventions
 
 - Use inline styles with CSS variables (`var(--bg-primary)`, `var(--accent-blue)`, etc.)
-- Panel dimensions: mm input → meters internally. Gap/margin: cm input (UI) → mm → meters internally
+- Panel dimensions: mm input → meters internally. Gap/margin constants are cm in UI/code (`GAP_CM`, `MARGIN_CM` in `page.tsx`) → converted to mm → meters in `panelPlacement.ts`
+- Coordinate flow: lat/lng ↔ local meters ↔ pixels (Y-axis flipped for canvas)
 - Path alias: `@/*` → `./src/*`
-- Fonts: Geist Sans + Geist Mono via `next/font/google`
+- Fonts: Figtree + Noto Sans JP + Geist Mono via `next/font/google` (`--font-figtree`, `--font-noto-sans-jp`, `--font-geist-mono` CSS vars)
 - Prefer React 19.2 patterns and latest API usage
 - TypeScript strict mode — no `any` types
 
@@ -95,7 +119,7 @@ src/app/
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Yes | Google Maps API key (Maps JS, Places, Drawing, Geometry APIs) |
+| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Yes | Google Maps API key (Maps JS, Places, Geometry APIs) |
 
 ## Testing
 
@@ -107,4 +131,16 @@ Currently no test framework configured. Verify changes via:
 ## Additional Context
 
 - See `CLAUDE.md` for Claude Code-specific instructions (language preferences, commit conventions)
-- The app defaults to Japanese UI with English toggle available
+- See `README.md` for the user-facing feature list, screenshots, and step-by-step usage
+- The app defaults to Japanese UI (`<html lang="ja">`) with English toggle available in the sidebar footer
+- Generation simulation backend is not wired up yet — `SimulationPanel` only collects input
+
+## graphify
+
+This project has a graphify knowledge graph at graphify-out/.
+
+Rules:
+- Before answering architecture or codebase questions, read graphify-out/GRAPH_REPORT.md for god nodes and community structure
+- If graphify-out/wiki/index.md exists, navigate it instead of reading raw files
+- For cross-module "how does X relate to Y" questions, prefer `graphify query "<question>"`, `graphify path "<A>" "<B>"`, or `graphify explain "<concept>"` over grep — these traverse the graph's EXTRACTED + INFERRED edges instead of scanning files
+- After modifying code files in this session, run `graphify update .` to keep the graph current (AST-only, no API cost)
