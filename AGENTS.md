@@ -8,6 +8,8 @@ Solar PV rooftop panel layout planner — a single-page web application that let
 
 ## Quick Start
 
+사전 요구사항: Node.js 20+ · pnpm · Google Maps API 키 (Maps JS / Places / Geometry API 활성)
+
 ```bash
 pnpm install
 echo 'NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_api_key' > .env.local
@@ -24,10 +26,6 @@ pnpm dev                     # http://localhost:3000
 - task 완료시 CLAUDE.md, AGENTS.md 및 README.md 문서에 업데이트가 필요하면 진행한다.
 - 작업시 한 문장으로 설명되는 의미있는 단위로 commit 한다.
 
-## Always Do Not
-
-- graphify update는 수동으로 진행할 예정이니 절대 실행하지 않는다.
-
 ## Commands
 
 | Command | Description |
@@ -38,6 +36,8 @@ pnpm dev                     # http://localhost:3000
 | `pnpm lint` | Run ESLint (flat config) |
 | `npx tsc --noEmit` | TypeScript type-check |
 | `docker compose up --build` | Docker build & run |
+| `docker compose up --build -d` | Docker build & run (백그라운드) |
+| `docker compose down` | Docker 컨테이너 중지 |
 | `graphify update .` | AST-only knowledge graph refresh |
 
 ## Tech Stack
@@ -105,6 +105,23 @@ src/app/
 | `PixelPanel` | Placed panel (`polygonId` + 4 pixel corners) |
 | `PolygonSubMode` | `"idle"` \| `"selected"` \| `"moving"` \| `"editing_vertices"` |
 
+### Supplementary Guides
+
+코드 작업 전에 해당 영역의 룰 파일을 참고하세요. CLAUDE.md 가 본 파일을 import 하므로 동일 컨텍스트로 로드됩니다.
+
+| 위치 | 내용 |
+|------|------|
+| `.claude/rules/components.md` | Page 구조 · 주요 컴포넌트 · 도메인 타입 요약 |
+| `.claude/rules/utils.md` | `panelPlacement.ts` 좌표 변환 / 단위 체계 / Y축 flip |
+| `.claude/rules/styles.md` | CSS 커스텀 프로퍼티 vs Tailwind 사용 원칙 |
+| `.claude/rules/docker.md` | Docker 멀티스테이지 빌드 / compose 명령 |
+| `docs/architecture.md` | 시스템 전체 아키텍처 도식 |
+| `docs/sequence-diagrams.md` | App init / i18n toggle / area calc 시퀀스 다이어그램 |
+| `docs/context-manage.md` | AI 에이전트 컨텍스트 관리 사례 노트 |
+| `docs/graphify-setup.md` | graphify 도입·운영 세팅 가이드 |
+| `docs/codemap-playground.html` | 인터랙티브 코드맵 (브라우저 열람용) |
+| `docs/plans/` | UX 개선·기능 도입 계획 문서 |
+
 ## Coding Conventions
 
 - Use inline styles with CSS variables (`var(--bg-primary)`, `var(--accent-blue)`, etc.)
@@ -130,7 +147,7 @@ Currently no test framework configured. Verify changes via:
 
 ## Additional Context
 
-- See `CLAUDE.md` for Claude Code-specific instructions (language preferences, commit conventions)
+- `CLAUDE.md` 는 본 파일(`AGENTS.md`)을 그대로 import 하는 shim 입니다 — 모든 가이드는 여기에서 관리합니다
 - See `README.md` for the user-facing feature list, screenshots, and step-by-step usage
 - The app defaults to Japanese UI (`<html lang="ja">`) with English toggle available in the sidebar footer
 - Generation simulation backend is not wired up yet — `SimulationPanel` only collects input
@@ -138,6 +155,8 @@ Currently no test framework configured. Verify changes via:
 ## graphify
 
 This project has a graphify knowledge graph at graphify-out/.
+
+`graphify-out/` 은 의도적으로 git 에 포함됩니다 (`.gitignore` 에 없음) — 에이전트 공유용 스냅샷입니다.
 
 Rules:
 - Before answering architecture or codebase questions, read graphify-out/GRAPH_REPORT.md for god nodes and community structure
