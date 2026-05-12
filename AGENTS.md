@@ -156,7 +156,7 @@ Currently no test framework configured. Verify changes via:
 
 This project has a graphify knowledge graph at graphify-out/.
 
-`graphify-out/` 은 의도적으로 git 에 포함됩니다 (`.gitignore` 에 없음) — 에이전트 공유용 스냅샷입니다.
+`graphify-out/` 은 `.gitignore` 에 포함되어 git 추적 대상이 아닙니다 — 로컬에서 `graphify update .` 로 재생성하세요.
 
 Rules:
 - Before answering architecture or codebase questions, read graphify-out/GRAPH_REPORT.md for god nodes and community structure
