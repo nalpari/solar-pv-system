@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { APIProvider } from "@vis.gl/react-google-maps";
-import { Globe, Sun, BarChart3, Crop, ChevronDown, ArrowRight, PenTool } from "lucide-react";
+import { Globe, Sun, BarChart3, Crop, ChevronDown, ArrowRight } from "lucide-react";
 import Header from "./components/Header";
 import AddressSearch from "./components/AddressSearch";
 import PanelConfig from "./components/PanelConfig";
@@ -16,6 +16,8 @@ import { placePanels, placePanelsOnCanvasCm } from "./utils/panelPlacement";
 import { t } from "./utils/i18n";
 import type { Lang } from "./utils/i18n";
 import CropPopup from "./components/CropPopup";
+import { detectRoofs } from "./utils/aiDetect";
+import type { NormalizedPolygon } from "./utils/aiDetect";
 import type {
   PanelSize,
   PanelOrientation,
@@ -65,7 +67,6 @@ export default function Home() {
   const [lang, setLang] = useState<Lang>("ja");
   const [activeTab, setActiveTab] = useState<SidebarTab>("design");
   const [slope, setSlope] = useState(4); // 4寸 default
-  const [roofEditing, setRoofEditing] = useState(false);
   const [roofEditTool, setRoofEditTool] = useState<RoofTool>("select");
   const [simForm, setSimForm] = useState<SimulationFormState>({
     azimuth: "",
@@ -77,6 +78,11 @@ export default function Home() {
   useEffect(() => {
     document.documentElement.lang = lang;
   }, [lang]);
+
+  // AI 지붕 감지 상태 (Phase 3)
+  const [isDetecting, setIsDetecting] = useState(false);
+  const [detectError, setDetectError] = useState<string | null>(null);
+  const [aiSeedAreas, setAiSeedAreas] = useState<NormalizedPolygon[]>([]);
 
   const [center, setCenter] = useState(DEFAULT_CENTER);
   const [viewport, setViewport] = useState<google.maps.LatLngBounds | null>(null);
@@ -103,9 +109,9 @@ export default function Home() {
 
   // RoofEditToolbar의 활성 툴에서 CropPopup의 drawingMode를 파생
   const drawingMode: DrawingMode =
-    roofEditing && roofEditTool === "drawRoof"
+    roofEditTool === "drawRoof"
       ? "install"
-      : roofEditing && roofEditTool === "drawOpening"
+      : roofEditTool === "drawOpening"
         ? "exclude"
         : null;
 
@@ -125,6 +131,38 @@ export default function Home() {
     setCropMode(false);
   }, []);
 
+  // 크롭 완료 시 자동으로 Gemini 지붕 감지 실행 (D2)
+  useEffect(() => {
+    if (!cropData) {
+      setAiSeedAreas([]);
+      setIsDetecting(false);
+      setDetectError(null);
+      return;
+    }
+
+    let cancelled = false;
+    setIsDetecting(true);
+    setDetectError(null);
+
+    (async () => {
+      try {
+        // Gemini detect 호출 (정규화 좌표 그대로 전달, 변환은 CropPopup에서 캔버스 크기 알 때 수행)
+        const response = await detectRoofs(cropData);
+        if (cancelled) return;
+        setAiSeedAreas(response.polygons.map((p) => p.points));
+      } catch (e) {
+        if (cancelled) return;
+        setDetectError(e instanceof Error ? e.message : t("aiDetectFailed", lang));
+      } finally {
+        if (!cancelled) setIsDetecting(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [cropData, lang]);
+
   const handleAreasChange = useCallback((newAreas: PolygonArea[]) => {
     const validIds = new Set(newAreas.map((a) => a.id));
     setAreas(newAreas);
@@ -142,11 +180,14 @@ export default function Home() {
   const handleCropClose = useCallback(() => {
     setCropData(null);
     setRoofEditTool("select");
-    setRoofEditing(false);
     setAreas([]);
     setPixelAreas(null);
     setPlacedPixelPanels([]);
     setPlacedPanelsList([]);
+    // AI 감지 상태도 정리 (Phase 3)
+    setAiSeedAreas([]);
+    setDetectError(null);
+    setIsDetecting(false);
   }, []);
 
   /** 지붕편집 툴바의 "전체 삭제" 액션 - 그려진 폴리곤/패널만 초기화 (cropData 유지) */
@@ -173,7 +214,6 @@ export default function Home() {
 
   function switchToSimulation() {
     setCropMode(false);
-    setRoofEditing(false);
     setRoofEditTool("select");
     setActiveTab("simulation");
   }
@@ -442,52 +482,6 @@ export default function Home() {
                   {/* Section: 지붕 편집 */}
                   <SectionHeader title={t("sectionRoofEdit", lang)} primary />
 
-                  {/* Roof Edit Toggle Button */}
-                  <div style={{ padding: "12px 16px 0" }}>
-                    <button
-                      onClick={() => cropData && setRoofEditing(!roofEditing)}
-                      disabled={!cropData}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: 8,
-                        width: "100%",
-                        padding: "10px 16px",
-                        borderRadius: "var(--radius-md)",
-                        border: roofEditing
-                          ? "1px solid var(--accent-blue)"
-                          : "1px solid var(--border-primary)",
-                        background: roofEditing
-                          ? "var(--accent-blue)"
-                          : "var(--bg-surface)",
-                        color: roofEditing
-                          ? "#fff"
-                          : !cropData
-                            ? "var(--text-tertiary)"
-                            : "var(--text-primary)",
-                        fontSize: 13,
-                        fontWeight: 600,
-                        cursor: cropData ? "pointer" : "not-allowed",
-                        opacity: cropData ? 1 : 0.5,
-                        transition: "all 0.15s ease",
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!roofEditing && cropData) {
-                          e.currentTarget.style.background = "var(--bg-surface-hover)";
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!roofEditing && cropData) {
-                          e.currentTarget.style.background = "var(--bg-surface)";
-                        }
-                      }}
-                    >
-                      <PenTool size={15} />
-                      {roofEditing ? t("roofEditing", lang) : t("roofEditStart", lang)}
-                    </button>
-                  </div>
-
                   {/* Slope Settings */}
                   <div style={{ padding: "12px 16px" }}>
                     <label
@@ -675,26 +669,6 @@ export default function Home() {
 
           {/* Map Area */}
           <main style={{ flex: 1, position: "relative" }}>
-            {/* Roof Edit Toolbar (floating over map) */}
-            {roofEditing && cropData && (
-              <RoofEditToolbar
-                lang={lang}
-                activeTool={roofEditTool}
-                onToolChange={setRoofEditTool}
-                onAction={(action) => {
-                  if (action === "undo") {
-                    setUndoSignal((n) => n + 1);
-                  } else if (action === "deleteAll") {
-                    handleDeleteAll();
-                  }
-                  // deleteSelected는 추후 연결 (현재는 CropPopup 툴팁의 삭제 사용)
-                }}
-                onClose={() => {
-                  setRoofEditing(false);
-                  setRoofEditTool("select");
-                }}
-              />
-            )}
             {GOOGLE_MAPS_API_KEY ? (
               <MapView
                 center={center}
@@ -802,19 +776,49 @@ export default function Home() {
               </div>
             )}
             {cropData && (
-              <CropPopup
-                cropData={cropData}
-                drawingMode={drawingMode}
-                onAreasChange={handleAreasChange}
-                onPixelAreasChange={handlePixelAreasChange}
-                placedPanels={placedPixelPanels}
-                onClose={handleCropClose}
-                lang={lang}
-                roofEditTool={roofEditing ? roofEditTool : undefined}
-                onEaveChange={handleEaveChange}
-                undoSignal={undoSignal}
-                clearSignal={clearSignal}
-              />
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  zIndex: 100,
+                  pointerEvents: "none",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 12,
+                }}
+              >
+                <RoofEditToolbar
+                  lang={lang}
+                  activeTool={roofEditTool}
+                  onToolChange={setRoofEditTool}
+                  onAction={(action) => {
+                    if (action === "undo") {
+                      setUndoSignal((n) => n + 1);
+                    } else if (action === "deleteAll") {
+                      handleDeleteAll();
+                    }
+                  }}
+                  onClose={() => setRoofEditTool("select")}
+                />
+                <CropPopup
+                  cropData={cropData}
+                  drawingMode={drawingMode}
+                  onAreasChange={handleAreasChange}
+                  onPixelAreasChange={handlePixelAreasChange}
+                  placedPanels={placedPixelPanels}
+                  onClose={handleCropClose}
+                  lang={lang}
+                  roofEditTool={roofEditTool}
+                  onEaveChange={handleEaveChange}
+                  undoSignal={undoSignal}
+                  clearSignal={clearSignal}
+                  initialAreas={aiSeedAreas}
+                  isDetecting={isDetecting}
+                  detectError={detectError}
+                />
+              </div>
             )}
           </main>
       </div>

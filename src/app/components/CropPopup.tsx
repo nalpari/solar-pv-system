@@ -5,6 +5,8 @@ import { X, Download } from "lucide-react";
 import type { CropData, CropBounds, DrawingMode, LatLng, PolygonArea, PixelPanel, PixelPolygon, PixelPoint, PolygonSubMode } from "../types";
 import type { Lang } from "../utils/i18n";
 import type { RoofTool } from "./RoofEditToolbar";
+import type { NormalizedPolygon } from "../utils/aiDetect";
+import { normalizedToPixelPolygons } from "../utils/aiDetect";
 import { t } from "../utils/i18n";
 import { isPointInPolygon } from "../utils/panelPlacement";
 
@@ -33,6 +35,12 @@ interface CropPopupProps {
   undoSignal?: number;
   /** 외부(툴바 deleteAll)로부터 전체 초기화 신호. 값이 바뀔 때마다 내부 areas/currentPoints/선택 상태 초기화 */
   clearSignal?: number;
+  /** 외부 주입 폴리곤 (AI 자동 감지 결과, 정규화 [0..1] 좌표). 새 reference로 들어올 때 내부 areas에 1회 머지 */
+  initialAreas?: NormalizedPolygon[];
+  /** AI 감지 진행 중 (로딩 오버레이 표시) */
+  isDetecting?: boolean;
+  /** AI 감지 실패 메시지 (배너 표시) */
+  detectError?: string | null;
 }
 
 interface AreaEntry {
@@ -192,6 +200,9 @@ export default function CropPopup({
   onEaveChange,
   undoSignal,
   clearSignal,
+  initialAreas,
+  isDetecting,
+  detectError,
 }: CropPopupProps) {
   const [areas, setAreas] = useState<AreaEntry[]>([]);
   const [currentPoints, setCurrentPoints] = useState<PixelPoint[]>([]);
@@ -218,6 +229,29 @@ export default function CropPopup({
 
   const areasRef = useRef<AreaEntry[]>(areas);
   areasRef.current = areas;
+
+  // AI 감지 결과(initialAreas) 외부 주입 — 캔버스 준비 + 새 reference 조합일 때 1회 머지
+  const lastSeedRef = useRef<NormalizedPolygon[] | null>(null);
+  useEffect(() => {
+    if (lastSeedRef.current === initialAreas) return;
+    if (!initialAreas || initialAreas.length === 0) return;
+
+    const canvas = canvasRef.current;
+    if (!canvas || canvas.width <= 0 || canvas.height <= 0) return; // 캔버스 아직 준비 안 됨
+
+    lastSeedRef.current = initialAreas;
+
+    // 정규화 [0..1] → 캔버스 픽셀 좌표
+    const converted = normalizedToPixelPolygons(initialAreas, canvas.width, canvas.height);
+    const seeded: AreaEntry[] = converted.map((p) => ({
+      ...p,
+      id: crypto.randomUUID(),
+    }));
+    const updated = [...areasRef.current, ...seeded];
+    setAreas(updated);
+    notifyParent(updated);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialAreas, canvasLayout]);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
@@ -927,33 +961,73 @@ export default function CropPopup({
   }
 
   return (
+    /* Popup card — 90% of map area. 외부 wrapper(page.tsx)가 zIndex/배치 담당 */
     <div
       style={{
-        position: "absolute",
-        inset: 0,
+        width: "90%",
+        height: "90%",
+        position: "relative",
+        background: "var(--bg-primary)",
+        borderRadius: "var(--radius-lg)",
+        boxShadow: "var(--shadow-lg)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        zIndex: 100,
-        pointerEvents: "none",
+        overflow: "hidden",
+        pointerEvents: "auto",
       }}
     >
-      {/* Popup card — 90% of map area */}
-      <div
-        style={{
-          width: "90%",
-          height: "90%",
-          position: "relative",
-          background: "var(--bg-primary)",
-          borderRadius: "var(--radius-lg)",
-          boxShadow: "var(--shadow-lg)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          overflow: "hidden",
-          pointerEvents: "auto",
-        }}
-      >
+        {/* AI 감지 로딩 오버레이 (D2: 크롭 직후 자동 트리거) */}
+        {isDetecting && (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: "rgba(0,0,0,0.4)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 50,
+            }}
+          >
+            <div
+              style={{
+                background: "var(--bg-surface)",
+                padding: "16px 24px",
+                borderRadius: "var(--radius-md)",
+                fontSize: 14,
+                color: "var(--text-primary)",
+                boxShadow: "var(--shadow-md)",
+              }}
+            >
+              {t("aiDetecting", lang)}
+            </div>
+          </div>
+        )}
+
+        {/* AI 감지 에러 배너 (D6: 표시만, 폴백 없음) */}
+        {detectError && (
+          <div
+            style={{
+              position: "absolute",
+              top: 12,
+              left: "50%",
+              transform: "translateX(-50%)",
+              background: "#ef4444",
+              color: "#fff",
+              padding: "8px 16px",
+              borderRadius: "var(--radius-md)",
+              fontSize: 13,
+              fontWeight: 500,
+              zIndex: 60,
+              maxWidth: "80%",
+              textAlign: "center",
+            }}
+          >
+            ⚠️ {detectError}
+          </div>
+        )}
+
         {/* Top-right buttons: Save + Close */}
         <div
           style={{
@@ -1101,7 +1175,6 @@ export default function CropPopup({
           );
         })()}
 
-      </div>
     </div>
   );
 }

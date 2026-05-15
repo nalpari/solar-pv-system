@@ -19,8 +19,6 @@ const translations = {
 
   // Section Headers
   sectionRoofEdit: { ja: "屋根編集", en: "Roof Edit" },
-  roofEditStart: { ja: "屋根編集", en: "Edit Roof" },
-  roofEditing: { ja: "編集中", en: "Editing" },
   sectionModulePlacement: { ja: "モジュール配置", en: "Module Placement" },
   sectionGapSettings: { ja: "間隔設定", en: "Gap Settings" },
 
@@ -191,6 +189,16 @@ const translations = {
   requiredApis: {
     ja: "必要なAPI: Maps JavaScript, Places, Geometry",
     en: "Required APIs: Maps JavaScript, Places, Geometry",
+  },
+
+  // AI Roof Detection (Phase 3)
+  aiDetecting: {
+    ja: "AIが屋根を検出しています...",
+    en: "AI is detecting the roof...",
+  },
+  aiDetectFailed: {
+    ja: "屋根の自動検出に失敗しました",
+    en: "Roof auto-detection failed",
   },
 } as const;
 
