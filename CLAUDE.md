@@ -50,6 +50,9 @@ pnpm dev                     # http://localhost:3000
 - **html2canvas** ^1.4.1 — Map tile capture for crop popup + PNG export
 - **lucide-react** ^0.577.0 — Icons
 - **Docker** — Multi-stage standalone build (see `Dockerfile`, `docker-compose.yml`)
+- **Gemini API** — `@google/genai` ^1.0.0 (AI 지붕 자동 감지)
+- **sharp** ^0.34.5 — 서버 측 이미지 처리 (북방 마커 오버레이)
+- **zod** ^4.3.6 — API 응답 스키마 검증
 
 ## Architecture
 
@@ -137,6 +140,7 @@ src/app/
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Yes | Google Maps API key (Maps JS, Places, Geometry APIs) |
+| `GEMINI_API_KEY` | Yes | Gemini API key for roof auto-detection. Server route only (no `NEXT_PUBLIC_` prefix) |
 
 ## Testing
 
