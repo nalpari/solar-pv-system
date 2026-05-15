@@ -196,5 +196,5 @@ src/app/
 
 ## 추가 문서
 
-- [`AGENTS.md`](./AGENTS.md) — AI 코딩 에이전트 공통 가이드 (구조·관례·테스트)
-- [`CLAUDE.md`](./CLAUDE.md) — Claude Code 전용 설정 및 작업 메모
+- [`CLAUDE.md`](./CLAUDE.md) — AI 코딩 에이전트 공통 가이드 (구조·관례·테스트)
+- [`AGENTS.md`](./AGENTS.md) — `CLAUDE.md`를 그대로 import 하는 shim
