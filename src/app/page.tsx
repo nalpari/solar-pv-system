@@ -148,17 +148,20 @@ export default function Home() {
     }
 
     let cancelled = false;
+    const controller = new AbortController();
     setIsDetecting(true);
     setDetectError(null);
 
     (async () => {
       try {
         // Gemini detect 호출 (정규화 좌표 그대로 전달, 변환은 CropPopup에서 캔버스 크기 알 때 수행)
-        const response = await detectRoofs(cropData);
+        const response = await detectRoofs(cropData, controller.signal);
         if (cancelled) return;
         setAiSeedAreas(response.polygons.map((p) => p.points));
       } catch (e) {
         if (cancelled) return;
+        // AbortError는 의도된 취소이므로 에러 표시 안 함 (F-1)
+        if (e instanceof Error && e.name === "AbortError") return;
         setDetectError(e instanceof Error ? e.message : t("aiDetectFailed", langRef.current));
       } finally {
         if (!cancelled) setIsDetecting(false);
@@ -167,6 +170,12 @@ export default function Home() {
 
     return () => {
       cancelled = true;
+      controller.abort(); // 진행 중 fetch 취소 (비용 절약 + race 차단)
+      // F-1: cropData 교체 시 이전 폴리곤/패널 잔존 방지
+      setAreas([]);
+      setPixelAreas(null);
+      setPlacedPixelPanels([]);
+      setPlacedPanelsList([]);
     };
   }, [cropData]);
 

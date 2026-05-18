@@ -29,10 +29,13 @@ export interface DetectApiResponse {
  * 응답의 azimuth/tilt/confidence/label은 D4 결정에 따라 버리고
  * points와 reason만 의미를 가짐
  *
+ * @param signal AbortSignal — cropData 교체 시 진행 중 fetch 취소(F-1)
  * @throws 네트워크 실패 또는 API 에러 응답 시 (D6: 호출자가 메시지만 표시)
+ *         AbortError는 호출자가 무시해야 함 (의도된 취소)
  */
 export async function detectRoofs(
   cropData: CropData,
+  signal?: AbortSignal,
 ): Promise<DetectApiResponse> {
   const res = await fetch("/api/detect-roof", {
     method: "POST",
@@ -41,6 +44,7 @@ export async function detectRoofs(
       imageDataUrl: cropData.imageDataUrl,
       bounds: cropData.bounds,
     }),
+    signal,
   });
 
   if (!res.ok) {
