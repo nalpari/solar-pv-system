@@ -981,7 +981,8 @@ export default function CropPopup({
         pointerEvents: "auto",
       }}
     >
-        {/* AI 감지 로딩 오버레이 (D2: 크롭 직후 자동 트리거) */}
+        {/* AI 감지 로딩 오버레이 (D2: 크롭 직후 자동 트리거)
+            기존 AddressSearch의 spin 패턴(globals.css @keyframes spin)을 재사용해 일관화 (U1) */}
         {isDetecting && (
           <div
             style={{
@@ -1002,8 +1003,24 @@ export default function CropPopup({
                 fontSize: 14,
                 color: "var(--text-primary)",
                 boxShadow: "var(--shadow-md)",
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
               }}
             >
+              <span
+                style={{
+                  width: 16,
+                  height: 16,
+                  border: "2px solid var(--text-tertiary)",
+                  borderTopColor: "var(--accent-blue)",
+                  borderRadius: "50%",
+                  animation: "spin 1s linear infinite",
+                  display: "inline-block",
+                  flexShrink: 0,
+                }}
+                aria-hidden="true"
+              />
               {t("aiDetecting", lang)}
             </div>
           </div>
