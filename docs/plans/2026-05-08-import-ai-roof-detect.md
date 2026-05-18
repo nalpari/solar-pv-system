@@ -345,3 +345,54 @@ D1~D7 모두 확정되었기 때문에 이 plan은 **추가 의사결정 없이 
 
 형님의 "ㄱㄱ" 명령 시 Phase 0부터 순차 실행.
 각 Phase 종료 시점에 자동으로 검증 결과를 보고하고, **Phase 1 / Phase 3 종료 후에는 중간 검토를 위해 형님 확인을 기다린다**.
+
+---
+
+## 16. 작업 후 추가 처리 (커밋 이후)
+
+### 16.1 1차 코드 리뷰 (`superpowers:code-reviewer`) 반영
+- **I-1**: `CropPopup`의 `lastSeedRef` 머지 계약 주석 명시 (같은 cropData 동안 reference 재설정 금지)
+- **I-4**: `handleCropClose`의 AI state 중복 reset 제거 (detect useEffect가 cropData null 시 자동 정리)
+- **I-5**: detect useEffect 의존성에서 `lang` 제거 — `langRef.current`로 latest read (사용자 토글 시 Gemini 재호출 방지)
+
+### 16.2 2차 코드 리뷰 (`chicago-code-review` 멀티 에이전트) 반영
+- **F-1**: detect 중 재크롭 race 처리
+  - `detectRoofs(cropData, signal)` 시그니처에 `AbortSignal` 추가
+  - useEffect cleanup에 `AbortController.abort()` + `areas/pixelAreas/placedPixelPanels/placedPanelsList` 초기화
+  - `AbortError`는 의도된 취소이므로 에러 메시지 표시 안 함
+- **U1**: AI 로딩 인디케이터를 기존 `AddressSearch`의 `spin` 패턴(`globals.css @keyframes spin`)으로 일관화
+
+---
+
+## 17. 별도 트랙으로 분리된 후속 작업
+
+이번 PR 범위 외로 분리되어 운영/별도 PR로 처리될 항목들:
+
+| 분류 | 항목 | 상태 |
+|------|------|------|
+| 기능/UX | F-2 에러 메시지 i18n 매핑 (서버는 에러 코드만 반환, 클라가 i18n으로 표시) | 기획 논의 대기 |
+| 기능/UX | F-3 폴리곤 0개 응답(`reason: low_confidence`/`no_polygons`) 사용자 안내 | 기획 논의 대기 |
+| UX | U2 AI 폴리곤 vs 사용자 그리기 폴리곤 시각 구분 | **불필요** — 기획상 사용자가 AI 결과 그대로 편집 가능해야 하므로 구분하지 않음 |
+| UX | U3 에러 배너 retry/dismiss 버튼 | 기획 논의 대기 |
+| 🔒 보안 | V1 Rate limiting (IP/세션 기반) | 별도 PR (배포 전 필수) |
+| 🔒 보안 | V2 Sharp 디코드 1회 통합 + decompression-bomb 방어 | 별도 PR |
+| 🔒 보안 | V3 dataURL 정규식 base64 문자셋 강제 + MIME 매직바이트 재검증 | 별도 PR |
+| 🏗️ 아키텍처 | A1 `route.ts` 도메인별 분할 (gemini-client / crop / pipeline) | 별도 PR |
+| 🏗️ 아키텍처 | A3 `<CropPopup key={cropData.id}>` remount 패턴으로 ref 가드 제거 | 별도 PR |
+| 🏗️ 아키텍처 | A4 `useRoofDetection` 훅 추출로 page.tsx God Component 완화 | 별도 PR |
+| 🔄 운영 | D1 Gemini 토큰 사용량 외부 모니터링 (Sentry/Datadog) | 별도 PR |
+| 🔄 운영 | D2 컨테이너 시작 시 키 누락 fail-fast | 별도 PR |
+| 🔄 운영 | D3 동시성 상한 + 서버 측 AbortController + 타임아웃 | 별도 PR (클라 측 AbortController는 F-1으로 처리됨) |
+| 📖 품질 | C2 결정 번호(D2/D4/I-1) 주석에 plan 경로 명시 | 선택 |
+| 🌐 솔라프리시젼 정합성 | 솔라프리시젼 원본도 동일 보안 부재 — PL 공유 보고 검토 | 선택 |
+
+---
+
+## 18. 최종 머지 판단 근거
+
+- ✅ **이식 작업 자체**: solar-precision의 백엔드(`route.ts`, `lib/detect/*`)를 그대로 복사. 솔라프리시젼 원본과 정합
+- ✅ **Plan 의사결정 100% 준수**: D1~D7, D-1, W-B 모두 코드 흔적
+- ✅ **검증**: tsc / lint / build / 실제 위성 이미지(메구로구) end-to-end 모두 통과
+- ✅ **기능 결함**: 1차/2차 리뷰의 즉시 조치 항목(I-1/I-4/I-5/F-1/U1) 모두 반영
+- ⏸️ **기획 대기 항목**: F-2/F-3/U3는 에러/안내 UX 기획 논의 후 후속 PR에서 처리
+- ⏸️ **보안/아키텍처/운영**: 별도 트랙. 솔라프리시젼 원본 정책과 동일하게 운영 시점 책임
