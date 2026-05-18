@@ -231,6 +231,10 @@ export default function CropPopup({
   areasRef.current = areas;
 
   // AI 감지 결과(initialAreas) 외부 주입 — 캔버스 준비 + 새 reference 조합일 때 1회 머지
+  //
+  // 계약(주의): page.tsx는 `cropData` 변경 시점에만 `setAiSeedAreas`를 새 reference로 호출해야 함.
+  // 같은 cropData 동안 같은 내용의 새 배열로 재설정하면 lastSeedRef의 reference 비교가
+  // 무력화되어 중복 머지가 발생함. (I-1)
   const lastSeedRef = useRef<NormalizedPolygon[] | null>(null);
   useEffect(() => {
     if (lastSeedRef.current === initialAreas) return;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { APIProvider } from "@vis.gl/react-google-maps";
 import { Globe, Sun, BarChart3, Crop, ChevronDown, ArrowRight } from "lucide-react";
 import Header from "./components/Header";
@@ -84,6 +84,13 @@ export default function Home() {
   const [detectError, setDetectError] = useState<string | null>(null);
   const [aiSeedAreas, setAiSeedAreas] = useState<NormalizedPolygon[]>([]);
 
+  // detect useEffect 의존성에서 lang 제거 (I-5: 사용자 토글 시 재호출 방지)
+  // 단 catch 시점의 메시지는 latest lang으로 보여야 하므로 ref로 read
+  const langRef = useRef(lang);
+  useEffect(() => {
+    langRef.current = lang;
+  }, [lang]);
+
   const [center, setCenter] = useState(DEFAULT_CENTER);
   const [viewport, setViewport] = useState<google.maps.LatLngBounds | null>(null);
   const [cropMode, setCropMode] = useState(false);
@@ -152,7 +159,7 @@ export default function Home() {
         setAiSeedAreas(response.polygons.map((p) => p.points));
       } catch (e) {
         if (cancelled) return;
-        setDetectError(e instanceof Error ? e.message : t("aiDetectFailed", lang));
+        setDetectError(e instanceof Error ? e.message : t("aiDetectFailed", langRef.current));
       } finally {
         if (!cancelled) setIsDetecting(false);
       }
@@ -161,7 +168,7 @@ export default function Home() {
     return () => {
       cancelled = true;
     };
-  }, [cropData, lang]);
+  }, [cropData]);
 
   const handleAreasChange = useCallback((newAreas: PolygonArea[]) => {
     const validIds = new Set(newAreas.map((a) => a.id));
@@ -184,10 +191,7 @@ export default function Home() {
     setPixelAreas(null);
     setPlacedPixelPanels([]);
     setPlacedPanelsList([]);
-    // AI 감지 상태도 정리 (Phase 3)
-    setAiSeedAreas([]);
-    setDetectError(null);
-    setIsDetecting(false);
+    // AI 감지 state는 cropData가 null 되면 detect useEffect가 자동 정리함 (I-4: DRY)
   }, []);
 
   /** 지붕편집 툴바의 "전체 삭제" 액션 - 그려진 폴리곤/패널만 초기화 (cropData 유지) */
