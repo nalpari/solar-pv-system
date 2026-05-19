@@ -200,6 +200,28 @@ const translations = {
     ja: "屋根の自動検出に失敗しました",
     en: "Roof auto-detection failed",
   },
+
+  // AI Roof Detection — 수동 트리거 (Phase 7)
+  aiDetectStart: {
+    ja: "AI 分析開始",
+    en: "Start AI Analysis",
+  },
+  aiDetectInProgress: {
+    ja: "AI 分析中",
+    en: "AI Analyzing...",
+  },
+  aiDetectCancel: {
+    ja: "AI 分析キャンセル",
+    en: "Cancel AI Analysis",
+  },
+  aiDetectConfirmReanalyze: {
+    ja: "AI 分析を再実行しますか? 作成された屋根面情報がすべて初期化されます。",
+    en: "Re-run AI analysis? All created roof faces will be reset.",
+  },
+  aiDetectFailedAlert: {
+    ja: "AI 分析に失敗しました。しばらく後でもう一度お試しください。",
+    en: "AI analysis failed. Please try again later.",
+  },
 } as const;
 
 type TranslationKey = keyof typeof translations;

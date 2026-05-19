@@ -14,6 +14,8 @@ interface ResultsPanelProps {
   onPlacePanels: () => void;
   onDeleteAllPanels: () => void;
   lang: Lang;
+  /** AI 분석 진행 중 등 비활성화 (D9) */
+  disabled?: boolean;
 }
 
 export default function ResultsPanel({
@@ -25,6 +27,7 @@ export default function ResultsPanel({
   onPlacePanels,
   onDeleteAllPanels,
   lang,
+  disabled = false,
 }: ResultsPanelProps) {
   const panelW = orientation === "landscape" ? panelSize.height : panelSize.width;
   const panelH = orientation === "landscape" ? panelSize.width : panelSize.height;
@@ -32,7 +35,17 @@ export default function ResultsPanel({
   const totalKw = panelCount * panelKw;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 0,
+        pointerEvents: disabled ? "none" : "auto",
+        opacity: disabled ? 0.5 : 1,
+        transition: "opacity 0.15s ease",
+      }}
+      aria-disabled={disabled || undefined}
+    >
       {/* Action Buttons */}
       <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: 6 }}>
         {/* Place Modules Button */}

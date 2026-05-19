@@ -79,10 +79,11 @@ export default function Home() {
     document.documentElement.lang = lang;
   }, [lang]);
 
-  // AI 지붕 감지 상태 (Phase 3)
-  const [isDetecting, setIsDetecting] = useState(false);
+  // AI 지붕 감지 상태 (Phase 7: 수동 트리거 + 상태 머신)
+  const [detectStatus, setDetectStatus] = useState<"idle" | "detecting">("idle");
   const [detectError, setDetectError] = useState<string | null>(null);
   const [aiSeedAreas, setAiSeedAreas] = useState<NormalizedPolygon[]>([]);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // detect useEffect 의존성에서 lang 제거 (I-5: 사용자 토글 시 재호출 방지)
   // 단 catch 시점의 메시지는 latest lang으로 보여야 하므로 ref로 read
@@ -138,46 +139,80 @@ export default function Home() {
     setCropMode(false);
   }, []);
 
-  // 크롭 완료 시 자동으로 Gemini 지붕 감지 실행 (D2)
+  // 크롭 변경 시 AI 분석 상태 reset (Phase 7: 자동 트리거 제거, 사용자 핸들러로 분리)
   useEffect(() => {
     if (!cropData) {
       setAiSeedAreas([]);
-      setIsDetecting(false);
+      setDetectStatus("idle");
       setDetectError(null);
       return;
     }
-
-    let cancelled = false;
-    const controller = new AbortController();
-    setIsDetecting(true);
+    // 새 cropData 진입 = idle 상태로 시작 (분석은 사용자 "AI 분석 시작" 클릭으로)
+    setDetectStatus("idle");
     setDetectError(null);
-
-    (async () => {
-      try {
-        // Gemini detect 호출 (정규화 좌표 그대로 전달, 변환은 CropPopup에서 캔버스 크기 알 때 수행)
-        const response = await detectRoofs(cropData, controller.signal);
-        if (cancelled) return;
-        setAiSeedAreas(response.polygons.map((p) => p.points));
-      } catch (e) {
-        if (cancelled) return;
-        // AbortError는 의도된 취소이므로 에러 표시 안 함 (F-1)
-        if (e instanceof Error && e.name === "AbortError") return;
-        setDetectError(e instanceof Error ? e.message : t("aiDetectFailed", langRef.current));
-      } finally {
-        if (!cancelled) setIsDetecting(false);
-      }
-    })();
-
+    setAiSeedAreas([]);
     return () => {
-      cancelled = true;
-      controller.abort(); // 진행 중 fetch 취소 (비용 절약 + race 차단)
-      // F-1: cropData 교체 시 이전 폴리곤/패널 잔존 방지
+      // F-1 유지: cropData 교체 시 진행 중 fetch + 이전 폴리곤/패널 정리
+      abortControllerRef.current?.abort();
+      abortControllerRef.current = null;
       setAreas([]);
       setPixelAreas(null);
       setPlacedPixelPanels([]);
       setPlacedPanelsList([]);
     };
   }, [cropData]);
+
+  // AI 분석 시작 핸들러 (Phase 7: 수동 트리거)
+  const handleStartDetect = useCallback(async () => {
+    if (!cropData) return;
+
+    // D8: 이미 지붕면이 있으면 재분석 확인 + 초기화
+    if (areas.length > 0) {
+      const ok = window.confirm(t("aiDetectConfirmReanalyze", langRef.current));
+      if (!ok) return;
+      setAreas([]);
+      setPixelAreas(null);
+      setPlacedPixelPanels([]);
+      setPlacedPanelsList([]);
+      setAiSeedAreas([]);
+      // CropPopup 내부 areas state도 비우는 신호 (handleDeleteAll과 동일 패턴)
+      setClearSignal((n) => n + 1);
+    }
+
+    // 이전 진행 중 요청 정리
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    setDetectStatus("detecting");
+    setDetectError(null);
+
+    try {
+      const response = await detectRoofs(cropData, controller.signal);
+      if (controller.signal.aborted) return;
+      setAiSeedAreas(response.polygons.map((p) => p.points));
+    } catch (e) {
+      if (controller.signal.aborted) return;
+      if (e instanceof Error && e.name === "AbortError") return;
+      // D10: 실패 alert (기획서 명시 문구)
+      window.alert(t("aiDetectFailedAlert", langRef.current));
+      setDetectError(e instanceof Error ? e.message : t("aiDetectFailed", langRef.current));
+    } finally {
+      if (abortControllerRef.current === controller) {
+        abortControllerRef.current = null;
+      }
+      if (!controller.signal.aborted) {
+        setDetectStatus("idle");
+      }
+    }
+  }, [cropData, areas.length]);
+
+  // AI 분석 취소 핸들러 (Phase 7: 사용자 취소 버튼)
+  const handleCancelDetect = useCallback(() => {
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
+    setDetectStatus("idle");
+  }, []);
 
   const handleAreasChange = useCallback((newAreas: PolygonArea[]) => {
     const validIds = new Set(newAreas.map((a) => a.id));
@@ -514,6 +549,7 @@ export default function Home() {
                         id="slope-select"
                         value={slope}
                         onChange={(e) => setSlope(Number(e.target.value))}
+                        disabled={detectStatus === "detecting"}
                         style={{
                           width: "100%",
                           height: 36,
@@ -567,6 +603,7 @@ export default function Home() {
                     panelSize={panelSize}
                     onPanelSizeChange={setPanelSize}
                     lang={lang}
+                    disabled={detectStatus === "detecting"}
                   />
 
                   {/* Results Panel (Action buttons + Capacity) */}
@@ -579,6 +616,7 @@ export default function Home() {
                     onPlacePanels={handlePlacePanels}
                     onDeleteAllPanels={handleDeleteAllPanels}
                     lang={lang}
+                    disabled={detectStatus === "detecting"}
                   />
                 </>
               ) : (
@@ -607,6 +645,7 @@ export default function Home() {
               >
                 <button
                   onClick={() => switchToSimulation()}
+                  disabled={detectStatus === "detecting"}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -620,12 +659,18 @@ export default function Home() {
                     color: "#fff",
                     fontSize: 14,
                     fontWeight: 600,
+                    opacity: detectStatus === "detecting" ? 0.5 : 1,
+                    cursor: detectStatus === "detecting" ? "not-allowed" : "pointer",
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "var(--accent-orange-hover)";
+                    if (detectStatus !== "detecting") {
+                      e.currentTarget.style.background = "var(--accent-orange-hover)";
+                    }
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "var(--accent-orange)";
+                    if (detectStatus !== "detecting") {
+                      e.currentTarget.style.background = "var(--accent-orange)";
+                    }
                   }}
                 >
                   {t("simulationCalcInput", lang)}
@@ -828,8 +873,11 @@ export default function Home() {
                   undoSignal={undoSignal}
                   clearSignal={clearSignal}
                   initialAreas={aiSeedAreas}
-                  isDetecting={isDetecting}
+                  detectStatus={detectStatus}
                   detectError={detectError}
+                  onStartDetect={handleStartDetect}
+                  onCancelDetect={handleCancelDetect}
+                  hasExistingAreas={areas.length > 0}
                 />
               </div>
             )}
