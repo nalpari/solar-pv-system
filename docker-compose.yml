@@ -1,11 +1,43 @@
 services:
-  app:
+  app-dev:
+    profiles:
+      - dev
     build:
       context: .
       args:
-        NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
+        NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:?NEXT_PUBLIC_GOOGLE_MAPS_API_KEY 환경변수가 필요합니다.}
+    image: solar-pv-system:dev-${IMAGE_TAG:-latest}
     ports:
-      - "3000:3000"
+      - "4010:3000"
     environment:
       - NODE_ENV=production
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    restart: unless-stopped
+
+  app-prod-4000:
+    profiles:
+      - prod
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:?NEXT_PUBLIC_GOOGLE_MAPS_API_KEY 환경변수가 필요합니다.}
+    image: solar-pv-system:prod-${IMAGE_TAG:-latest}
+    ports:
+      - "4000:3000"
+    environment:
+      - NODE_ENV=production
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    restart: unless-stopped
+
+  app-prod-4001:
+    profiles:
+      - prod
+    image: solar-pv-system:prod-${IMAGE_TAG:-latest}
+    depends_on:
+      - app-prod-4000
+    ports:
+      - "4001:3000"
+    environment:
+      - NODE_ENV=production
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
     restart: unless-stopped

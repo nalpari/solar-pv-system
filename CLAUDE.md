@@ -50,29 +50,38 @@ pnpm dev                     # http://localhost:3000
 - **html2canvas** ^1.4.1 — Map tile capture for crop popup + PNG export
 - **lucide-react** ^0.577.0 — Icons
 - **Docker** — Multi-stage standalone build (see `Dockerfile`, `docker-compose.yml`)
+- **Gemini API** — `@google/genai` ^1.0.0 (AI 지붕 자동 감지)
+- **sharp** ^0.34.5 — 서버 측 이미지 처리 (북방 마커 오버레이)
+- **zod** ^4.3.6 — API 응답 스키마 검증
 
 ## Architecture
 
 ### Directory Structure
 
 ```
-src/app/
-├── components/          # UI components (all "use client")
-│   ├── AddressSearch    # Google Places autocomplete
-│   ├── CropPopup        # Crop image popup with Canvas polygon editor, panel rendering, PNG save
-│   ├── Header           # App header with Hanwha Japan logo
-│   ├── MapView          # Google Maps satellite view + crop overlay + zoom/recenter controls
-│   ├── PanelConfig      # Panel size preset (60-cell / 72-cell / Large / Custom, mm)
-│   ├── ResultsPanel     # Panel count, capacity, area, coverage ratio
-│   ├── RoofEditToolbar  # Floating toolbar over map (select / drawRoof / drawOpening / flowSetting / editRoof / undo / delete)
-│   └── SimulationPanel  # Generation simulation inputs (azimuth, battery, monthly electric cost)
-├── utils/
-│   ├── panelPlacement   # Computational geometry (lat/lng + pixel-based panel layout)
-│   └── i18n             # Japanese/English translation system
-├── types/               # Domain types (LatLng, CropData, PixelPanel, etc.)
-├── globals.css          # CSS custom properties theme
-├── layout.tsx           # Root layout (Server Component, html lang="ja")
-└── page.tsx             # Main page (Client Component, owns all state, hosts design/simulation tabs)
+src/
+├── app/
+│   ├── api/
+│   │   └── detect-roof/      # /api/detect-roof — Gemini Vision 호출 라우트 (서버)
+│   ├── components/          # UI components (all "use client")
+│   │   ├── AddressSearch    # Google Places autocomplete
+│   │   ├── CropPopup        # Crop image popup with Canvas polygon editor, panel rendering, PNG save
+│   │   ├── Header           # App header with Hanwha Japan logo
+│   │   ├── MapView          # Google Maps satellite view + crop overlay + zoom/recenter controls
+│   │   ├── PanelConfig      # Panel size preset (60-cell / 72-cell / Large / Custom, mm)
+│   │   ├── ResultsPanel     # Panel count, capacity, area, coverage ratio
+│   │   ├── RoofEditToolbar  # Floating toolbar over map (select / drawRoof / drawOpening / flowSetting / editRoof / undo / delete)
+│   │   └── SimulationPanel  # Generation simulation inputs (azimuth, battery, monthly electric cost)
+│   ├── utils/
+│   │   ├── aiDetect         # Gemini detect fetch 래퍼 + 정규화→픽셀 변환 어댑터
+│   │   ├── panelPlacement   # Computational geometry (lat/lng + pixel-based panel layout)
+│   │   └── i18n             # Japanese/English translation system
+│   ├── types/               # Domain types (LatLng, CropData, PixelPanel, NormalizedPolygon, etc.)
+│   ├── globals.css          # CSS custom properties theme
+│   ├── layout.tsx           # Root layout (Server Component, html lang="ja")
+│   └── page.tsx             # Main page (Client Component, owns all state, hosts design/simulation tabs)
+└── lib/
+    └── detect/              # Gemini Vision 백엔드 모듈 (schema.ts / prompt.ts / overlay.ts)
 ```
 
 ### Key Patterns
@@ -137,6 +146,7 @@ src/app/
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Yes | Google Maps API key (Maps JS, Places, Geometry APIs) |
+| `GEMINI_API_KEY` | Yes | Gemini API key for roof auto-detection. Server route only (no `NEXT_PUBLIC_` prefix) |
 
 ## Testing
 

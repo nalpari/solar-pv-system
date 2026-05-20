@@ -5,6 +5,8 @@ import { X, Download } from "lucide-react";
 import type { CropData, CropBounds, DrawingMode, LatLng, PolygonArea, PixelPanel, PixelPolygon, PixelPoint, PolygonSubMode } from "../types";
 import type { Lang } from "../utils/i18n";
 import type { RoofTool } from "./RoofEditToolbar";
+import type { NormalizedPolygon } from "../utils/aiDetect";
+import { normalizedToPixelPolygons } from "../utils/aiDetect";
 import { t } from "../utils/i18n";
 import { isPointInPolygon } from "../utils/panelPlacement";
 
@@ -33,6 +35,14 @@ interface CropPopupProps {
   undoSignal?: number;
   /** 외부(툴바 deleteAll)로부터 전체 초기화 신호. 값이 바뀔 때마다 내부 areas/currentPoints/선택 상태 초기화 */
   clearSignal?: number;
+  /** 외부 주입 폴리곤 (AI 자동 감지 결과, 정규화 [0..1] 좌표). 새 reference로 들어올 때 내부 areas에 1회 머지 */
+  initialAreas?: NormalizedPolygon[];
+  /** AI 감지 상태 머신 (Phase 7) */
+  detectStatus?: "idle" | "detecting";
+  /** "AI 분석 시작" 버튼 클릭 핸들러 (Phase 7) */
+  onStartDetect?: () => void;
+  /** "AI 분석 취소" 버튼 클릭 핸들러 (Phase 7) */
+  onCancelDetect?: () => void;
 }
 
 interface AreaEntry {
@@ -192,6 +202,10 @@ export default function CropPopup({
   onEaveChange,
   undoSignal,
   clearSignal,
+  initialAreas,
+  detectStatus = "idle",
+  onStartDetect,
+  onCancelDetect,
 }: CropPopupProps) {
   const [areas, setAreas] = useState<AreaEntry[]>([]);
   const [currentPoints, setCurrentPoints] = useState<PixelPoint[]>([]);
@@ -218,6 +232,33 @@ export default function CropPopup({
 
   const areasRef = useRef<AreaEntry[]>(areas);
   areasRef.current = areas;
+
+  // AI 감지 결과(initialAreas) 외부 주입 — 캔버스 준비 + 새 reference 조합일 때 1회 머지
+  //
+  // 계약(주의): page.tsx는 `cropData` 변경 시점에만 `setAiSeedAreas`를 새 reference로 호출해야 함.
+  // 같은 cropData 동안 같은 내용의 새 배열로 재설정하면 lastSeedRef의 reference 비교가
+  // 무력화되어 중복 머지가 발생함. (I-1)
+  const lastSeedRef = useRef<NormalizedPolygon[] | null>(null);
+  useEffect(() => {
+    if (lastSeedRef.current === initialAreas) return;
+    if (!initialAreas || initialAreas.length === 0) return;
+
+    const canvas = canvasRef.current;
+    if (!canvas || canvas.width <= 0 || canvas.height <= 0) return; // 캔버스 아직 준비 안 됨
+
+    lastSeedRef.current = initialAreas;
+
+    // 정규화 [0..1] → 캔버스 픽셀 좌표
+    const converted = normalizedToPixelPolygons(initialAreas, canvas.width, canvas.height);
+    const seeded: AreaEntry[] = converted.map((p) => ({
+      ...p,
+      id: crypto.randomUUID(),
+    }));
+    const updated = [...areasRef.current, ...seeded];
+    setAreas(updated);
+    notifyParent(updated);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialAreas, canvasLayout]);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
@@ -927,33 +968,110 @@ export default function CropPopup({
   }
 
   return (
+    /* Popup card — 90% of map area. 외부 wrapper(page.tsx)가 zIndex/배치 담당 */
     <div
       style={{
-        position: "absolute",
-        inset: 0,
+        width: "90%",
+        height: "90%",
+        position: "relative",
+        background: "var(--bg-primary)",
+        borderRadius: "var(--radius-lg)",
+        boxShadow: "var(--shadow-lg)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        zIndex: 100,
-        pointerEvents: "none",
+        overflow: "hidden",
+        pointerEvents: "auto",
       }}
     >
-      {/* Popup card — 90% of map area */}
-      <div
-        style={{
-          width: "90%",
-          height: "90%",
-          position: "relative",
-          background: "var(--bg-primary)",
-          borderRadius: "var(--radius-lg)",
-          boxShadow: "var(--shadow-lg)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          overflow: "hidden",
-          pointerEvents: "auto",
-        }}
-      >
+        {/* AI 감지 로딩 오버레이 (Phase 7: 사용자가 "AI 분석 시작" 클릭 시)
+            기존 AddressSearch의 spin 패턴(globals.css @keyframes spin)을 재사용해 일관화 (U1) */}
+        {detectStatus === "detecting" && (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: "rgba(0,0,0,0.4)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 50,
+            }}
+          >
+            {/* F-1: 텍스트 제거 — 버튼 "AI 分析中"이 충분한 안내, 오버레이는 차단 목적만 */}
+            <span
+              style={{
+                width: 40,
+                height: 40,
+                border: "3px solid rgba(255,255,255,0.3)",
+                borderTopColor: "var(--accent-blue)",
+                borderRadius: "50%",
+                animation: "spin 1s linear infinite",
+                display: "inline-block",
+              }}
+              aria-hidden="true"
+            />
+          </div>
+        )}
+
+        {/* AI 분석 트리거 버튼 영역 (Phase 7: 수동 트리거 — AI 분석 시작/취소)
+            zIndex 55: 로딩 오버레이(50)보다 위에 있어야 분석 중에도 취소 버튼 클릭 가능 */}
+        {onStartDetect && (
+          <div
+            style={{
+              position: "absolute",
+              bottom: 16,
+              left: 0,
+              right: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 12,
+              zIndex: 55,
+              pointerEvents: "none",
+            }}
+          >
+            <button
+              onClick={onCancelDetect}
+              disabled={detectStatus !== "detecting" || !onCancelDetect}
+              style={{
+                padding: "10px 20px",
+                borderRadius: "var(--radius-md)",
+                border: "1px solid var(--border-primary)",
+                background: "var(--bg-surface)",
+                color: "var(--text-primary)",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: detectStatus === "detecting" ? "pointer" : "not-allowed",
+                opacity: detectStatus === "detecting" ? 1 : 0.5,
+                pointerEvents: "auto",
+                transition: "all 0.15s ease",
+              }}
+            >
+              {t("aiDetectCancel", lang)}
+            </button>
+            <button
+              onClick={onStartDetect}
+              disabled={detectStatus === "detecting"}
+              style={{
+                padding: "10px 20px",
+                borderRadius: "var(--radius-md)",
+                border: "none",
+                background: "var(--accent-blue)",
+                color: "#fff",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: detectStatus === "detecting" ? "not-allowed" : "pointer",
+                opacity: detectStatus === "detecting" ? 0.6 : 1,
+                pointerEvents: "auto",
+                transition: "all 0.15s ease",
+              }}
+            >
+              {detectStatus === "detecting" ? t("aiDetectInProgress", lang) : t("aiDetectStart", lang)}
+            </button>
+          </div>
+        )}
+
         {/* Top-right buttons: Save + Close */}
         <div
           style={{
@@ -986,6 +1104,8 @@ export default function CropPopup({
           </button>
           <button
             onClick={onClose}
+            disabled={detectStatus === "detecting"}
+            title={detectStatus === "detecting" ? t("aiDetectInProgress", lang) : undefined}
             style={{
               display: "flex",
               alignItems: "center",
@@ -996,7 +1116,8 @@ export default function CropPopup({
               background: "rgba(255, 255, 255, 0.9)",
               color: "var(--text-secondary)",
               borderRadius: "var(--radius-md)",
-              cursor: "pointer",
+              cursor: detectStatus === "detecting" ? "not-allowed" : "pointer",
+              opacity: detectStatus === "detecting" ? 0.5 : 1,
               backdropFilter: "blur(8px)",
             }}
           >
@@ -1101,7 +1222,6 @@ export default function CropPopup({
           );
         })()}
 
-      </div>
     </div>
   );
 }

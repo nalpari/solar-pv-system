@@ -59,14 +59,10 @@ export default function RoofEditToolbar({ lang, activeTool, onToolChange, onActi
 
   return (
     <>
-      {/* Floating toolbar */}
+      {/* Floating toolbar (위치/zIndex는 외부 wrapper가 담당) */}
       <div
         style={{
-          position: "absolute",
-          top: 12,
-          left: "50%",
-          transform: "translateX(-50%)",
-          zIndex: 200,
+          pointerEvents: "auto",
           display: "flex",
           alignItems: "center",
           gap: 2,
@@ -168,7 +164,7 @@ export default function RoofEditToolbar({ lang, activeTool, onToolChange, onActi
         </button>
       </div>
 
-      {/* Bottom guide text */}
+      {/* Bottom guide text (위치/zIndex는 외부 wrapper가 담당. 도움 메시지 배치는 별도 작업) */}
       {currentTool && (
         <div
           style={{
@@ -176,7 +172,6 @@ export default function RoofEditToolbar({ lang, activeTool, onToolChange, onActi
             bottom: 12,
             left: "50%",
             transform: "translateX(-50%)",
-            zIndex: 200,
             padding: "8px 20px",
             background: "rgba(0, 0, 0, 0.7)",
             borderRadius: "var(--radius-lg)",

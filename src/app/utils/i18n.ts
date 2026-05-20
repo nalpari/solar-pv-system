@@ -19,8 +19,6 @@ const translations = {
 
   // Section Headers
   sectionRoofEdit: { ja: "屋根編集", en: "Roof Edit" },
-  roofEditStart: { ja: "屋根編集", en: "Edit Roof" },
-  roofEditing: { ja: "編集中", en: "Editing" },
   sectionModulePlacement: { ja: "モジュール配置", en: "Module Placement" },
   sectionGapSettings: { ja: "間隔設定", en: "Gap Settings" },
 
@@ -191,6 +189,28 @@ const translations = {
   requiredApis: {
     ja: "必要なAPI: Maps JavaScript, Places, Geometry",
     en: "Required APIs: Maps JavaScript, Places, Geometry",
+  },
+
+  // AI Roof Detection — 수동 트리거 (Phase 7)
+  aiDetectStart: {
+    ja: "AI 分析開始",
+    en: "Start AI Analysis",
+  },
+  aiDetectInProgress: {
+    ja: "AI 分析中",
+    en: "AI Analyzing...",
+  },
+  aiDetectCancel: {
+    ja: "AI 分析キャンセル",
+    en: "Cancel AI Analysis",
+  },
+  aiDetectConfirmReanalyze: {
+    ja: "AI 分析を再実行しますか? 作成された屋根面情報がすべて初期化されます。",
+    en: "Re-run AI analysis? All created roof faces will be reset.",
+  },
+  aiDetectFailedAlert: {
+    ja: "AI 分析に失敗しました。しばらく後でもう一度お試しください。",
+    en: "AI analysis failed. Please try again later.",
   },
 } as const;
 

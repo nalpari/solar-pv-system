@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { APIProvider } from "@vis.gl/react-google-maps";
-import { Globe, Sun, BarChart3, Crop, ChevronDown, ArrowRight, PenTool } from "lucide-react";
+import { Globe, Sun, BarChart3, Crop, ChevronDown, ArrowRight } from "lucide-react";
 import Header from "./components/Header";
 import AddressSearch from "./components/AddressSearch";
 import PanelConfig from "./components/PanelConfig";
@@ -16,6 +16,8 @@ import { placePanels, placePanelsOnCanvasCm } from "./utils/panelPlacement";
 import { t } from "./utils/i18n";
 import type { Lang } from "./utils/i18n";
 import CropPopup from "./components/CropPopup";
+import { detectRoofs } from "./utils/aiDetect";
+import type { NormalizedPolygon } from "./utils/aiDetect";
 import type {
   PanelSize,
   PanelOrientation,
@@ -65,7 +67,6 @@ export default function Home() {
   const [lang, setLang] = useState<Lang>("ja");
   const [activeTab, setActiveTab] = useState<SidebarTab>("design");
   const [slope, setSlope] = useState(4); // 4寸 default
-  const [roofEditing, setRoofEditing] = useState(false);
   const [roofEditTool, setRoofEditTool] = useState<RoofTool>("select");
   const [simForm, setSimForm] = useState<SimulationFormState>({
     azimuth: "",
@@ -76,6 +77,19 @@ export default function Home() {
 
   useEffect(() => {
     document.documentElement.lang = lang;
+  }, [lang]);
+
+  // AI 지붕 감지 상태 (Phase 7: 수동 트리거 + 상태 머신)
+  // 실패는 alert으로만 표시 (D10/H-2: 배너 제거) → detectError state 불필요
+  const [detectStatus, setDetectStatus] = useState<"idle" | "detecting">("idle");
+  const [aiSeedAreas, setAiSeedAreas] = useState<NormalizedPolygon[]>([]);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // detect useEffect 의존성에서 lang 제거 (I-5: 사용자 토글 시 재호출 방지)
+  // 단 catch 시점의 메시지는 latest lang으로 보여야 하므로 ref로 read
+  const langRef = useRef(lang);
+  useEffect(() => {
+    langRef.current = lang;
   }, [lang]);
 
   const [center, setCenter] = useState(DEFAULT_CENTER);
@@ -103,9 +117,9 @@ export default function Home() {
 
   // RoofEditToolbar의 활성 툴에서 CropPopup의 drawingMode를 파생
   const drawingMode: DrawingMode =
-    roofEditing && roofEditTool === "drawRoof"
+    roofEditTool === "drawRoof"
       ? "install"
-      : roofEditing && roofEditTool === "drawOpening"
+      : roofEditTool === "drawOpening"
         ? "exclude"
         : null;
 
@@ -125,6 +139,80 @@ export default function Home() {
     setCropMode(false);
   }, []);
 
+  // 크롭 변경 시 AI 분석 상태 reset (Phase 7: 자동 트리거 제거, 사용자 핸들러로 분리)
+  useEffect(() => {
+    if (!cropData) {
+      setAiSeedAreas([]);
+      setDetectStatus("idle");
+      return;
+    }
+    // 새 cropData 진입 = idle 상태로 시작 (분석은 사용자 "AI 분석 시작" 클릭으로)
+    setDetectStatus("idle");
+    setAiSeedAreas([]);
+    return () => {
+      // F-1 유지: cropData 교체 시 진행 중 fetch + 이전 폴리곤/패널 정리
+      abortControllerRef.current?.abort();
+      abortControllerRef.current = null;
+      setAreas([]);
+      setPixelAreas(null);
+      setPlacedPixelPanels([]);
+      setPlacedPanelsList([]);
+    };
+  }, [cropData]);
+
+  // areas의 latest snapshot (M-1: handleStartDetect deps에서 areas.length 제거)
+  const areasRef = useRef(areas);
+  useEffect(() => {
+    areasRef.current = areas;
+  }, [areas]);
+
+  // AI 분석 시작 핸들러 (Phase 7: 수동 트리거)
+  const handleStartDetect = useCallback(async () => {
+    if (!cropData) return;
+
+    // D8/Mi-7: 이미 지붕면이 있으면 재분석 확인 + handleDeleteAll 재사용으로 일괄 초기화
+    if (areasRef.current.length > 0) {
+      const ok = window.confirm(t("aiDetectConfirmReanalyze", langRef.current));
+      if (!ok) return;
+      handleDeleteAll();
+      setAiSeedAreas([]);
+    }
+
+    // 이전 진행 중 요청 정리
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    setDetectStatus("detecting");
+
+    try {
+      const response = await detectRoofs(cropData, controller.signal);
+      if (controller.signal.aborted) return;
+      // H-1: 새 controller가 시작됐다면 stale 응답 무시 (race 가드)
+      if (abortControllerRef.current !== controller) return;
+      setAiSeedAreas(response.polygons.map((p) => p.points));
+    } catch (e) {
+      if (controller.signal.aborted) return;
+      if (e instanceof Error && e.name === "AbortError") return;
+      // D10/H-2: 실패 alert만 (배너 제거 — 기획서 명시 문구)
+      window.alert(t("aiDetectFailedAlert", langRef.current));
+    } finally {
+      if (abortControllerRef.current === controller) {
+        abortControllerRef.current = null;
+      }
+      if (!controller.signal.aborted) {
+        setDetectStatus("idle");
+      }
+    }
+  }, [cropData]);
+
+  // AI 분석 취소 핸들러 (Phase 7: 사용자 취소 버튼)
+  const handleCancelDetect = useCallback(() => {
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
+    setDetectStatus("idle");
+  }, []);
+
   const handleAreasChange = useCallback((newAreas: PolygonArea[]) => {
     const validIds = new Set(newAreas.map((a) => a.id));
     setAreas(newAreas);
@@ -142,11 +230,11 @@ export default function Home() {
   const handleCropClose = useCallback(() => {
     setCropData(null);
     setRoofEditTool("select");
-    setRoofEditing(false);
     setAreas([]);
     setPixelAreas(null);
     setPlacedPixelPanels([]);
     setPlacedPanelsList([]);
+    // AI 감지 state는 cropData가 null 되면 detect useEffect가 자동 정리함 (I-4: DRY)
   }, []);
 
   /** 지붕편집 툴바의 "전체 삭제" 액션 - 그려진 폴리곤/패널만 초기화 (cropData 유지) */
@@ -173,7 +261,6 @@ export default function Home() {
 
   function switchToSimulation() {
     setCropMode(false);
-    setRoofEditing(false);
     setRoofEditTool("select");
     setActiveTab("simulation");
   }
@@ -442,52 +529,6 @@ export default function Home() {
                   {/* Section: 지붕 편집 */}
                   <SectionHeader title={t("sectionRoofEdit", lang)} primary />
 
-                  {/* Roof Edit Toggle Button */}
-                  <div style={{ padding: "12px 16px 0" }}>
-                    <button
-                      onClick={() => cropData && setRoofEditing(!roofEditing)}
-                      disabled={!cropData}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: 8,
-                        width: "100%",
-                        padding: "10px 16px",
-                        borderRadius: "var(--radius-md)",
-                        border: roofEditing
-                          ? "1px solid var(--accent-blue)"
-                          : "1px solid var(--border-primary)",
-                        background: roofEditing
-                          ? "var(--accent-blue)"
-                          : "var(--bg-surface)",
-                        color: roofEditing
-                          ? "#fff"
-                          : !cropData
-                            ? "var(--text-tertiary)"
-                            : "var(--text-primary)",
-                        fontSize: 13,
-                        fontWeight: 600,
-                        cursor: cropData ? "pointer" : "not-allowed",
-                        opacity: cropData ? 1 : 0.5,
-                        transition: "all 0.15s ease",
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!roofEditing && cropData) {
-                          e.currentTarget.style.background = "var(--bg-surface-hover)";
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!roofEditing && cropData) {
-                          e.currentTarget.style.background = "var(--bg-surface)";
-                        }
-                      }}
-                    >
-                      <PenTool size={15} />
-                      {roofEditing ? t("roofEditing", lang) : t("roofEditStart", lang)}
-                    </button>
-                  </div>
-
                   {/* Slope Settings */}
                   <div style={{ padding: "12px 16px" }}>
                     <label
@@ -507,6 +548,7 @@ export default function Home() {
                         id="slope-select"
                         value={slope}
                         onChange={(e) => setSlope(Number(e.target.value))}
+                        disabled={detectStatus === "detecting"}
                         style={{
                           width: "100%",
                           height: 36,
@@ -560,6 +602,7 @@ export default function Home() {
                     panelSize={panelSize}
                     onPanelSizeChange={setPanelSize}
                     lang={lang}
+                    disabled={detectStatus === "detecting"}
                   />
 
                   {/* Results Panel (Action buttons + Capacity) */}
@@ -572,6 +615,7 @@ export default function Home() {
                     onPlacePanels={handlePlacePanels}
                     onDeleteAllPanels={handleDeleteAllPanels}
                     lang={lang}
+                    disabled={detectStatus === "detecting"}
                   />
                 </>
               ) : (
@@ -600,6 +644,7 @@ export default function Home() {
               >
                 <button
                   onClick={() => switchToSimulation()}
+                  disabled={detectStatus === "detecting"}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -613,12 +658,18 @@ export default function Home() {
                     color: "#fff",
                     fontSize: 14,
                     fontWeight: 600,
+                    opacity: detectStatus === "detecting" ? 0.5 : 1,
+                    cursor: detectStatus === "detecting" ? "not-allowed" : "pointer",
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "var(--accent-orange-hover)";
+                    if (detectStatus !== "detecting") {
+                      e.currentTarget.style.background = "var(--accent-orange-hover)";
+                    }
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "var(--accent-orange)";
+                    if (detectStatus !== "detecting") {
+                      e.currentTarget.style.background = "var(--accent-orange)";
+                    }
                   }}
                 >
                   {t("simulationCalcInput", lang)}
@@ -675,26 +726,6 @@ export default function Home() {
 
           {/* Map Area */}
           <main style={{ flex: 1, position: "relative" }}>
-            {/* Roof Edit Toolbar (floating over map) */}
-            {roofEditing && cropData && (
-              <RoofEditToolbar
-                lang={lang}
-                activeTool={roofEditTool}
-                onToolChange={setRoofEditTool}
-                onAction={(action) => {
-                  if (action === "undo") {
-                    setUndoSignal((n) => n + 1);
-                  } else if (action === "deleteAll") {
-                    handleDeleteAll();
-                  }
-                  // deleteSelected는 추후 연결 (현재는 CropPopup 툴팁의 삭제 사용)
-                }}
-                onClose={() => {
-                  setRoofEditing(false);
-                  setRoofEditTool("select");
-                }}
-              />
-            )}
             {GOOGLE_MAPS_API_KEY ? (
               <MapView
                 center={center}
@@ -802,19 +833,50 @@ export default function Home() {
               </div>
             )}
             {cropData && (
-              <CropPopup
-                cropData={cropData}
-                drawingMode={drawingMode}
-                onAreasChange={handleAreasChange}
-                onPixelAreasChange={handlePixelAreasChange}
-                placedPanels={placedPixelPanels}
-                onClose={handleCropClose}
-                lang={lang}
-                roofEditTool={roofEditing ? roofEditTool : undefined}
-                onEaveChange={handleEaveChange}
-                undoSignal={undoSignal}
-                clearSignal={clearSignal}
-              />
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  zIndex: 100,
+                  pointerEvents: "none",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 12,
+                }}
+              >
+                <RoofEditToolbar
+                  lang={lang}
+                  activeTool={roofEditTool}
+                  onToolChange={setRoofEditTool}
+                  onAction={(action) => {
+                    if (action === "undo") {
+                      setUndoSignal((n) => n + 1);
+                    } else if (action === "deleteAll") {
+                      handleDeleteAll();
+                    }
+                  }}
+                  onClose={() => setRoofEditTool("select")}
+                />
+                <CropPopup
+                  cropData={cropData}
+                  drawingMode={drawingMode}
+                  onAreasChange={handleAreasChange}
+                  onPixelAreasChange={handlePixelAreasChange}
+                  placedPanels={placedPixelPanels}
+                  onClose={handleCropClose}
+                  lang={lang}
+                  roofEditTool={roofEditTool}
+                  onEaveChange={handleEaveChange}
+                  undoSignal={undoSignal}
+                  clearSignal={clearSignal}
+                  initialAreas={aiSeedAreas}
+                  detectStatus={detectStatus}
+                  onStartDetect={handleStartDetect}
+                  onCancelDetect={handleCancelDetect}
+                />
+              </div>
             )}
           </main>
       </div>
