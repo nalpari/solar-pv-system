@@ -39,6 +39,7 @@ pipeline {
           set -eu
           set -a; . ./.env; set +a
           : "${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:?credential pv-simulation-env에 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY가 정의되어 있어야 합니다.}"
+          : "${GEMINI_API_KEY:?credential pv-simulation-env에 GEMINI_API_KEY가 정의되어 있어야 합니다. (AI 지붕 감지 기능 필수)}"
           docker compose version
           node --version
           pnpm --version || corepack prepare pnpm@10 --activate
