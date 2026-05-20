@@ -19,12 +19,15 @@ interface PanelConfigProps {
   panelSize: PanelSize;
   onPanelSizeChange: (size: PanelSize) => void;
   lang: Lang;
+  /** AI 분석 진행 중 등 비활성화 (D9) */
+  disabled?: boolean;
 }
 
 export default function PanelConfig({
   panelSize,
   onPanelSizeChange,
   lang,
+  disabled = false,
 }: PanelConfigProps) {
   const [selectedPreset, setSelectedPreset] = useState(0);
   const presetSizes = getPresetSizes(lang);
@@ -35,7 +38,17 @@ export default function PanelConfig({
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 0,
+        pointerEvents: disabled ? "none" : "auto",
+        opacity: disabled ? 0.5 : 1,
+        transition: "opacity 0.15s ease",
+      }}
+      aria-disabled={disabled || undefined}
+    >
       {/* Module Selection */}
       <div style={{ padding: "12px 16px" }}>
         <label

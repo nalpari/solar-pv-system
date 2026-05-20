@@ -7,6 +7,7 @@
 - **주소 검색** — Google Places Autocomplete로 건물 위치 탐색
 - **위성 지도** — 위성/일반 보기 토글, 줌 컨트롤, 중심 복귀 버튼
 - **건물 확정 (Crop)** — 지도 위에서 드래그해 대상 영역을 캡처(`html2canvas`) → 크롭 팝업 진입
+- **AI 자동 지붕 감지** — 크롭 즉시 Gemini Vision이 위성 이미지에서 지붕면 폴리곤을 자동 추출. 사용자가 수동으로 편집·추가 가능
 - **지붕 편집 툴바** — 크롭 이미지 위에서 폴리곤 편집
   - `select` 선택/이동, `drawRoof` 지붕면, `drawOpening` 개구부(제외 영역), `flowSetting` 처마(흐름방향), `editRoof` 꼭짓점 편집, `deleteSelected`, `deleteAll`, `undo`
 - **모듈 선택** — 60셀 / 72셀 / 대형 / 커스텀 프리셋 (mm 단위)
@@ -28,6 +29,9 @@
 | @vis.gl/react-google-maps | ^1.7.1 | Google Maps 통합 |
 | html2canvas | ^1.4.1 | 지도 영역 캡처 / PNG 저장 |
 | lucide-react | ^0.577.0 | 아이콘 |
+| @google/genai | ^1.0.0 | Gemini API SDK (지붕 자동 감지) |
+| sharp | ^0.34.5 | 서버 측 이미지 처리 (북방 마커 오버레이) |
+| zod | ^4.3.6 | Gemini 응답 스키마 검증 |
 | babel-plugin-react-compiler | 1.0.0 | React Compiler |
 | ESLint | ^9 | flat config (`eslint-config-next`) |
 
@@ -38,6 +42,7 @@
 - Node.js 20+
 - pnpm
 - Google Maps API 키 (Maps JavaScript API, Places API, Geometry API 활성화 필요)
+- Gemini API 키 ([Google AI Studio](https://aistudio.google.com/apikey)에서 발급)
 
 ### 설치 및 실행
 
@@ -49,6 +54,7 @@ pnpm install
 
 ```
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_api_key_here
+GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
 개발 서버 실행:
@@ -82,7 +88,7 @@ docker compose down             # 중지
 
 ```bash
 docker build --build-arg NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_api_key_here -t solar-pv-system .
-docker run -p 3000:3000 solar-pv-system
+docker run -p 3000:3000 -e GEMINI_API_KEY=your_gemini_api_key_here solar-pv-system
 ```
 
 ## 아키텍처
@@ -169,7 +175,7 @@ src/app/
 
 1. 사이드바 상단의 **주소 검색**으로 대상 건물로 이동합니다.
 2. **建物確定 / Confirm Building**을 누르고 지도 위에서 드래그하여 옥상이 잘 보이는 범위를 크롭합니다 → 크롭 팝업이 열립니다.
-3. **屋根編集 / Edit Roof**을 활성화하여 지도 위 플로팅 툴바를 표시한 뒤:
+3. 크롭 팝업이 열리면 **AI가 자동으로 지붕면을 감지하여 폴리곤으로 표시**합니다 (~15~30초). 동시에 표시되는 플로팅 툴바에서 결과를 추가 편집할 수 있습니다:
    - `drawRoof`로 지붕면 폴리곤을 그립니다 (3점 이상 → 시작점 클릭으로 닫기)
    - `drawOpening`으로 환기구 등 개구부(제외 영역)를 그립니다
    - `flowSetting`으로 각 지붕면의 처마(흐름방향) 변을 지정하면 모듈이 그 변과 평행하게 배치됩니다
@@ -193,6 +199,7 @@ src/app/
 | 변수 | 필수 | 설명 |
 |------|------|------|
 | `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | ✅ | Google Maps API 키 (Maps JS / Places / Geometry) |
+| `GEMINI_API_KEY` | ✅ | Gemini API 키 (지붕 자동 감지). 서버 라우트에서만 사용하므로 `NEXT_PUBLIC_` 접두사 금지 |
 
 ## 추가 문서
 

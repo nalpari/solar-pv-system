@@ -37,4 +37,5 @@ services:
       - "4001:3000"
     environment:
       - NODE_ENV=production
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
     restart: unless-stopped
