@@ -31,7 +31,7 @@ import type {
 
 const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
 
-const DEFAULT_CENTER = { lat: 47.6062, lng: -122.3321 }; // Seattle
+const DEFAULT_CENTER = { lat: 35.6850697, lng: 139.7619073 }; // 〒100-0005 東京都千代田区丸の内1-1-1
 
 type SidebarTab = "design" | "simulation";
 
