@@ -23,6 +23,9 @@ import { buildNorthMarker } from "@/lib/detect/overlay";
 export const runtime = "nodejs";
 
 const MAX_REQUEST_BYTES = 5 * 1024 * 1024;
+// Boston H1: base64는 원본 대비 약 4/3배 팽창. 5MB 원본을 허용하려면 ~6.67MB의 data URL을 허용해야 함.
+// 256 = "data:image/...;base64," 헤더 + JSON wrapper 여유.
+const MAX_DATA_URL_LENGTH = Math.ceil((MAX_REQUEST_BYTES * 4) / 3) + 256;
 const MAX_IMAGE_PIXELS = 25_000_000;
 
 type MediaType = "image/png" | "image/jpeg" | "image/webp";
@@ -347,8 +350,21 @@ export async function POST(req: Request) {
     );
   }
 
-  const declaredLen = Number(req.headers.get("content-length") ?? "0");
-  if (Number.isFinite(declaredLen) && declaredLen > MAX_REQUEST_BYTES) {
+  // Boston H1: Content-Length 헤더는 위조/누락 시 NaN으로 분기 통과 가능 →
+  // arrayBuffer().byteLength로 직접 검증하여 req.json() 메모리 폭탄 방지.
+  let raw: ArrayBuffer;
+  try {
+    raw = await req.arrayBuffer();
+  } catch {
+    return NextResponse.json(
+      { error: "Failed to read request body" },
+      { status: 400 },
+    );
+  }
+  if (raw.byteLength === 0) {
+    return NextResponse.json({ error: "Empty body" }, { status: 400 });
+  }
+  if (raw.byteLength > MAX_DATA_URL_LENGTH) {
     return NextResponse.json(
       { error: "Request body too large" },
       { status: 413 },
@@ -357,7 +373,7 @@ export async function POST(req: Request) {
 
   let body: DetectRequestBody;
   try {
-    body = (await req.json()) as DetectRequestBody;
+    body = JSON.parse(new TextDecoder().decode(raw)) as DetectRequestBody;
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
@@ -366,13 +382,6 @@ export async function POST(req: Request) {
     return NextResponse.json(
       { error: "imageDataUrl is required" },
       { status: 400 },
-    );
-  }
-  // Defense-in-depth: enforce size even when Content-Length was absent/under-reported.
-  if (body.imageDataUrl.length > MAX_REQUEST_BYTES) {
-    return NextResponse.json(
-      { error: "Image too large" },
-      { status: 413 },
     );
   }
   const image = parseDataUrl(body.imageDataUrl);
