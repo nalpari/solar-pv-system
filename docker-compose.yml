@@ -11,6 +11,7 @@ services:
       - "4010:3000"
     environment:
       - NODE_ENV=production
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
     restart: unless-stopped
 
   app-prod-4000:
