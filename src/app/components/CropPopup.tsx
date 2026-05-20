@@ -1104,6 +1104,8 @@ export default function CropPopup({
           </button>
           <button
             onClick={onClose}
+            disabled={detectStatus === "detecting"}
+            title={detectStatus === "detecting" ? t("aiDetectInProgress", lang) : undefined}
             style={{
               display: "flex",
               alignItems: "center",
@@ -1114,7 +1116,8 @@ export default function CropPopup({
               background: "rgba(255, 255, 255, 0.9)",
               color: "var(--text-secondary)",
               borderRadius: "var(--radius-md)",
-              cursor: "pointer",
+              cursor: detectStatus === "detecting" ? "not-allowed" : "pointer",
+              opacity: detectStatus === "detecting" ? 0.5 : 1,
               backdropFilter: "blur(8px)",
             }}
           >
