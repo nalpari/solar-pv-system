@@ -80,8 +80,8 @@ export default function Home() {
   }, [lang]);
 
   // AI 지붕 감지 상태 (Phase 7: 수동 트리거 + 상태 머신)
+  // 실패는 alert으로만 표시 (D10/H-2: 배너 제거) → detectError state 불필요
   const [detectStatus, setDetectStatus] = useState<"idle" | "detecting">("idle");
-  const [detectError, setDetectError] = useState<string | null>(null);
   const [aiSeedAreas, setAiSeedAreas] = useState<NormalizedPolygon[]>([]);
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -144,12 +144,10 @@ export default function Home() {
     if (!cropData) {
       setAiSeedAreas([]);
       setDetectStatus("idle");
-      setDetectError(null);
       return;
     }
     // 새 cropData 진입 = idle 상태로 시작 (분석은 사용자 "AI 분석 시작" 클릭으로)
     setDetectStatus("idle");
-    setDetectError(null);
     setAiSeedAreas([]);
     return () => {
       // F-1 유지: cropData 교체 시 진행 중 fetch + 이전 폴리곤/패널 정리
@@ -162,21 +160,22 @@ export default function Home() {
     };
   }, [cropData]);
 
+  // areas의 latest snapshot (M-1: handleStartDetect deps에서 areas.length 제거)
+  const areasRef = useRef(areas);
+  useEffect(() => {
+    areasRef.current = areas;
+  }, [areas]);
+
   // AI 분석 시작 핸들러 (Phase 7: 수동 트리거)
   const handleStartDetect = useCallback(async () => {
     if (!cropData) return;
 
-    // D8: 이미 지붕면이 있으면 재분석 확인 + 초기화
-    if (areas.length > 0) {
+    // D8/Mi-7: 이미 지붕면이 있으면 재분석 확인 + handleDeleteAll 재사용으로 일괄 초기화
+    if (areasRef.current.length > 0) {
       const ok = window.confirm(t("aiDetectConfirmReanalyze", langRef.current));
       if (!ok) return;
-      setAreas([]);
-      setPixelAreas(null);
-      setPlacedPixelPanels([]);
-      setPlacedPanelsList([]);
+      handleDeleteAll();
       setAiSeedAreas([]);
-      // CropPopup 내부 areas state도 비우는 신호 (handleDeleteAll과 동일 패턴)
-      setClearSignal((n) => n + 1);
     }
 
     // 이전 진행 중 요청 정리
@@ -185,18 +184,18 @@ export default function Home() {
     abortControllerRef.current = controller;
 
     setDetectStatus("detecting");
-    setDetectError(null);
 
     try {
       const response = await detectRoofs(cropData, controller.signal);
       if (controller.signal.aborted) return;
+      // H-1: 새 controller가 시작됐다면 stale 응답 무시 (race 가드)
+      if (abortControllerRef.current !== controller) return;
       setAiSeedAreas(response.polygons.map((p) => p.points));
     } catch (e) {
       if (controller.signal.aborted) return;
       if (e instanceof Error && e.name === "AbortError") return;
-      // D10: 실패 alert (기획서 명시 문구)
+      // D10/H-2: 실패 alert만 (배너 제거 — 기획서 명시 문구)
       window.alert(t("aiDetectFailedAlert", langRef.current));
-      setDetectError(e instanceof Error ? e.message : t("aiDetectFailed", langRef.current));
     } finally {
       if (abortControllerRef.current === controller) {
         abortControllerRef.current = null;
@@ -205,7 +204,7 @@ export default function Home() {
         setDetectStatus("idle");
       }
     }
-  }, [cropData, areas.length]);
+  }, [cropData]);
 
   // AI 분석 취소 핸들러 (Phase 7: 사용자 취소 버튼)
   const handleCancelDetect = useCallback(() => {
@@ -874,10 +873,8 @@ export default function Home() {
                   clearSignal={clearSignal}
                   initialAreas={aiSeedAreas}
                   detectStatus={detectStatus}
-                  detectError={detectError}
                   onStartDetect={handleStartDetect}
                   onCancelDetect={handleCancelDetect}
-                  hasExistingAreas={areas.length > 0}
                 />
               </div>
             )}

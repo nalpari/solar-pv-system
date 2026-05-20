@@ -191,16 +191,6 @@ const translations = {
     en: "Required APIs: Maps JavaScript, Places, Geometry",
   },
 
-  // AI Roof Detection (Phase 3)
-  aiDetecting: {
-    ja: "AIが屋根を検出しています...",
-    en: "AI is detecting the roof...",
-  },
-  aiDetectFailed: {
-    ja: "屋根の自動検出に失敗しました",
-    en: "Roof auto-detection failed",
-  },
-
   // AI Roof Detection — 수동 트리거 (Phase 7)
   aiDetectStart: {
     ja: "AI 分析開始",

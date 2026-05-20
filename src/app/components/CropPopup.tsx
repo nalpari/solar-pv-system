@@ -39,14 +39,10 @@ interface CropPopupProps {
   initialAreas?: NormalizedPolygon[];
   /** AI 감지 상태 머신 (Phase 7) */
   detectStatus?: "idle" | "detecting";
-  /** AI 감지 실패 메시지 (배너 표시) */
-  detectError?: string | null;
   /** "AI 분석 시작" 버튼 클릭 핸들러 (Phase 7) */
   onStartDetect?: () => void;
   /** "AI 분석 취소" 버튼 클릭 핸들러 (Phase 7) */
   onCancelDetect?: () => void;
-  /** 외부 areas 존재 여부 (재분석 confirm 활성화 판단용, 현재 미사용 - page.tsx에서 처리) */
-  hasExistingAreas?: boolean;
 }
 
 interface AreaEntry {
@@ -208,7 +204,6 @@ export default function CropPopup({
   clearSignal,
   initialAreas,
   detectStatus = "idle",
-  detectError,
   onStartDetect,
   onCancelDetect,
 }: CropPopupProps) {
@@ -1003,57 +998,19 @@ export default function CropPopup({
               zIndex: 50,
             }}
           >
-            <div
+            {/* F-1: 텍스트 제거 — 버튼 "AI 分析中"이 충분한 안내, 오버레이는 차단 목적만 */}
+            <span
               style={{
-                background: "var(--bg-surface)",
-                padding: "16px 24px",
-                borderRadius: "var(--radius-md)",
-                fontSize: 14,
-                color: "var(--text-primary)",
-                boxShadow: "var(--shadow-md)",
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
+                width: 40,
+                height: 40,
+                border: "3px solid rgba(255,255,255,0.3)",
+                borderTopColor: "var(--accent-blue)",
+                borderRadius: "50%",
+                animation: "spin 1s linear infinite",
+                display: "inline-block",
               }}
-            >
-              <span
-                style={{
-                  width: 16,
-                  height: 16,
-                  border: "2px solid var(--text-tertiary)",
-                  borderTopColor: "var(--accent-blue)",
-                  borderRadius: "50%",
-                  animation: "spin 1s linear infinite",
-                  display: "inline-block",
-                  flexShrink: 0,
-                }}
-                aria-hidden="true"
-              />
-              {t("aiDetecting", lang)}
-            </div>
-          </div>
-        )}
-
-        {/* AI 감지 에러 배너 (D6: 표시만, 폴백 없음) */}
-        {detectError && (
-          <div
-            style={{
-              position: "absolute",
-              top: 12,
-              left: "50%",
-              transform: "translateX(-50%)",
-              background: "#ef4444",
-              color: "#fff",
-              padding: "8px 16px",
-              borderRadius: "var(--radius-md)",
-              fontSize: 13,
-              fontWeight: 500,
-              zIndex: 60,
-              maxWidth: "80%",
-              textAlign: "center",
-            }}
-          >
-            ⚠️ {detectError}
+              aria-hidden="true"
+            />
           </div>
         )}
 

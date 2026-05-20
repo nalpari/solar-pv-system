@@ -362,11 +362,10 @@ D1~D7 모두 확정되었기 때문에 이 plan은 **추가 의사결정 없이 
 
 ```
 detectStatus:
-  "idle"      ← CropPopup 진입 직후, 또는 취소/실패 후 복귀
+  "idle"      ← CropPopup 진입 직후, 또는 취소/실패/성공 후 복귀
   "detecting" ← "AI 분석 시작" 클릭 직후 ~ 응답 도착 전
-  "done"      ← 응답 도착 (성공)
-  "error"     ← 실패 (alert 후 idle 복귀)
-  "canceled"  ← 사용자 취소 (즉시 idle 복귀)
+
+(구현은 2상태로 단순화. done/error/canceled는 모두 idle 복귀로 흡수 — 룰 #2 Simplicity)
 ```
 
 ### 7.2 변경 파일
@@ -376,7 +375,7 @@ detectStatus:
 | `src/app/page.tsx` | cropData 변경 시 자동 detect 호출 useEffect 제거 → `handleStartDetect` / `handleCancelDetect` 핸들러로. 분석 중 사이드바 버튼 비활성화 prop 전달 |
 | `src/app/components/CropPopup.tsx` | 하단 영역에 버튼 2개 추가 (AI 분석 시작 / AI 분석 취소). 분석 상태에 따른 텍스트/활성화 토글. confirm 다이얼로그 |
 | `src/app/utils/i18n.ts` | 기획 문구 ja/en 키 추가 |
-| 사이드바 버튼들 | `disabled` prop으로 분석 중 비활성화 (PanelConfig, ResultsPanel, SimulationPanel, 시뮬레이션 입력 CTA) |
+| 사이드바 버튼들 | `disabled` prop으로 분석 중 비활성화 (PanelConfig, ResultsPanel, 슬로프 select, 시뮬레이션 입력 CTA). SimulationPanel은 simulation 탭 전용이라 비활성화 불필요 |
 
 ### 7.3 핵심 동작
 
@@ -387,13 +386,13 @@ detectStatus:
    - 확인/없음 → 기존 폴리곤/패널 초기화 + 사이드바 버튼 비활성화 (D9)
    - `detectStatus = "detecting"`. 버튼 텍스트 "AI 분석 중", 취소 버튼 활성
 4. 응답 도착 (성공):
-   - 폴리곤 표출 + `detectStatus = "done"`
+   - 폴리곤 표출 + `detectStatus = "idle"` 복귀
    - 버튼 텍스트 "AI 분석 시작" 복원 + 활성
    - 사이드바 버튼 활성화 복원
 5. "AI 분석 취소" 클릭:
    - `AbortController.abort()` (F-1 재활용)
    - `detectStatus = "idle"`. 버튼 상태 초기화
-6. 실패: alert "AI 分析に失敗しました…" (D10). 닫으면 idle 복귀
+6. 실패: alert만 "AI 分析に失敗しました…" (D10/H-2: 배너 없음, 기획서 정합). 닫으면 idle 복귀
 
 ### 7.4 i18n 키 (ja / en)
 
@@ -405,7 +404,7 @@ detectStatus:
 | `aiDetectConfirmReanalyze` | AI 分析を再実行しますか? 作成された屋根面情報がすべて初期化されます。 | Re-run AI analysis? All created roof faces will be reset. |
 | `aiDetectFailedAlert` | AI 分析に失敗しました。しばらく後でもう一度お試しください。 | AI analysis failed. Please try again later. |
 
-기존 `aiDetecting` / `aiDetectFailed` 키는 그대로 유지하거나 위 키들로 통합 검토.
+기존 `aiDetecting` (로딩 오버레이 텍스트), `aiDetectFailed` (배너 메시지) 두 키는 **이번 Phase 7 fix에서 제거** (F-1 로딩 텍스트 제거 + H-2 배너 제거로 호출처 0).
 
 ### 7.5 F-1 / 이전 작업과의 관계
 
@@ -416,11 +415,10 @@ detectStatus:
 
 ### 7.6 사이드이펙트 점검 (룰 #6)
 
-- [ ] page.tsx의 cropData 변경 시 자동 detect 트리거 제거 → 다른 곳에서 호출되는지 검색
-- [ ] 사이드바 비활성화 prop이 모든 관련 버튼에 전달되는지
-- [ ] confirm 다이얼로그가 native confirm vs 커스텀 — 기존 pv-system 패턴 확인
-- [ ] alert이 native alert vs 커스텀 모달 — 기존 패턴 확인
-- [ ] 재분석 confirm 후 기존 폴리곤 초기화가 사용자 그리기 폴리곤까지 지우는지 정책 확인
+- [x] page.tsx의 cropData 변경 시 자동 detect 트리거 제거 → handleStartDetect로 분리, useEffect는 reset만
+- [x] 사이드바 비활성화 prop이 모든 관련 버튼에 전달됨 (PanelConfig/ResultsPanel/슬로프 select/시뮬레이션 CTA)
+- [x] confirm/alert 모두 native 사용 (pv-system에 커스텀 모달 패턴 없음 — 별도 PR 후보)
+- [x] 재분석 confirm 후 사용자 그리기 폴리곤도 모두 초기화 (handleDeleteAll 재사용, Mi-7)
 
 ---
 
@@ -437,6 +435,15 @@ detectStatus:
   - useEffect cleanup에 `AbortController.abort()` + `areas/pixelAreas/placedPixelPanels/placedPanelsList` 초기화
   - `AbortError`는 의도된 취소이므로 에러 메시지 표시 안 함
 - **U1**: AI 로딩 인디케이터를 기존 `AddressSearch`의 `spin` 패턴(`globals.css @keyframes spin`)으로 일관화
+
+### 16.3 Phase 7-A 셀프 리뷰(1차 superpowers + 2차 chicago) 반영
+- **F-1 (Phase 7)**: 로딩 오버레이 텍스트 제거 — 버튼 "AI 分析中"이 충분, 오버레이는 차단 목적만 (스피너만 유지)
+- **H-1**: race 가드 — `setAiSeedAreas` 직전 `abortControllerRef.current === controller` 비교 추가 (시작→취소→시작 빠른 클릭 시 stale 응답 차단)
+- **H-2**: 실패 시 alert만, 배너 제거 (기획서 D10 정합) — `detectError` state/setter 및 CropPopup 배너 div 모두 삭제
+- **M-1**: `areasRef` 패턴(langRef와 동일) 도입, `handleStartDetect` deps에서 `areas.length` 제거
+- **Mi-2**: `hasExistingAreas` prop 제거 (CropPopup 인터페이스 + page.tsx 전달 양쪽)
+- **Mi-7/A-2**: D8 재분석 리셋을 `handleDeleteAll() + setAiSeedAreas([])` 재사용으로 DRY
+- **i18n**: dead key가 된 `aiDetecting` / `aiDetectFailed` 제거
 
 ---
 
