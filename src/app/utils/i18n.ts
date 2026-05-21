@@ -70,6 +70,18 @@ const translations = {
 
   // Bottom CTA
   simulationCalcInput: { ja: "発電シミュレーション計算入力", en: "Power Simulation Input" },
+  modulePlacementDone: { ja: "モジュール配置完了", en: "Module Placement Done" },
+  backToModuleEdit: { ja: "モジュール編集に戻る", en: "Back to Module Edit" },
+
+  // PV logo + new Lnb section titles
+  pvLogoAlt: { ja: "Hanwha Japan PV Simulation", en: "Hanwha Japan PV Simulation" },
+  sectionRoofSlope: { ja: "屋根面傾斜", en: "Roof Slope" },
+  tabSolarDesignShort: { ja: "ソーラーデザイン", en: "Solar Design" },
+  tabSimulationShort: { ja: "発電シミュレーション", en: "Simulation" },
+  buildingConfirmHint: {
+    ja: "※太陽光モジュールを設置する屋根がよく見えるように 範囲を調整して確定します.",
+    en: "※Adjust the area so the roof for solar module installation is clearly visible, then confirm.",
+  },
 
   // Simulation Panel
   azimuthSetting: { ja: "方位設定", en: "Azimuth Setting" },
