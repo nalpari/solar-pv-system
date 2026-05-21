@@ -19,9 +19,10 @@ pnpm dev                     # http://localhost:3000
 ## Always Do
 
 - 모든 답변과 추론과정은 한국어로 작성한다.
-- 가급적 react 19.2 버전의 최신 문법을 사용한다.
-- task가 끝나면 서브 에이전트를 사용해서 린트체크, 타입체크, 빌드체크를 수행한다.
+- 가급적 react 19.2, nextjs 16 버전의 최신 문법을 사용한다.
+- 코드 파일(`.ts/.tsx/.js/.jsx/.mjs/.cjs`)을 수정한 턴이 끝나면 Stop 훅이 자동으로 `pnpm lint` + `npx tsc --noEmit` 을 실행한다 (`.claude/hooks/check-lint-tsc.sh`). 실패 시 stderr 가 Claude 에게 피드백되어 자동 수정 루프에 들어간다.
 - 린트체크시 오류가 있으면 반드시 해결하고 넘어가도록 하고, 경고가 있더라도 해결하려고 노력한다.
+- 빌드 검증(`pnpm build`)은 자동 훅에 포함되지 않는다 — 큰 변경 후 또는 사용자가 명시적으로 요청할 때만 수동 실행한다.
 - 커밋시에 접두사는 영어로 나머지 타이틀과 내용은 한국어로 작성한다.
 - task 완료시 CLAUDE.md, AGENTS.md 및 README.md 문서에 업데이트가 필요하면 진행한다.
 - 작업시 한 문장으로 설명되는 의미있는 단위로 commit 한다.

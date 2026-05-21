@@ -46,3 +46,6 @@ next-env.d.ts
 
 # graphify
 graphify-out/
+
+# claude hooks state
+.claude/state/
