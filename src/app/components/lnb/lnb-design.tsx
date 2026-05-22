@@ -167,15 +167,15 @@ export function LnbDesign({
                   onClick={onPlacePanels}
                   disabled={!canPlace || detecting}
                 >
-                  整列配置
+                  {t("btnAlignedPlacement", lang)}
                 </Button>
                 <Button
                   variant="outline"
                   className="flex-1"
                   disabled
-                  title="未対応"
+                  title={t("btnStaggeredUnsupported", lang)}
                 >
-                  千鳥配置
+                  {t("btnStaggeredPlacement", lang)}
                 </Button>
                 <TipPopover>
                   <BaechiTip />
@@ -187,7 +187,7 @@ export function LnbDesign({
                 onClick={onDeleteAllPanels}
                 disabled={panelCount === 0 || detecting}
               >
-                モジュールの削除
+                {t("btnDeleteModule", lang)}
               </Button>
               {placementError && (
                 <p className="text-[12px] leading-[1.5] text-[#cf2e2e]">
@@ -196,13 +196,8 @@ export function LnbDesign({
               )}
             </div>
             <div className="flex flex-col gap-3">
-              <Hint>
-                ※北面への設置は日射量が少なく、発電量や経済効果が低下しやすいです.
-                また、反射光により近隣とのトラブルにつながる可能性があるため、原則として推奨しておりません.
-              </Hint>
-              <Hint>
-                ※本ツールは複数種類のパネルの混合配置には対応いたしません. あらかじめご了承ください.
-              </Hint>
+              <Hint>{t("hintNorthRoofNotRecommended", lang)}</Hint>
+              <Hint>{t("hintMixedPanelsNotSupported", lang)}</Hint>
             </div>
           </Section>
 

@@ -92,25 +92,21 @@ export function LnbSim({
             <div className="flex gap-6 items-center">
               <Compass selected={azimuth} />
               <div className="flex-1 pt-[10px] text-[12px] leading-[1.5] text-[#333]">
-                <p className="mb-0">
-                  モジュールを載せる屋根の方位を選択してください.
-                </p>
-                <p>
-                  複数の屋根面にモジュールを設置する場合、最も広い屋根面の方位を選択してください.
-                </p>
+                <p className="mb-0">{t("azimuthGuideLine1", lang)}</p>
+                <p>{t("azimuthGuideLine2", lang)}</p>
               </div>
             </div>
           </Section>
 
           {/* Section 2: 蓄電池 */}
           <Section
-            title="蓄電池"
+            title={t("batteryShort", lang)}
             iconSrc="/assets/images/contents/tab02_cont_icon02.svg"
             iconWidth={18}
             iconHeight={12}
           >
             <p className="text-[12px] leading-[1.5] text-[#999]">
-              ※太陽光で作った電気を保存しておき 必要なとき 使用するバッテリーユニットです.
+              {t("batteryUnitDescription", lang)}
             </p>
             <div className="flex gap-6">
               <Radio
@@ -172,7 +168,7 @@ export function LnbSim({
           disabled={azimuth === "" || monthlyElecCost === ""}
           icon={<ChevronRight />}
         >
-          {t("simulationCalcInput", lang)}
+          {t("simViewResults", lang)}
         </Button>
       </div>
     </>

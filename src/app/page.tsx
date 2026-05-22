@@ -72,9 +72,11 @@ export default function Home() {
   const [clearSignal, setClearSignal] = useState(0);
   const [areas, setAreas] = useState<PolygonArea[]>([]);
   const [panelSize, setPanelSize] = useState<PanelSize>({
-    label: "Custom",
+    // Default matches first option in Lnb design's MODULE_PRESETS catalog
+    // (placeholder until module-loading API is wired).
+    label: "Re-RIZE-G3 440",
     width: 991,
-    height: 1650,
+    height: 1722,
   });
   const [orientation, setOrientation] = useState<PanelOrientation>("portrait");
   const [placedPanelsList, setPlacedPanelsList] = useState<PlacedPanel[]>([]);
@@ -332,6 +334,7 @@ export default function Home() {
             onPlacePanels: handlePlacePanels,
             onDeleteAllPanels: handleDeleteAllPanels,
             detectStatus,
+            onPlacementDone: switchToSimulation,
             onSwitchToSimulation: switchToSimulation,
           }}
           sim={{
