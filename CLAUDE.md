@@ -144,11 +144,35 @@ src/
 
 ## Environment Variables
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Yes | Google Maps API key (Maps JS, Places, Geometry APIs) |
-| `GEMINI_API_KEY` | Yes | Gemini API key for roof auto-detection. Server route only (no `NEXT_PUBLIC_` prefix) |
-| `GEMINI_MODEL` | Yes | Gemini model identifier (예: `"gemini-3.1-pro-preview"`). Server route only. 미설정 시 `/api/detect-roof`는 500 응답 |
+`.env` 는 세 파일로 분리되어 운영됩니다:
+
+| 파일 | 역할 | Jenkins credential |
+|------|------|---------------------|
+| `.env` | 공통 키 (dev/prod 모두 동일) | `pv-simulation-env-common` (file) |
+| `.env.dev` | dev 배포 전용 오버라이드 | `pv-simulation-env-dev` (file) |
+| `.env.prod` | prod 배포 전용 오버라이드 | `pv-simulation-env-prod` (file) |
+
+Jenkinsfile 의 `Load Env Credential` 스테이지에서 `cat common + 선택된 profile > .env` 로 병합되며, 같은 키가 양쪽에 있으면 **profile 파일이 공통을 오버라이드** 합니다. docker-compose 는 `env_file: .env` 로 통째 마운트해 컨테이너에 주입합니다.
+
+> ⚠️ 파일명에 `.env.development` / `.env.production` 을 쓰지 않는 이유 — Next.js 가 `NODE_ENV` 에 따라 해당 파일을 자동 로드하기 때문. 배포는 dev/prod 모두 `NODE_ENV=production` 으로 빌드되므로 의미 충돌을 피하기 위해 `.env.dev` / `.env.prod` 로 명명합니다.
+
+| Variable | 위치 | 빌드/런타임 | 설명 |
+|----------|------|-------------|------|
+| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | `.env` (공통) | **빌드타임 ARG** (클라이언트 번들 인라인) | Google Maps API key (Maps JS, Places, Geometry APIs) |
+| `NEXT_PUBLIC_AWS_S3_BASE_URL` | `.env` (공통) | **빌드타임 ARG** (클라이언트 번들 인라인) | S3 기준 이미지 베이스 URL |
+| `GEMINI_API_KEY` | `.env` (공통) | 런타임 | Gemini API key. Server route only |
+| `GEMINI_MODEL` | `.env` (공통) | 런타임 | Gemini model identifier (예: `"gemini-3.1-pro-preview"`). 미설정 시 `/api/detect-roof`는 500 응답 |
+| `AWS_REGION` | `.env` (공통) | 런타임 | S3 리전 (예: `ap-northeast-1`) |
+| `AMPLIFY_BUCKET` | `.env` (공통) | 런타임 | S3 버킷명 (지붕 형상 추론 기준 이미지 업로드용) |
+| `AWS_ACCESS_KEY_ID` | `.env` (공통) | 런타임 | S3 업로드 IAM 자격 |
+| `AWS_SECRET_ACCESS_KEY` | `.env` (공통) | 런타임 | S3 업로드 IAM 자격 |
+| `QSP_API_HOST` | `.env.dev` / `.env.prod` | 런타임 | QSalesPlatform 마스터 데이터 API 호스트. 환경별로 다름 |
+
+새 키 추가 워크플로:
+- **공통 키**: Jenkins UI 의 `pv-simulation-env-common` credential 파일에 추가
+- **환경별 키**: `pv-simulation-env-dev` / `pv-simulation-env-prod` credential 파일에 추가
+- **`NEXT_PUBLIC_*` 키**: 위 + Dockerfile 에 `ARG`/`ENV` 2줄 + docker-compose.yml 각 서비스 `build.args` 에 1줄 추가
+- **모든 키**: Jenkinsfile `Validate Environment` 스테이지의 `: "${VAR:?...}"` 검증 라인 추가 (전수 검증 정책)
 
 ## Testing
 
