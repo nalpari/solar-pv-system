@@ -6,12 +6,14 @@ services:
       context: .
       args:
         NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:?NEXT_PUBLIC_GOOGLE_MAPS_API_KEY 환경변수가 필요합니다.}
+        NEXT_PUBLIC_AWS_S3_BASE_URL: ${NEXT_PUBLIC_AWS_S3_BASE_URL:?NEXT_PUBLIC_AWS_S3_BASE_URL 환경변수가 필요합니다.}
     image: solar-pv-system:dev-${IMAGE_TAG:-latest}
     ports:
       - "4010:3000"
+    env_file:
+      - .env
     environment:
       - NODE_ENV=production
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
     restart: unless-stopped
 
   app-prod-4000:
@@ -21,12 +23,14 @@ services:
       context: .
       args:
         NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:?NEXT_PUBLIC_GOOGLE_MAPS_API_KEY 환경변수가 필요합니다.}
+        NEXT_PUBLIC_AWS_S3_BASE_URL: ${NEXT_PUBLIC_AWS_S3_BASE_URL:?NEXT_PUBLIC_AWS_S3_BASE_URL 환경변수가 필요합니다.}
     image: solar-pv-system:prod-${IMAGE_TAG:-latest}
     ports:
       - "4000:3000"
+    env_file:
+      - .env
     environment:
       - NODE_ENV=production
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
     restart: unless-stopped
 
   app-prod-4001:
@@ -37,7 +41,8 @@ services:
       - app-prod-4000
     ports:
       - "4001:3000"
+    env_file:
+      - .env
     environment:
       - NODE_ENV=production
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
     restart: unless-stopped

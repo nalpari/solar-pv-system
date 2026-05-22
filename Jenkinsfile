@@ -23,12 +23,22 @@ pipeline {
 
     stage('Load Env Credential') {
       steps {
-        withCredentials([file(credentialsId: 'pv-simulation-env', variable: 'ENV_FILE')]) {
-          sh '''
-            set -eu
-            cp "$ENV_FILE" .env
-            chmod 600 .env
-          '''
+        script {
+          def profileCred = params.PROFILE == 'dev'
+            ? 'pv-simulation-env-dev'
+            : 'pv-simulation-env-prod'
+          withCredentials([
+            file(credentialsId: 'pv-simulation-env-common', variable: 'ENV_COMMON'),
+            file(credentialsId: profileCred,                variable: 'ENV_PROFILE'),
+          ]) {
+            sh '''
+              set -eu
+              cat "$ENV_COMMON" > .env
+              printf '\\n' >> .env
+              cat "$ENV_PROFILE" >> .env
+              chmod 600 .env
+            '''
+          }
         }
       }
     }
@@ -38,8 +48,15 @@ pipeline {
         sh '''
           set -eu
           set -a; . ./.env; set +a
-          : "${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:?credential pv-simulation-env에 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY가 정의되어 있어야 합니다.}"
-          : "${GEMINI_API_KEY:?credential pv-simulation-env에 GEMINI_API_KEY가 정의되어 있어야 합니다. (AI 지붕 감지 기능 필수)}"
+          : "${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:?credential pv-simulation-env-common에 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY가 정의되어 있어야 합니다.}"
+          : "${GEMINI_API_KEY:?credential pv-simulation-env-common에 GEMINI_API_KEY가 정의되어 있어야 합니다.}"
+          : "${GEMINI_MODEL:?credential pv-simulation-env-common에 GEMINI_MODEL이 정의되어 있어야 합니다. (AI 지붕 감지 기능 필수)}"
+          : "${AWS_REGION:?credential pv-simulation-env-common에 AWS_REGION이 정의되어 있어야 합니다.}"
+          : "${AMPLIFY_BUCKET:?credential pv-simulation-env-common에 AMPLIFY_BUCKET이 정의되어 있어야 합니다.}"
+          : "${AWS_ACCESS_KEY_ID:?credential pv-simulation-env-common에 AWS_ACCESS_KEY_ID가 정의되어 있어야 합니다.}"
+          : "${AWS_SECRET_ACCESS_KEY:?credential pv-simulation-env-common에 AWS_SECRET_ACCESS_KEY가 정의되어 있어야 합니다.}"
+          : "${NEXT_PUBLIC_AWS_S3_BASE_URL:?credential pv-simulation-env-common에 NEXT_PUBLIC_AWS_S3_BASE_URL이 정의되어 있어야 합니다.}"
+          : "${QSP_API_HOST:?credential pv-simulation-env-${PROFILE}에 QSP_API_HOST가 정의되어 있어야 합니다.}"
           docker compose version
           node --version
           pnpm --version || corepack prepare pnpm@10 --activate
