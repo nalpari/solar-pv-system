@@ -530,20 +530,6 @@ export default function MapView({
         lang={lang}
       />
 
-      {/* Center pin overlay — 크롭 모드 및 팝업 표시 중에는 숨김 */}
-      {!cropMode && !locked && <div
-        style={{
-          position: "absolute",
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -100%)",
-          pointerEvents: "none",
-          zIndex: 10,
-        }}
-      >
-        <img src="/map-point.svg" alt="" width={40} height={56} style={{ opacity: 0.9 }} />
-      </div>}
-
     </div>
   );
 }
