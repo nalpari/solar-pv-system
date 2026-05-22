@@ -2,12 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { APIProvider } from "@vis.gl/react-google-maps";
-import { Globe, Sun, BarChart3, Crop, ChevronDown, ArrowRight } from "lucide-react";
-import Header from "./components/Header";
-import AddressSearch from "./components/AddressSearch";
-import PanelConfig from "./components/PanelConfig";
-import ResultsPanel from "./components/ResultsPanel";
-import SimulationPanel from "./components/SimulationPanel";
+import { Lnb } from "./components/lnb/lnb";
 import type { SimulationFormState } from "./components/SimulationPanel";
 import RoofEditToolbar from "./components/RoofEditToolbar";
 import type { RoofTool } from "./components/RoofEditToolbar";
@@ -35,33 +30,8 @@ const DEFAULT_CENTER = { lat: 35.6850697, lng: 139.7619073 }; // 〒100-0005 東
 
 type SidebarTab = "design" | "simulation";
 
-// 경사 options: 0.5 ~ 10, step 0.5
-const SLOPE_OPTIONS = Array.from({ length: 20 }, (_, i) => (i + 1) * 0.5);
-
 const GAP_CM = 0.3; // 모듈 간격 3mm
 const MARGIN_CM = 30; // 외곽 여백 300mm
-
-/** Section header bar component */
-function SectionHeader({ title, primary }: { title: string; primary?: boolean }) {
-  return (
-    <div
-      style={{
-        padding: "10px 16px",
-        background: primary ? "var(--accent-blue)" : "var(--bg-surface)",
-        borderTop: primary ? "none" : "1px solid var(--border-primary)",
-        borderBottom: primary ? "none" : "1px solid var(--border-primary)",
-        fontSize: 13,
-        fontWeight: 600,
-        color: primary ? "#fff" : "var(--text-primary)",
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-      }}
-    >
-      {title}
-    </div>
-  );
-}
 
 export default function Home() {
   const [lang, setLang] = useState<Lang>("ja");
@@ -102,9 +72,11 @@ export default function Home() {
   const [clearSignal, setClearSignal] = useState(0);
   const [areas, setAreas] = useState<PolygonArea[]>([]);
   const [panelSize, setPanelSize] = useState<PanelSize>({
-    label: "Custom",
+    // Default matches first option in Lnb design's MODULE_PRESETS catalog
+    // (placeholder until module-loading API is wired).
+    label: "Re-RIZE-G3 440",
     width: 991,
-    height: 1650,
+    height: 1722,
   });
   const [orientation, setOrientation] = useState<PanelOrientation>("portrait");
   const [placedPanelsList, setPlacedPanelsList] = useState<PlacedPanel[]>([]);
@@ -341,544 +313,196 @@ export default function Home() {
           overflow: "hidden",
         }}
       >
-          {/* Left Sidebar */}
-          <aside
-            style={{
-              width: 320,
-              flexShrink: 0,
-              background: "var(--bg-secondary)",
-              borderRight: "1px solid var(--border-primary)",
-              display: "flex",
-              flexDirection: "column",
-              overflow: "hidden",
-            }}
-          >
-            <Header />
-            {/* Tab Navigation */}
+        {/* Left Sidebar — pv-pub design */}
+        <Lnb
+          tab={activeTab}
+          onTabChange={setActiveTab}
+          lang={lang}
+          onLangToggle={() => setLang(lang === "ja" ? "en" : "ja")}
+          design={{
+            onPlaceSelect: handlePlaceSelect,
+            cropMode,
+            onCropModeToggle: () => setCropMode(!cropMode),
+            slope,
+            onSlopeChange: setSlope,
+            panelSize,
+            onPanelSizeChange: setPanelSize,
+            orientation,
+            panelCount,
+            canPlace,
+            placementError,
+            onPlacePanels: handlePlacePanels,
+            onDeleteAllPanels: handleDeleteAllPanels,
+            detectStatus,
+            onPlacementDone: switchToSimulation,
+            onSwitchToSimulation: switchToSimulation,
+          }}
+          sim={{
+            formState: simForm,
+            onFormChange: setSimForm,
+            onGoBack: () => setActiveTab("design"),
+            onSubmit: () => {
+              // TODO: 시뮬레이션 결과 조회 API 호출
+              console.log("Simulation submit:", simForm);
+            },
+          }}
+        />
+
+        {/* Map Area */}
+        <main style={{ flex: 1, position: "relative" }}>
+          {GOOGLE_MAPS_API_KEY ? (
+            <MapView
+              center={center}
+              viewport={viewport}
+              cropMode={cropMode}
+              locked={cropData !== null}
+              onCropComplete={handleCropComplete}
+              address={address}
+              lang={lang}
+            />
+          ) : (
             <div
               style={{
-                display: "flex",
-                borderBottom: "1px solid var(--border-primary)",
-                flexShrink: 0,
-              }}
-            >
-              <button
-                onClick={() => setActiveTab("design")}
-                style={{
-                  flex: 1,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: 6,
-                  padding: "14px 8px 10px",
-                  border: "none",
-                  borderBottom: activeTab === "design"
-                    ? "2px solid var(--accent-blue)"
-                    : "2px solid transparent",
-                  background: activeTab === "design"
-                    ? "var(--bg-primary)"
-                    : "var(--bg-secondary)",
-                  color: activeTab === "design"
-                    ? "var(--accent-blue)"
-                    : "var(--text-tertiary)",
-                  fontSize: 11,
-                  fontWeight: activeTab === "design" ? 600 : 400,
-                  transition: "all 0.15s ease",
-                }}
-              >
-                <div
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: "50%",
-                    background: activeTab === "design"
-                      ? "var(--accent-blue)"
-                      : "var(--bg-surface)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    transition: "all 0.15s ease",
-                  }}
-                >
-                  <Sun
-                    size={20}
-                    color={activeTab === "design" ? "#fff" : "var(--text-tertiary)"}
-                  />
-                </div>
-                {t("tabSolarDesign", lang)}
-              </button>
-
-              <button
-                onClick={() => switchToSimulation()}
-                style={{
-                  flex: 1,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: 6,
-                  padding: "14px 8px 10px",
-                  border: "none",
-                  borderBottom: activeTab === "simulation"
-                    ? "2px solid var(--accent-blue)"
-                    : "2px solid transparent",
-                  background: activeTab === "simulation"
-                    ? "var(--bg-primary)"
-                    : "var(--bg-secondary)",
-                  color: activeTab === "simulation"
-                    ? "var(--accent-blue)"
-                    : "var(--text-tertiary)",
-                  fontSize: 11,
-                  fontWeight: activeTab === "simulation" ? 600 : 400,
-                  transition: "all 0.15s ease",
-                }}
-              >
-                <div
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: "50%",
-                    background: activeTab === "simulation"
-                      ? "var(--accent-blue)"
-                      : "var(--bg-surface)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    transition: "all 0.15s ease",
-                  }}
-                >
-                  <BarChart3
-                    size={20}
-                    color={activeTab === "simulation" ? "#fff" : "var(--text-tertiary)"}
-                  />
-                </div>
-                {t("tabSimulationInput", lang)}
-              </button>
-            </div>
-
-            {/* Scrollable Content */}
-            <div
-              style={{
-                flex: 1,
-                overflowY: "auto",
+                width: "100%",
+                height: "100%",
                 display: "flex",
                 flexDirection: "column",
-              }}
-            >
-              {activeTab === "design" ? (
-                <>
-                  {/* Section: 주소 검색 */}
-                  <SectionHeader title={t("searchAddress", lang)} primary />
-
-                  {/* Address Search */}
-                  <div style={{ padding: "16px 16px 12px" }}>
-                    <AddressSearch onPlaceSelect={handlePlaceSelect} lang={lang} />
-                  </div>
-
-                  {/* Confirm Building Button */}
-                  <div style={{ padding: "0 16px 12px" }}>
-                    <button
-                      onClick={() => setCropMode(!cropMode)}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: 8,
-                        width: "100%",
-                        padding: "10px 16px",
-                        borderRadius: "var(--radius-md)",
-                        border: cropMode
-                          ? "1px solid var(--accent-blue)"
-                          : "1px solid var(--border-primary)",
-                        background: cropMode
-                          ? "var(--accent-blue)"
-                          : "var(--bg-surface)",
-                        color: cropMode ? "#fff" : "var(--text-primary)",
-                        fontSize: 13,
-                        fontWeight: 600,
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!cropMode) {
-                          e.currentTarget.style.background = "var(--bg-surface-hover)";
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!cropMode) {
-                          e.currentTarget.style.background = "var(--bg-surface)";
-                        }
-                      }}
-                    >
-                      <Crop size={15} />
-                      {t("confirmBuilding", lang)}
-                    </button>
-                  </div>
-
-                  {/* Guide Text */}
-                  <div
-                    style={{
-                      padding: "0 16px 12px",
-                      fontSize: 11,
-                      color: "var(--text-tertiary)",
-                      lineHeight: 1.6,
-                    }}
-                  >
-                    {cropMode
-                      ? t("cropModeActive", lang)
-                      : t("confirmBuildingGuide", lang)}
-                  </div>
-
-                  {/* Section: 지붕 편집 */}
-                  <SectionHeader title={t("sectionRoofEdit", lang)} primary />
-
-                  {/* Slope Settings */}
-                  <div style={{ padding: "12px 16px" }}>
-                    <label
-                      htmlFor="slope-select"
-                      style={{
-                        display: "block",
-                        fontSize: 13,
-                        fontWeight: 500,
-                        color: "var(--text-primary)",
-                        marginBottom: 6,
-                      }}
-                    >
-                      {t("slopeSettings", lang)}
-                    </label>
-                    <div style={{ position: "relative" }}>
-                      <select
-                        id="slope-select"
-                        value={slope}
-                        onChange={(e) => setSlope(Number(e.target.value))}
-                        disabled={detectStatus === "detecting"}
-                        style={{
-                          width: "100%",
-                          height: 36,
-                          fontSize: 13,
-                          appearance: "none",
-                          background: "var(--bg-surface)",
-                          border: "1px solid var(--border-primary)",
-                          borderRadius: "var(--radius-md)",
-                          color: "var(--text-primary)",
-                          padding: "0 32px 0 12px",
-                        }}
-                      >
-                        {SLOPE_OPTIONS.map((val) => (
-                          <option key={val} value={val}>
-                            {val}{t("slopeUnit", lang)}
-                          </option>
-                        ))}
-                      </select>
-                      <ChevronDown
-                        size={14}
-                        color="var(--text-tertiary)"
-                        style={{
-                          position: "absolute",
-                          right: 10,
-                          top: "50%",
-                          transform: "translateY(-50%)",
-                          pointerEvents: "none",
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Roof image */}
-                  <div style={{ padding: "0 16px 12px" }}>
-                    <img
-                      src="/roof_one_line.png"
-                      alt="roof"
-                      style={{
-                        width: "100%",
-                        borderRadius: "var(--radius-md)",
-                        display: "block",
-                      }}
-                    />
-                  </div>
-
-                  {/* Section: 모듈 배치 */}
-                  <SectionHeader title={t("sectionModulePlacement", lang)} primary />
-
-                  {/* Panel Config (Module selection) */}
-                  <PanelConfig
-                    panelSize={panelSize}
-                    onPanelSizeChange={setPanelSize}
-                    lang={lang}
-                    disabled={detectStatus === "detecting"}
-                  />
-
-                  {/* Results Panel (Action buttons + Capacity) */}
-                  <ResultsPanel
-                    panelCount={panelCount}
-                    panelSize={panelSize}
-                    orientation={orientation}
-                    canPlace={canPlace}
-                    placementError={placementError}
-                    onPlacePanels={handlePlacePanels}
-                    onDeleteAllPanels={handleDeleteAllPanels}
-                    lang={lang}
-                    disabled={detectStatus === "detecting"}
-                  />
-                </>
-              ) : (
-                /* Simulation Tab */
-                <SimulationPanel
-                  lang={lang}
-                  formState={simForm}
-                  onFormChange={setSimForm}
-                  onGoBack={() => setActiveTab("design")}
-                  onSubmit={() => {
-                    // TODO: 시뮬레이션 결과 조회 API 호출
-                    console.log("Simulation submit:", simForm);
-                  }}
-                />
-              )}
-            </div>
-
-            {/* Bottom CTA Button */}
-            {activeTab === "design" && (
-              <div
-                style={{
-                  padding: "12px 16px",
-                  borderTop: "1px solid var(--border-primary)",
-                  flexShrink: 0,
-                }}
-              >
-                <button
-                  onClick={() => switchToSimulation()}
-                  disabled={detectStatus === "detecting"}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 8,
-                    width: "100%",
-                    padding: "12px 16px",
-                    borderRadius: "var(--radius-md)",
-                    border: "none",
-                    background: "var(--accent-orange)",
-                    color: "#fff",
-                    fontSize: 14,
-                    fontWeight: 600,
-                    opacity: detectStatus === "detecting" ? 0.5 : 1,
-                    cursor: detectStatus === "detecting" ? "not-allowed" : "pointer",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (detectStatus !== "detecting") {
-                      e.currentTarget.style.background = "var(--accent-orange-hover)";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (detectStatus !== "detecting") {
-                      e.currentTarget.style.background = "var(--accent-orange)";
-                    }
-                  }}
-                >
-                  {t("simulationCalcInput", lang)}
-                  <ArrowRight size={16} />
-                </button>
-              </div>
-            )}
-
-            {/* Sidebar footer */}
-            <div
-              style={{
-                padding: "8px 16px",
-                borderTop: "1px solid var(--border-primary)",
-                fontSize: 11,
-                color: "var(--text-tertiary)",
-                display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                gap: 8,
-                flexShrink: 0,
+                background: "var(--bg-primary)",
+                gap: 16,
               }}
             >
-              <span>Hanwha Japan PV Simulation v0.1.0</span>
-              <button
-                onClick={() => setLang(lang === "ja" ? "en" : "ja")}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 4,
-                  padding: "2px 8px",
-                  borderRadius: 10,
-                  border: "1px solid var(--border-primary)",
-                  background: "var(--bg-surface)",
-                  color: "var(--text-secondary)",
-                  fontSize: 10,
-                  fontWeight: 500,
-                  cursor: "pointer",
-                  transition: "all 0.15s ease",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = "var(--accent-blue)";
-                  e.currentTarget.style.color = "var(--accent-blue)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = "var(--border-primary)";
-                  e.currentTarget.style.color = "var(--text-secondary)";
-                }}
-              >
-                <Globe size={10} />
-                {lang === "ja" ? "EN" : "JA"}
-              </button>
-            </div>
-          </aside>
-
-          {/* Map Area */}
-          <main style={{ flex: 1, position: "relative" }}>
-            {GOOGLE_MAPS_API_KEY ? (
-              <MapView
-                center={center}
-                viewport={viewport}
-                cropMode={cropMode}
-                locked={cropData !== null}
-                onCropComplete={handleCropComplete}
-                address={address}
-                lang={lang}
-              />
-            ) : (
               <div
                 style={{
                   width: "100%",
-                  height: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  background: "var(--bg-primary)",
-                  gap: 16,
+                  maxWidth: 480,
+                  padding: 32,
+                  textAlign: "center",
                 }}
               >
                 <div
                   style={{
-                    width: "100%",
-                    maxWidth: 480,
-                    padding: 32,
-                    textAlign: "center",
+                    width: 64,
+                    height: 64,
+                    borderRadius: "var(--radius-lg)",
+                    background: "var(--bg-surface)",
+                    border: "1px solid var(--border-primary)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    margin: "0 auto 16px",
                   }}
                 >
-                  <div
-                    style={{
-                      width: 64,
-                      height: 64,
-                      borderRadius: "var(--radius-lg)",
-                      background: "var(--bg-surface)",
-                      border: "1px solid var(--border-primary)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      margin: "0 auto 16px",
-                    }}
+                  <svg
+                    width="28"
+                    height="28"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="var(--text-tertiary)"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                   >
-                    <svg
-                      width="28"
-                      height="28"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="var(--text-tertiary)"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z" />
-                      <circle cx="12" cy="10" r="3" />
-                    </svg>
-                  </div>
-                  <h2
-                    style={{
-                      fontSize: 18,
-                      fontWeight: 600,
-                      color: "var(--text-primary)",
-                      marginBottom: 8,
-                    }}
-                  >
-                    {t("apiKeyRequired", lang)}
-                  </h2>
-                  <p
-                    style={{
-                      fontSize: 14,
-                      color: "var(--text-secondary)",
-                      lineHeight: 1.6,
-                      marginBottom: 20,
-                    }}
-                  >
-                    {t("apiKeyDescription", lang)}
-                  </p>
-                  <code
-                    style={{
-                      display: "block",
-                      padding: "12px 16px",
-                      background: "var(--bg-surface)",
-                      borderRadius: "var(--radius-md)",
-                      border: "1px solid var(--border-primary)",
-                      fontSize: 13,
-                      fontFamily: "var(--font-geist-mono)",
-                      color: "var(--accent-blue-hover)",
-                      textAlign: "left",
-                      overflowX: "auto",
-                    }}
-                  >
-                    NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_key_here
-                  </code>
-                  <p
-                    style={{
-                      fontSize: 12,
-                      color: "var(--text-tertiary)",
-                      marginTop: 12,
-                    }}
-                  >
-                    {t("requiredApis", lang)}
-                  </p>
+                    <path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z" />
+                    <circle cx="12" cy="10" r="3" />
+                  </svg>
                 </div>
-              </div>
-            )}
-            {cropData && (
-              <div
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  zIndex: 100,
-                  pointerEvents: "none",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 12,
-                }}
-              >
-                <RoofEditToolbar
-                  lang={lang}
-                  activeTool={roofEditTool}
-                  onToolChange={setRoofEditTool}
-                  onAction={(action) => {
-                    if (action === "undo") {
-                      setUndoSignal((n) => n + 1);
-                    } else if (action === "deleteAll") {
-                      handleDeleteAll();
-                    }
+                <h2
+                  style={{
+                    fontSize: 18,
+                    fontWeight: 600,
+                    color: "var(--text-primary)",
+                    marginBottom: 8,
                   }}
-                  onClose={() => setRoofEditTool("select")}
-                />
-                <CropPopup
-                  cropData={cropData}
-                  drawingMode={drawingMode}
-                  onAreasChange={handleAreasChange}
-                  onPixelAreasChange={handlePixelAreasChange}
-                  placedPanels={placedPixelPanels}
-                  onClose={handleCropClose}
-                  lang={lang}
-                  roofEditTool={roofEditTool}
-                  onEaveChange={handleEaveChange}
-                  undoSignal={undoSignal}
-                  clearSignal={clearSignal}
-                  initialAreas={aiSeedAreas}
-                  detectStatus={detectStatus}
-                  onStartDetect={handleStartDetect}
-                  onCancelDetect={handleCancelDetect}
-                />
+                >
+                  {t("apiKeyRequired", lang)}
+                </h2>
+                <p
+                  style={{
+                    fontSize: 14,
+                    color: "var(--text-secondary)",
+                    lineHeight: 1.6,
+                    marginBottom: 20,
+                  }}
+                >
+                  {t("apiKeyDescription", lang)}
+                </p>
+                <code
+                  style={{
+                    display: "block",
+                    padding: "12px 16px",
+                    background: "var(--bg-surface)",
+                    borderRadius: "var(--radius-md)",
+                    border: "1px solid var(--border-primary)",
+                    fontSize: 13,
+                    fontFamily: "var(--font-geist-mono)",
+                    color: "var(--accent-blue-hover)",
+                    textAlign: "left",
+                    overflowX: "auto",
+                  }}
+                >
+                  NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_key_here
+                </code>
+                <p
+                  style={{
+                    fontSize: 12,
+                    color: "var(--text-tertiary)",
+                    marginTop: 12,
+                  }}
+                >
+                  {t("requiredApis", lang)}
+                </p>
               </div>
-            )}
-          </main>
+            </div>
+          )}
+          {cropData && (
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                zIndex: 100,
+                pointerEvents: "none",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 12,
+              }}
+            >
+              <RoofEditToolbar
+                lang={lang}
+                activeTool={roofEditTool}
+                onToolChange={setRoofEditTool}
+                onAction={(action) => {
+                  if (action === "undo") {
+                    setUndoSignal((n) => n + 1);
+                  } else if (action === "deleteAll") {
+                    handleDeleteAll();
+                  }
+                }}
+                onClose={() => setRoofEditTool("select")}
+              />
+              <CropPopup
+                cropData={cropData}
+                drawingMode={drawingMode}
+                onAreasChange={handleAreasChange}
+                onPixelAreasChange={handlePixelAreasChange}
+                placedPanels={placedPixelPanels}
+                onClose={handleCropClose}
+                lang={lang}
+                roofEditTool={roofEditTool}
+                onEaveChange={handleEaveChange}
+                undoSignal={undoSignal}
+                clearSignal={clearSignal}
+                initialAreas={aiSeedAreas}
+                detectStatus={detectStatus}
+                onStartDetect={handleStartDetect}
+                onCancelDetect={handleCancelDetect}
+              />
+            </div>
+          )}
+        </main>
       </div>
     </APIProvider>
   );
