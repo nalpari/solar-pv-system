@@ -148,6 +148,7 @@ src/
 |----------|----------|-------------|
 | `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Yes | Google Maps API key (Maps JS, Places, Geometry APIs) |
 | `GEMINI_API_KEY` | Yes | Gemini API key for roof auto-detection. Server route only (no `NEXT_PUBLIC_` prefix) |
+| `GEMINI_MODEL` | Yes | Gemini model identifier (예: `"gemini-3.1-pro-preview"`). Server route only. 미설정 시 `/api/detect-roof`는 500 응답 |
 
 ## Testing
 

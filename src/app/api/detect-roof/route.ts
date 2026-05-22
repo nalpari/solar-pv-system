@@ -14,7 +14,6 @@ import {
   BBOX_CROP_PADDING,
   BBOX_SYSTEM_PROMPT,
   BBOX_USER_PROMPT,
-  DETECT_MODEL,
   ROOF_DETECT_SYSTEM_PROMPT,
   ROOF_DETECT_USER_PROMPT,
 } from "@/lib/detect/prompt";
@@ -27,6 +26,8 @@ const MAX_REQUEST_BYTES = 5 * 1024 * 1024;
 // 256 = "data:image/...;base64," 헤더 + JSON wrapper 여유.
 const MAX_DATA_URL_LENGTH = Math.ceil((MAX_REQUEST_BYTES * 4) / 3) + 256;
 const MAX_IMAGE_PIXELS = 25_000_000;
+// 환경변수로 모델 식별자 주입. 미설정 시 POST 핸들러에서 500 응답으로 차단.
+const DETECT_MODEL = process.env.GEMINI_MODEL ?? "";
 
 type MediaType = "image/png" | "image/jpeg" | "image/webp";
 
@@ -346,6 +347,13 @@ export async function POST(req: Request) {
     console.error("[detect-roof] GEMINI_API_KEY 미설정");
     return NextResponse.json(
       { error: "Server is missing GEMINI_API_KEY" },
+      { status: 500 },
+    );
+  }
+  if (!DETECT_MODEL) {
+    console.error("[detect-roof] GEMINI_MODEL 미설정");
+    return NextResponse.json(
+      { error: "Server is missing GEMINI_MODEL" },
       { status: 500 },
     );
   }
