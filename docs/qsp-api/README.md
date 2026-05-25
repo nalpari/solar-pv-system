@@ -10,7 +10,7 @@
 
 | No | API | Method | Endpoint | Source → Target | 문서 |
 |----|-----|--------|----------|------------------|------|
-| 3 | BTC Google Map 아이템 정보 조회 | GET | `/api/api/master/btcGoogleItemList` | Q.Partner → QSP | [03-btc-google-item-list.md](./03-btc-google-item-list.md) |
+| 3 | BTC Google Map 아이템 정보 조회 | GET | `/api/master/btcGoogleItemList` | Q.Partner → QSP | [03-btc-google-item-list.md](./03-btc-google-item-list.md) |
 | 4 | PV 발전시뮬레이션 결과전 검증 조회 | GET | `/qm/pwrgnSimulationM/checkCalcResults` | (QSP 내부) | [04-pv-simulation-check.md](./04-pv-simulation-check.md) |
 | 5 | PV 발전시뮬레이션 결과 정보 조회 | GET | `/qm/pwrgnSimulationM/calcResults` | (QSP 내부) | [05-pv-simulation-calc.md](./05-pv-simulation-calc.md) |
 

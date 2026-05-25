@@ -1,0 +1,224 @@
+// src/lib/qsp/client.ts
+// QSP 백엔드 호출 + 응답 정규화 (서버 전용).
+// 라우트 핸들러 3개가 공유하는 callQsp 헬퍼와 API 별 호출 함수를 제공한다.
+import { NextResponse } from "next/server";
+import type { z } from "zod";
+import {
+  BtcResponseSchema,
+  SimCalcResponseSchema,
+  SimCheckResponseSchema,
+  type BtcItem,
+  type BtcItemsInput,
+  type SimCalcResponse,
+  type SimulationInput,
+} from "./schema";
+
+const QSP_API_HOST = process.env.QSP_API_HOST ?? "";
+const DEFAULT_TIMEOUT_MS = 30_000;
+
+type QueryValue = string | number | undefined;
+
+export type QspCallResult<T> =
+  | { success: true; data: T }
+  | { success: false; status: number; code: number; message: string };
+
+function buildUrl(
+  base: string,
+  path: string,
+  query: Record<string, QueryValue>,
+): string {
+  const url = new URL(`${base}${path}`);
+  for (const [k, v] of Object.entries(query)) {
+    if (v === undefined) continue;
+    url.searchParams.set(k, String(v));
+  }
+  return url.toString();
+}
+
+// upstream 응답의 두 가지 result 표현 모두 지원.
+//   { result: { code, message } }   ← 03 / 05 공통 포맷
+//   { resultCode, resultMessage }   ← 04 평탄화 포맷
+function extractUpstreamStatus(data: unknown): { code: number; message: string } {
+  if (typeof data !== "object" || data === null) {
+    return { code: 0, message: "" };
+  }
+  const d = data as Record<string, unknown>;
+  if (d.result && typeof d.result === "object") {
+    const r = d.result as Record<string, unknown>;
+    return {
+      code: typeof r.code === "number" ? r.code : 0,
+      message: typeof r.message === "string" ? r.message : "",
+    };
+  }
+  return {
+    code: typeof d.resultCode === "number" ? d.resultCode : 0,
+    message: typeof d.resultMessage === "string" ? d.resultMessage : "",
+  };
+}
+
+function mapUpstreamCodeToStatus(code: number): number {
+  if (code === 600) return 401; // 토큰 만료
+  if (code === 400) return 422; // 검증 실패
+  return 502; // 그 외 upstream 오류
+}
+
+async function callQsp<T>(
+  routeName: string,
+  path: string,
+  query: Record<string, QueryValue>,
+  schema: z.ZodType<T>,
+  timeoutMs: number = DEFAULT_TIMEOUT_MS,
+): Promise<QspCallResult<T>> {
+  if (!QSP_API_HOST) {
+    console.error(`[qsp/${routeName}] QSP_API_HOST 미설정`);
+    return {
+      success: false,
+      status: 500,
+      code: 0,
+      message: "QSP_API_HOST not configured",
+    };
+  }
+
+  const url = buildUrl(QSP_API_HOST, path, query);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      signal: controller.signal,
+      cache: "no-store",
+    });
+  } catch (err) {
+    clearTimeout(timer);
+    const name = err instanceof Error ? err.name : "";
+    if (name === "AbortError") {
+      console.warn(`[qsp/${routeName}] timeout after ${timeoutMs}ms`);
+      return {
+        success: false,
+        status: 504,
+        code: 0,
+        message: "Upstream timeout",
+      };
+    }
+    console.warn(`[qsp/${routeName}] fetch error: ${String(err)}`);
+    return {
+      success: false,
+      status: 502,
+      code: 0,
+      message: "Upstream fetch failed",
+    };
+  }
+  clearTimeout(timer);
+
+  let body: unknown;
+  try {
+    body = await res.json();
+  } catch {
+    console.warn(
+      `[qsp/${routeName}] invalid JSON from upstream (http=${res.status})`,
+    );
+    return {
+      success: false,
+      status: 502,
+      code: 0,
+      message: "Invalid upstream response",
+    };
+  }
+
+  const parsed = schema.safeParse(body);
+  if (!parsed.success) {
+    const issueSummary = parsed.error.issues
+      .map((i) => `${i.path.join(".")} ${i.message}`)
+      .join("; ");
+    console.warn(`[qsp/${routeName}] schema violation: ${issueSummary}`);
+    return {
+      success: false,
+      status: 502,
+      code: 0,
+      message: "Upstream contract violation",
+    };
+  }
+
+  const { code, message } = extractUpstreamStatus(parsed.data);
+  if (code !== 200) {
+    console.warn(`[qsp/${routeName}] upstream code=${code} message=${message}`);
+    return {
+      success: false,
+      status: mapUpstreamCodeToStatus(code),
+      code,
+      message,
+    };
+  }
+
+  return { success: true, data: parsed.data };
+}
+
+// ============================================================================
+// API 별 caller
+// ============================================================================
+
+export async function fetchBtcItems(
+  input: BtcItemsInput,
+): Promise<QspCallResult<BtcItem[]>> {
+  const result = await callQsp(
+    "btc-items",
+    "/api/master/btcGoogleItemList",
+    { schItemTp: input.schItemTp },
+    BtcResponseSchema,
+  );
+  if (!result.success) return result;
+  return { success: true, data: result.data.data ?? [] };
+}
+
+export async function postSimCheck(
+  input: SimulationInput,
+): Promise<QspCallResult<null>> {
+  const result = await callQsp(
+    "sim-check",
+    "/qm/pwrgnSimulationM/checkCalcResults",
+    input,
+    SimCheckResponseSchema,
+  );
+  if (!result.success) return result;
+  return { success: true, data: null };
+}
+
+export async function postSimCalc(
+  input: SimulationInput,
+): Promise<QspCallResult<SimCalcResponse>> {
+  // 05번은 응답 사양 미정 — full body 그대로 클라이언트에 패스스루.
+  return callQsp(
+    "sim-calc",
+    "/qm/pwrgnSimulationM/calcResults",
+    input,
+    SimCalcResponseSchema,
+  );
+}
+
+// ============================================================================
+// 라우트 공용 — envelope 응답 헬퍼 + zod 에러 포맷터
+// ============================================================================
+
+export function envelopeSuccess<T>(data: T): NextResponse {
+  return NextResponse.json({ success: true, data });
+}
+
+export function envelopeError(
+  status: number,
+  code: number,
+  message: string,
+): NextResponse {
+  return NextResponse.json(
+    { success: false, error: { code, message } },
+    { status },
+  );
+}
+
+export function formatZodError(error: z.ZodError): string {
+  return error.issues
+    .map((i) => `${i.path.join(".") || "(root)"} ${i.message}`)
+    .join("; ");
+}

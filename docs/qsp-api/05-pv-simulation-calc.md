@@ -40,7 +40,7 @@
 축전지 선택
 
 ```
-GET https://q-musubi-dev.q-cells.jp/qm/pwrgnSimulation/calcResults
+GET https://q-musubi-dev.q-cells.jp/qm/pwrgnSimulationM/calcResults
     ?pvSimulationYn=Y
     &postCd=340-9601
     &moduleItemId=106797
@@ -57,7 +57,7 @@ GET https://q-musubi-dev.q-cells.jp/qm/pwrgnSimulation/calcResults
 축전지 미선택
 
 ```
-GET https://q-musubi-dev.q-cells.jp/qm/pwrgnSimulation/calcResults
+GET https://q-musubi-dev.q-cells.jp/qm/pwrgnSimulationM/calcResults
     ?pvSimulationYn=Y
     &postCd=340-9601
     &moduleItemId=106797
@@ -70,5 +70,3 @@ GET https://q-musubi-dev.q-cells.jp/qm/pwrgnSimulation/calcResults
     &storageBatteryYn=N
     &storageBatterySelectYn=N
 ```
-
-> 예시 URL에는 사양 정의의 `/qm/pwrgnSimulationM/calcResults` 가 아닌 `/qm/pwrgnSimulation/calcResults` (`M` 없음) 가 사용되어 있다. 호출 전 실제 환경의 라우팅을 재확인할 것.
