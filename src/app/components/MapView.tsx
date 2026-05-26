@@ -217,52 +217,30 @@ function CropOverlay({
 
     const newRect = { ...orig };
 
-    // 지도 중심(핀 위치)은 크롭 영역 안에 항상 포함되어야 함
-    const centerX = cw / 2;
-    const centerY = ch / 2;
-
     if (target === "move") {
-      let newLeft = Math.max(0, Math.min(cw - orig.width, orig.left + dx));
-      let newTop = Math.max(0, Math.min(ch - orig.height, orig.top + dy));
-      // 중심 포함 보정: left <= centerX <= left+width, top <= centerY <= top+height
-      newLeft = Math.max(centerX - orig.width, Math.min(centerX, newLeft));
-      newTop = Math.max(centerY - orig.height, Math.min(centerY, newTop));
-      newRect.left = newLeft;
-      newRect.top = newTop;
+      newRect.left = Math.max(0, Math.min(cw - orig.width, orig.left + dx));
+      newRect.top = Math.max(0, Math.min(ch - orig.height, orig.top + dy));
     } else {
       // Resize
       if (target?.includes("w")) {
-        let newLeft = Math.max(0, Math.min(orig.left + orig.width - MIN_SIZE, orig.left + dx));
-        // 중심 포함 보정: 서쪽 edge가 centerX를 넘어가면 안 됨
-        newLeft = Math.min(newLeft, centerX);
+        const newLeft = Math.max(0, Math.min(orig.left + orig.width - MIN_SIZE, orig.left + dx));
         newRect.width = orig.width + (orig.left - newLeft);
         newRect.left = newLeft;
       }
       if (target?.includes("e")) {
-        let w = Math.max(MIN_SIZE, Math.min(cw - orig.left, orig.width + dx));
-        // 중심 포함 보정: 동쪽 edge가 centerX 이전으로 오면 안 됨
-        w = Math.max(w, centerX - orig.left);
-        newRect.width = w;
+        newRect.width = Math.max(MIN_SIZE, Math.min(cw - orig.left, orig.width + dx));
       }
       if (target?.includes("n")) {
-        let newTop = Math.max(0, Math.min(orig.top + orig.height - MIN_SIZE, orig.top + dy));
-        newTop = Math.min(newTop, centerY);
+        const newTop = Math.max(0, Math.min(orig.top + orig.height - MIN_SIZE, orig.top + dy));
         newRect.height = orig.height + (orig.top - newTop);
         newRect.top = newTop;
       }
       if (target?.includes("s")) {
-        let h = Math.max(MIN_SIZE, Math.min(ch - orig.top, orig.height + dy));
-        h = Math.max(h, centerY - orig.top);
-        newRect.height = h;
+        newRect.height = Math.max(MIN_SIZE, Math.min(ch - orig.top, orig.height + dy));
       }
     }
 
-    // 최종 invariant 검증: 축별 보정 후에도 중심이 rect 안에 있는지 확인하고
-    // edge case(컨테이너 크기 변동, MIN_SIZE 충돌 등)에서 보정. 캔버스 경계도 함께 보장.
-    if (newRect.left > centerX) newRect.left = centerX;
-    if (newRect.top > centerY) newRect.top = centerY;
-    if (newRect.left + newRect.width < centerX) newRect.width = centerX - newRect.left;
-    if (newRect.top + newRect.height < centerY) newRect.height = centerY - newRect.top;
+    // 최종 캔버스 경계 보장
     newRect.left = Math.max(0, newRect.left);
     newRect.top = Math.max(0, newRect.top);
     newRect.width = Math.min(newRect.width, cw - newRect.left);

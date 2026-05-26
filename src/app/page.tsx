@@ -109,6 +109,11 @@ export default function Home() {
   const handleCropComplete = useCallback((data: CropData) => {
     setCropData(data);
     setCropMode(false);
+    // 크롭 영역 센터를 지도 중심으로 이동 (다음 작업 시점 갱신)
+    setCenter({
+      lat: (data.bounds.sw.lat + data.bounds.ne.lat) / 2,
+      lng: (data.bounds.sw.lng + data.bounds.ne.lng) / 2,
+    });
   }, []);
 
   // 크롭 변경 시 AI 분석 상태 reset (Phase 7: 자동 트리거 제거, 사용자 핸들러로 분리)
