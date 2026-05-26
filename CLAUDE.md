@@ -96,9 +96,10 @@ src/
 
 - 사양 SSOT: `src/lib/qsp/schema.ts`, `src/lib/detect/schema.ts` 의 zod 스키마
 - 빌더: `src/lib/openapi.ts` — `createDocument({ reused: "ref" })` 로 OpenAPI 3.1 생성. `.meta({ id })` 부여된 스키마는 `components.schemas` 에 자동 등록되며 paths 에서 `$ref` 로 참조된다 (8개 컴포넌트: `DetectRequest`, `DetectResponse`, `DetectPolygon`, `BboxResponse`, `ErrorEnvelope`, `BtcItem`, `SimulationInput`, `SimCalcResponse` + 3개 응답 envelope `BtcItemsResponse` / `SimCheckResponse` / `SimCalcSuccessResponse`)
-- 엔드포인트 (둘 다 `NODE_ENV === "production"` 에서는 404 반환 — 내부 API 명세 노출 차단):
+- 엔드포인트 (둘 다 `ENABLE_API_DOCS=true` 환경에서만 노출, 그 외에는 404 — 내부 API 명세 노출 차단. `NODE_ENV` 가드는 dev/prod 모두 production 빌드를 쓰는 배포 모델과 충돌하므로 사용하지 않음):
   - `GET /api/openapi` — OpenAPI 3.1 JSON (모듈 스코프 lazy memoize)
   - `GET /reference` — Scalar 기반 API Reference UI (dev: http://localhost:3000/reference)
+- 라우트 보호: `/api/qsp/*` 는 `src/middleware.ts` 에서 Origin 검증 + per-IP rate limit (1분 30회, in-memory sliding window) 적용 — 단일 인스턴스 배포 전제, 스케일아웃 시 분산 저장소로 교체 필요
 
 ### Key Patterns
 
@@ -182,6 +183,7 @@ Jenkinsfile 의 `Load Env Credential` 스테이지에서 `cat common + 선택된
 | `AWS_ACCESS_KEY_ID` | `.env` (공통) | 런타임 | S3 업로드 IAM 자격 |
 | `AWS_SECRET_ACCESS_KEY` | `.env` (공통) | 런타임 | S3 업로드 IAM 자격 |
 | `QSP_API_HOST` | `.env.dev` / `.env.prod` | 런타임 | QSalesPlatform 마스터 데이터 API 호스트. 환경별로 다름 |
+| `ENABLE_API_DOCS` | `.env.dev` / `.env.prod` | 런타임 | `"true"` 일 때만 `/api/openapi` 와 `/reference` 노출. dev=true / prod=false 권장 |
 
 새 키 추가 워크플로:
 - **공통 키**: Jenkins UI 의 `pv-simulation-env-common` credential 파일에 추가

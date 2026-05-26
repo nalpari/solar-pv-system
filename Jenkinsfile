@@ -57,6 +57,7 @@ pipeline {
           : "${AWS_SECRET_ACCESS_KEY:?credential pv-simulation-env-common에 AWS_SECRET_ACCESS_KEY가 정의되어 있어야 합니다.}"
           : "${NEXT_PUBLIC_AWS_S3_BASE_URL:?credential pv-simulation-env-common에 NEXT_PUBLIC_AWS_S3_BASE_URL이 정의되어 있어야 합니다.}"
           : "${QSP_API_HOST:?credential pv-simulation-env-${PROFILE}에 QSP_API_HOST가 정의되어 있어야 합니다.}"
+          : "${ENABLE_API_DOCS:?credential pv-simulation-env-${PROFILE}에 ENABLE_API_DOCS(true/false)가 정의되어 있어야 합니다. (API 문서 노출 플래그)}"
           docker compose version
           node --version
           pnpm --version || corepack prepare pnpm@10 --activate
