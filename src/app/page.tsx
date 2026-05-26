@@ -11,6 +11,7 @@ import { placePanels, placePanelsOnCanvasCm } from "./utils/panelPlacement";
 import { t } from "./utils/i18n";
 import type { Lang } from "./utils/i18n";
 import CropPopup from "./components/CropPopup";
+import AiDetectControls from "./components/AiDetectControls";
 import { detectRoofs } from "./utils/aiDetect";
 import type { NormalizedPolygon } from "./utils/aiDetect";
 import type {
@@ -502,8 +503,13 @@ export default function Home() {
                 clearSignal={clearSignal}
                 initialAreas={aiSeedAreas}
                 detectStatus={detectStatus}
+              />
+              {/* AI 분석 트리거 — 팝업 박스 외부 하단 (RoofEditToolbar 와 대칭) */}
+              <AiDetectControls
+                detectStatus={detectStatus}
                 onStartDetect={handleStartDetect}
                 onCancelDetect={handleCancelDetect}
+                lang={lang}
               />
             </div>
           )}
