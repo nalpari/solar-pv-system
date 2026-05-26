@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@google/genai": "^1.52.0",
+    "@scalar/nextjs-api-reference": "^0.10.19",
     "@vis.gl/react-google-maps": "^1.7.1",
     "html2canvas": "^1.4.1",
     "lucide-react": "^0.577.0",
@@ -17,7 +18,8 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "sharp": "^0.34.5",
-    "zod": "^4.3.6"
+    "zod": "^4.3.6",
+    "zod-openapi": "^5.4.6"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
