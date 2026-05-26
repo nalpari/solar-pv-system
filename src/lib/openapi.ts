@@ -62,7 +62,7 @@ const DetectRequestSchema = z
   .meta({ id: "DetectRequest", description: "지붕 감지 요청 본문" });
 
 // ============================================================================
-// Reusable 컴포넌트 등록 (id 부여 → $ref 로 참조)
+// Reusable 컴포넌트 등록 (id 부여 → createDocument 의 reused:"ref" 옵션으로 $ref 화)
 // ============================================================================
 
 const RegisteredPolygonSchema = PolygonSchema.meta({
@@ -95,10 +95,22 @@ const RegisteredSimCalcResponseSchema = SimCalcResponseSchema.meta({
   description: "PV 발전 시뮬레이션 결과 (upstream 사양 미정 — passthrough)",
 });
 
-// 참조용 alias (eslint no-unused-vars 회피).
-// createDocument 가 registry 를 통해 자동으로 components 에 포함시킨다.
-void RegisteredPolygonSchema;
-void RegisteredBboxResponseSchema;
+// 라우트별 성공 응답 envelope — id 부여로 클라이언트 코드 생성기에서 named type 생성
+const BtcItemsSuccessSchema = successEnvelope(z.array(RegisteredBtcItemSchema))
+  .meta({ id: "BtcItemsResponse", description: "BTC 자재 마스터 조회 성공" });
+
+const SimCheckSuccessSchema = successEnvelope(z.null())
+  .meta({ id: "SimCheckResponse", description: "시뮬레이션 사전 검증 성공 (data=null)" });
+
+const SimCalcSuccessSchema = successEnvelope(RegisteredSimCalcResponseSchema)
+  .meta({ id: "SimCalcSuccessResponse", description: "시뮬레이션 계산 성공" });
+
+// reused:"ref" 옵션과 함께 paths 에서 직접 참조하지 않아도 components 에 포함되도록 보장.
+// DetectPolygon / BboxResponse 는 DetectResponse 내부에서만 사용되지만 독립 컴포넌트로 노출.
+const COMPONENT_SCHEMAS = {
+  DetectPolygon: RegisteredPolygonSchema,
+  BboxResponse: RegisteredBboxResponseSchema,
+} as const;
 
 // ============================================================================
 // 라우트별 응답 정의 헬퍼
@@ -133,6 +145,12 @@ export function buildOpenApiDocument() {
       { name: "detect", description: "지붕 자동 감지" },
       { name: "qsp", description: "QSP.Connector BFF — 마스터/시뮬레이션" },
     ],
+    // DetectPolygon / BboxResponse 는 paths 에서 직접 참조되지 않으므로
+    // 여기서 명시 등록해 노출. 그 외 .meta({id}) 부여 스키마는 paths 안
+    // 인스턴스 매칭으로 zod-openapi 가 자동 $ref 처리한다.
+    components: {
+      schemas: COMPONENT_SCHEMAS,
+    },
     paths: {
       "/api/detect-roof": {
         post: {
@@ -151,9 +169,10 @@ export function buildOpenApiDocument() {
             },
             "400": { description: "잘못된 요청 본문", content: errorContent },
             "413": { description: "요청 본문 초과", content: errorContent },
-            "429": { description: "Rate limit", content: errorContent },
-            "500": { description: "서버 설정 오류", content: errorContent },
+            "429": { description: "Rate limit (upstream)", content: errorContent },
+            "500": { description: "서버 설정 오류 (API 키/모델 미설정)", content: errorContent },
             "502": { description: "Upstream(Gemini) 오류", content: errorContent },
+            "504": { description: "Upstream 타임아웃 (인프라 레벨)", content: errorContent },
           },
         },
       },
@@ -168,9 +187,7 @@ export function buildOpenApiDocument() {
           responses: {
             "200": {
               description: "조회 성공",
-              content: jsonContent(
-                successEnvelope(z.array(RegisteredBtcItemSchema)),
-              ),
+              content: jsonContent(BtcItemsSuccessSchema),
             },
             "400": { description: "쿼리 파라미터 검증 실패", content: errorContent },
             "401": { description: "Upstream 토큰 만료", content: errorContent },
@@ -193,7 +210,7 @@ export function buildOpenApiDocument() {
           responses: {
             "200": {
               description: "검증 통과 (data 는 항상 null)",
-              content: jsonContent(successEnvelope(z.null())),
+              content: jsonContent(SimCheckSuccessSchema),
             },
             "400": { description: "본문 검증 실패", content: errorContent },
             "401": { description: "Upstream 토큰 만료", content: errorContent },
@@ -216,9 +233,7 @@ export function buildOpenApiDocument() {
           responses: {
             "200": {
               description: "계산 성공 (응답 사양 미정 — upstream passthrough)",
-              content: jsonContent(
-                successEnvelope(RegisteredSimCalcResponseSchema),
-              ),
+              content: jsonContent(SimCalcSuccessSchema),
             },
             "400": { description: "본문 검증 실패", content: errorContent },
             "401": { description: "Upstream 토큰 만료", content: errorContent },
