@@ -54,6 +54,8 @@ pnpm dev                     # http://localhost:3000
 - **Gemini API** — `@google/genai` ^1.0.0 (AI 지붕 자동 감지)
 - **sharp** ^0.34.5 — 서버 측 이미지 처리 (북방 마커 오버레이)
 - **zod** ^4.3.6 — API 응답 스키마 검증
+- **zod-openapi** ^5.4 — 기존 zod 스키마 → OpenAPI 3.1 문서 생성
+- **@scalar/nextjs-api-reference** ^0.10 — `/reference` 페이지에서 Scalar UI 렌더
 
 ## Architecture
 
@@ -63,7 +65,10 @@ pnpm dev                     # http://localhost:3000
 src/
 ├── app/
 │   ├── api/
-│   │   └── detect-roof/      # /api/detect-roof — Gemini Vision 호출 라우트 (서버)
+│   │   ├── detect-roof/      # /api/detect-roof — Gemini Vision 호출 라우트 (서버)
+│   │   ├── openapi/          # /api/openapi — buildOpenApiDocument() JSON 제공
+│   │   └── qsp/              # /api/qsp/* — QSP BFF 3종 (btc-items / sim-check / sim-calc)
+│   ├── reference/           # /reference — Scalar API Reference UI
 │   ├── components/          # UI components (all "use client")
 │   │   ├── AddressSearch    # Google Places autocomplete
 │   │   ├── CropPopup        # Crop image popup with Canvas polygon editor, panel rendering, PNG save
@@ -82,8 +87,18 @@ src/
 │   ├── layout.tsx           # Root layout (Server Component, html lang="ja")
 │   └── page.tsx             # Main page (Client Component, owns all state, hosts design/simulation tabs)
 └── lib/
-    └── detect/              # Gemini Vision 백엔드 모듈 (schema.ts / prompt.ts / overlay.ts)
+    ├── detect/              # Gemini Vision 백엔드 모듈 (schema.ts / prompt.ts / overlay.ts)
+    ├── qsp/                 # QSP BFF 모듈 (schema.ts / client.ts)
+    └── openapi.ts           # 기존 zod 스키마 → OpenAPI 3.1 문서 빌더 (SSOT)
 ```
+
+### API Documentation
+
+- 사양 SSOT: `src/lib/qsp/schema.ts`, `src/lib/detect/schema.ts` 의 zod 스키마
+- 빌더: `src/lib/openapi.ts` — `createDocument` 로 OpenAPI 3.1 생성, `.meta({ id })` 로 컴포넌트 등록
+- 엔드포인트:
+  - `GET /api/openapi` — OpenAPI 3.1 JSON
+  - `GET /reference` — Scalar 기반 API Reference UI (dev: http://localhost:3000/reference)
 
 ### Key Patterns
 
