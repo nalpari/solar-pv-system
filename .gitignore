@@ -49,3 +49,6 @@ graphify-out/
 
 # claude hooks state
 .claude/state/
+
+# git worktrees (격리 작업 공간)
+.worktrees/
