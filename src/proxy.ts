@@ -1,6 +1,7 @@
-// src/middleware.ts
+// src/proxy.ts
 // /api/qsp/* 보호 — Origin 검증 + per-IP sliding-window rate limit (in-memory).
 // 단일 인스턴스 배포(docker-compose) 전제. 스케일아웃 시 분산 저장소로 교체 필요.
+// Next.js 16 의 proxy 컨벤션: 함수명은 `proxy`, runtime 은 nodejs 고정.
 import { NextResponse, type NextRequest } from "next/server";
 
 export const config = {
@@ -62,7 +63,7 @@ function envelopeError(
   );
 }
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   // CSRF 보호 — Origin 헤더가 없거나 사이트 origin과 다르면 차단
   const origin = req.headers.get("origin");
   const expected = req.nextUrl.origin;
