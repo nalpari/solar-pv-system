@@ -48,8 +48,10 @@ export async function detectRoofs(
   });
 
   if (!res.ok) {
-    const err = (await res.json().catch(() => ({}))) as { error?: string };
-    throw new Error(err.error ?? `API 호출 실패 (HTTP ${res.status})`);
+    const err = (await res.json().catch(() => ({}))) as {
+      error?: { message?: string };
+    };
+    throw new Error(err.error?.message ?? `API 호출 실패 (HTTP ${res.status})`);
   }
 
   return res.json();
