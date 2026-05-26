@@ -95,9 +95,9 @@ src/
 ### API Documentation
 
 - 사양 SSOT: `src/lib/qsp/schema.ts`, `src/lib/detect/schema.ts` 의 zod 스키마
-- 빌더: `src/lib/openapi.ts` — `createDocument` 로 OpenAPI 3.1 생성, `.meta({ id })` 로 컴포넌트 등록
-- 엔드포인트:
-  - `GET /api/openapi` — OpenAPI 3.1 JSON
+- 빌더: `src/lib/openapi.ts` — `createDocument({ reused: "ref" })` 로 OpenAPI 3.1 생성. `.meta({ id })` 부여된 스키마는 `components.schemas` 에 자동 등록되며 paths 에서 `$ref` 로 참조된다 (8개 컴포넌트: `DetectRequest`, `DetectResponse`, `DetectPolygon`, `BboxResponse`, `ErrorEnvelope`, `BtcItem`, `SimulationInput`, `SimCalcResponse` + 3개 응답 envelope `BtcItemsResponse` / `SimCheckResponse` / `SimCalcSuccessResponse`)
+- 엔드포인트 (둘 다 `NODE_ENV === "production"` 에서는 404 반환 — 내부 API 명세 노출 차단):
+  - `GET /api/openapi` — OpenAPI 3.1 JSON (모듈 스코프 lazy memoize)
   - `GET /reference` — Scalar 기반 API Reference UI (dev: http://localhost:3000/reference)
 
 ### Key Patterns
