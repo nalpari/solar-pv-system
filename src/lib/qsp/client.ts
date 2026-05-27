@@ -248,3 +248,45 @@ export function formatZodError(error: z.ZodError): string {
     .map((i) => `${i.path.join(".") || "(root)"} ${i.message}`)
     .join("; ");
 }
+
+// Boston H1: req.json() 직접 호출은 body 크기 제한 없이 메모리/CPU 를 소비.
+// arrayBuffer 로 먼저 읽고 byte cap 으로 차단한 뒤 파싱한다.
+// 호출자는 success 분기에서 unknown 을 zod 로 검증한다.
+export type ReadJsonBodyResult =
+  | { success: true; data: unknown }
+  | { success: false; response: NextResponse };
+
+export async function readJsonBodyWithLimit(
+  req: Request,
+  maxBytes: number,
+): Promise<ReadJsonBodyResult> {
+  let raw: ArrayBuffer;
+  try {
+    raw = await req.arrayBuffer();
+  } catch {
+    return {
+      success: false,
+      response: envelopeError(400, 400, "Failed to read request body"),
+    };
+  }
+  if (raw.byteLength === 0) {
+    return { success: false, response: envelopeError(400, 400, "Empty body") };
+  }
+  if (raw.byteLength > maxBytes) {
+    return {
+      success: false,
+      response: envelopeError(413, 413, "Request body too large"),
+    };
+  }
+  try {
+    return {
+      success: true,
+      data: JSON.parse(new TextDecoder().decode(raw)) as unknown,
+    };
+  } catch {
+    return {
+      success: false,
+      response: envelopeError(400, 400, "Invalid JSON body"),
+    };
+  }
+}
