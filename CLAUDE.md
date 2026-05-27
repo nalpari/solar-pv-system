@@ -68,7 +68,7 @@ src/
 │   │   ├── detect-roof/      # /api/detect-roof — Gemini Vision 호출 라우트 (서버)
 │   │   ├── openapi/          # /api/openapi — buildOpenApiDocument() JSON 제공
 │   │   ├── qsp/              # /api/qsp/* — QSP BFF (btc-items)
-│   │   └── musbi/            # /api/musbi/* — MUSBI BFF (simcheck / sim-calc)
+│   │   └── musbi/            # /api/musbi/* — MUSBI BFF (sim-check / sim-calc)
 │   ├── reference/           # /reference — Scalar API Reference UI
 │   ├── components/          # UI components (all "use client")
 │   │   ├── AddressSearch    # Google Places autocomplete

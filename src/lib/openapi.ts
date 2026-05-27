@@ -199,7 +199,7 @@ export function buildOpenApiDocument() {
           },
         },
       },
-      "/api/musbi/simcheck": {
+      "/api/musbi/sim-check": {
         post: {
           tags: ["musbi"],
           summary: "PV 발전 시뮬레이션 결과 사전 검증",

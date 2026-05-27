@@ -1,4 +1,4 @@
-// src/app/api/musbi/simcheck/route.ts
+// src/app/api/musbi/sim-check/route.ts
 // MUSBI PV 발전시뮬레이션 결과전 검증 조회 BFF (사양 04).
 import {
   envelopeError,
