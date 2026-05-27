@@ -48,7 +48,7 @@ pnpm dev                     # http://localhost:3000
 - **TypeScript** — strict mode
 - **Tailwind CSS v4** — via `@tailwindcss/postcss` (CSS custom properties used for styling, not utility classes)
 - **Google Maps** — `@vis.gl/react-google-maps` ^1.7.1 (Maps JS, Places, Geometry APIs)
-- **html2canvas** ^1.4.1 — Map tile capture for crop popup + PNG export
+- **html2canvas** ^1.4.1 — Map tile capture for crop popup
 - **lucide-react** ^0.577.0 — Icons
 - **Docker** — Multi-stage standalone build (see `Dockerfile`, `docker-compose.yml`)
 - **Gemini API** — `@google/genai` ^1.0.0 (AI 지붕 자동 감지)
@@ -72,7 +72,7 @@ src/
 │   ├── reference/           # /reference — Scalar API Reference UI
 │   ├── components/          # UI components (all "use client")
 │   │   ├── AddressSearch    # Google Places autocomplete
-│   │   ├── CropPopup        # Crop image popup with Canvas polygon editor, panel rendering, PNG save
+│   │   ├── CropPopup        # Crop image popup with Canvas polygon editor, panel rendering
 │   │   ├── Header           # App header with Hanwha Japan logo
 │   │   ├── MapView          # Google Maps satellite view + crop overlay + zoom/recenter controls
 │   │   ├── PanelConfig      # Panel size preset (60-cell / 72-cell / Large / Custom, mm)
@@ -107,7 +107,7 @@ src/
 - **State Management**: `page.tsx` owns all state, passes via props (Props-Down / Callbacks-Up). Sidebar tabs (`design` | `simulation`) are also held there.
 - **Styling**: CSS custom properties in `globals.css`, inline styles — NOT Tailwind utility classes
 - **i18n**: `utils/i18n.ts` with `t(key, lang)` function, `Lang` type (`"ja" | "en"`), sidebar footer toggle synced to `<html lang>` in `page.tsx`
-- **Workflow**: Address search → confirm building (drag crop on map, captured via `html2canvas`) → CropPopup polygon editor (drawRoof / drawOpening / flowSetting / editRoof) → set slope (寸 단위, 0.5–10) and module preset → place modules (auto picks portrait or landscape, whichever fits more) → results panel + PNG save → optional Simulation tab input
+- **Workflow**: Address search → confirm building (drag crop on map, captured via `html2canvas`) → CropPopup polygon editor (drawRoof / drawOpening / flowSetting / editRoof) → set slope (寸 단위, 0.5–10) and module preset → place modules (auto picks portrait or landscape, whichever fits more) → results panel → optional Simulation tab input
 - **Panel Placement**: Three functions in `utils/panelPlacement.ts`
   - `placePanels` — lat/lng-based (mm internal)
   - `placePanelsOnCanvas` — pixel-based (mm internal)
