@@ -1,7 +1,7 @@
 "use client";
 
+import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { X, Download } from "lucide-react";
 import type { CropData, CropBounds, DrawingMode, LatLng, PolygonArea, PixelPanel, PixelPolygon, PixelPoint, PolygonSubMode } from "../types";
 import type { Lang } from "../utils/i18n";
 import type { RoofTool } from "./RoofEditToolbar";
@@ -935,7 +935,11 @@ export default function CropPopup({
     }
   }
 
-  /** 캔버스 + 이미지를 합성하여 PNG로 다운로드한다 */
+  /**
+   * 추후 기능 사용 예정으로 현재 임시 주석처리.
+   * 캔버스 + 이미지를 합성하여 PNG로 다운로드한다.
+   */
+  /*
   function handleSave() {
     const canvas = canvasRef.current;
     const img = imgRef.current;
@@ -960,6 +964,7 @@ export default function CropPopup({
     link.href = saveCanvas.toDataURL("image/png");
     link.click();
   }
+  */
 
   return (
     /* Popup card — 외부 wrapper(page.tsx)가 zIndex/배치 담당.
@@ -1009,58 +1014,32 @@ export default function CropPopup({
           </div>
         )}
 
-        {/* Top-right buttons: Save + Close */}
-        <div
+        {/* Top-right Close button (편집 종료 — 동일 동작이 RoofEditToolbar X 에도 연결됨) */}
+        <button
+          onClick={onClose}
+          disabled={detectStatus === "detecting"}
+          title={detectStatus === "detecting" ? t("aiDetectInProgress", lang) : undefined}
           style={{
             position: "absolute",
             top: 12,
             right: 12,
             zIndex: 10,
             display: "flex",
-            gap: 8,
+            alignItems: "center",
+            justifyContent: "center",
+            width: 32,
+            height: 32,
+            border: "1px solid var(--border-primary)",
+            background: "rgba(255, 255, 255, 0.9)",
+            color: "var(--text-secondary)",
+            borderRadius: "var(--radius-md)",
+            cursor: detectStatus === "detecting" ? "not-allowed" : "pointer",
+            opacity: detectStatus === "detecting" ? 0.5 : 1,
+            backdropFilter: "blur(8px)",
           }}
         >
-          <button
-            onClick={handleSave}
-            title={t("cropSave", lang)}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 32,
-              height: 32,
-              border: "1px solid var(--border-primary)",
-              background: "rgba(255, 255, 255, 0.9)",
-              color: "var(--text-secondary)",
-              borderRadius: "var(--radius-md)",
-              cursor: "pointer",
-              backdropFilter: "blur(8px)",
-            }}
-          >
-            <Download size={16} />
-          </button>
-          <button
-            onClick={onClose}
-            disabled={detectStatus === "detecting"}
-            title={detectStatus === "detecting" ? t("aiDetectInProgress", lang) : undefined}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 32,
-              height: 32,
-              border: "1px solid var(--border-primary)",
-              background: "rgba(255, 255, 255, 0.9)",
-              color: "var(--text-secondary)",
-              borderRadius: "var(--radius-md)",
-              cursor: detectStatus === "detecting" ? "not-allowed" : "pointer",
-              opacity: detectStatus === "detecting" ? 0.5 : 1,
-              backdropFilter: "blur(8px)",
-            }}
-          >
-            <X size={16} />
-          </button>
-        </div>
+          <X size={16} />
+        </button>
 
         {/* Image + Canvas container — fills the popup, image scales to fit */}
         <div

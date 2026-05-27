@@ -204,9 +204,6 @@ const translations = {
     en: "Select an area on the map to open the roof editor.",
   },
 
-  // CropPopup save
-  cropSave: { ja: "保存", en: "Save" },
-
   // Polygon edit
   polygonMove: { ja: "移動", en: "Move" },
   polygonDelete: { ja: "削除", en: "Delete" },
