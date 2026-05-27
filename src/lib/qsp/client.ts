@@ -1,6 +1,6 @@
 // src/lib/qsp/client.ts
-// QSP 백엔드 호출 + 응답 정규화 (서버 전용).
-// 라우트 핸들러 3개가 공유하는 callQsp 헬퍼와 API 별 호출 함수를 제공한다.
+// QSP/MUSBI 백엔드 호출 + 응답 정규화 (서버 전용).
+// 라우트 핸들러가 공유하는 callQsp 헬퍼와 API 별 호출 함수를 제공한다.
 import { NextResponse } from "next/server";
 import type { z } from "zod";
 import {
@@ -14,9 +14,28 @@ import {
 } from "./schema";
 
 const QSP_API_HOST = process.env.QSP_API_HOST ?? "";
+const MUSBI_API_HOST = process.env.MUSBI_API_HOST ?? "";
 const DEFAULT_TIMEOUT_MS = 30_000;
 
 type QueryValue = string | number | undefined;
+type UpstreamOptions = {
+  host: string;
+  hostEnvName: "QSP_API_HOST" | "MUSBI_API_HOST";
+  logPrefix: "qsp" | "musbi";
+  timeoutMs?: number;
+};
+
+const QSP_UPSTREAM = {
+  host: QSP_API_HOST,
+  hostEnvName: "QSP_API_HOST",
+  logPrefix: "qsp",
+} satisfies UpstreamOptions;
+
+const MUSBI_UPSTREAM = {
+  host: MUSBI_API_HOST,
+  hostEnvName: "MUSBI_API_HOST",
+  logPrefix: "musbi",
+} satisfies UpstreamOptions;
 
 export type QspCallResult<T> =
   | { success: true; data: T }
@@ -67,19 +86,22 @@ async function callQsp<T>(
   path: string,
   query: Record<string, QueryValue>,
   schema: z.ZodType<T>,
-  timeoutMs: number = DEFAULT_TIMEOUT_MS,
+  options: UpstreamOptions = QSP_UPSTREAM,
 ): Promise<QspCallResult<T>> {
-  if (!QSP_API_HOST) {
-    console.error(`[qsp/${routeName}] QSP_API_HOST 미설정`);
+  const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  const logName = `${options.logPrefix}/${routeName}`;
+
+  if (!options.host) {
+    console.error(`[${logName}] ${options.hostEnvName} 미설정`);
     return {
       success: false,
       status: 500,
       code: 0,
-      message: "QSP_API_HOST not configured",
+      message: `${options.hostEnvName} not configured`,
     };
   }
 
-  const url = buildUrl(QSP_API_HOST, path, query);
+  const url = buildUrl(options.host, path, query);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -95,7 +117,7 @@ async function callQsp<T>(
     clearTimeout(timer);
     const name = err instanceof Error ? err.name : "";
     if (name === "AbortError") {
-      console.warn(`[qsp/${routeName}] timeout after ${timeoutMs}ms`);
+      console.warn(`[${logName}] timeout after ${timeoutMs}ms`);
       return {
         success: false,
         status: 504,
@@ -103,7 +125,7 @@ async function callQsp<T>(
         message: "Upstream timeout",
       };
     }
-    console.warn(`[qsp/${routeName}] fetch error: ${String(err)}`);
+    console.warn(`[${logName}] fetch error: ${String(err)}`);
     return {
       success: false,
       status: 502,
@@ -118,7 +140,7 @@ async function callQsp<T>(
     body = await res.json();
   } catch {
     console.warn(
-      `[qsp/${routeName}] invalid JSON from upstream (http=${res.status})`,
+      `[${logName}] invalid JSON from upstream (http=${res.status})`,
     );
     return {
       success: false,
@@ -133,7 +155,7 @@ async function callQsp<T>(
     const issueSummary = parsed.error.issues
       .map((i) => `${i.path.join(".")} ${i.message}`)
       .join("; ");
-    console.warn(`[qsp/${routeName}] schema violation: ${issueSummary}`);
+    console.warn(`[${logName}] schema violation: ${issueSummary}`);
     return {
       success: false,
       status: 502,
@@ -144,7 +166,7 @@ async function callQsp<T>(
 
   const { code, message } = extractUpstreamStatus(parsed.data);
   if (code !== 200) {
-    console.warn(`[qsp/${routeName}] upstream code=${code} message=${message}`);
+    console.warn(`[${logName}] upstream code=${code} message=${message}`);
     return {
       success: false,
       status: mapUpstreamCodeToStatus(code),
@@ -181,6 +203,7 @@ export async function postSimCheck(
     "/qm/pwrgnSimulationM/checkCalcResults",
     input,
     SimCheckResponseSchema,
+    MUSBI_UPSTREAM,
   );
   if (!result.success) return result;
   return { success: true, data: null };
@@ -195,6 +218,7 @@ export async function postSimCalc(
     "/qm/pwrgnSimulationM/calcResults",
     input,
     SimCalcResponseSchema,
+    MUSBI_UPSTREAM,
   );
 }
 

@@ -1,5 +1,5 @@
-// src/app/api/qsp/sim-calc/route.ts
-// QSP PV 발전시뮬레이션 결과 정보 조회 BFF (사양 05).
+// src/app/api/musbi/sim-calc/route.ts
+// MUSBI PV 발전시뮬레이션 결과 정보 조회 BFF (사양 05).
 import {
   envelopeError,
   envelopeSuccess,
