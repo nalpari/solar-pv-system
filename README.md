@@ -14,7 +14,6 @@
 - **자동 모듈 배치** — Portrait/Landscape 두 방향을 모두 시도해 더 많이 배치되는 쪽을 자동 채택
 - **처마 평행 배치** — `flowSetting`으로 지정한 처마 변(eave)에 평행하도록 그리드 정렬
 - **결과 표시** — 총 패널 수, 설치 용량, 패널 면적, 커버리지 비율
-- **이미지 저장** — 크롭 팝업에서 폴리곤 + 패널 오버레이가 합성된 PNG 다운로드
 - **발전 시뮬레이션 입력** — 방위, 배터리(유/무·모델), 월 평균 전기요금 입력 화면
 - **다국어** — 일본어(기본) / 영어 토글, `<html lang>` 속성 자동 동기화
 
@@ -27,7 +26,7 @@
 | TypeScript | ^5 | strict mode |
 | Tailwind CSS | v4 | `@tailwindcss/postcss` (CSS 커스텀 프로퍼티 기반) |
 | @vis.gl/react-google-maps | ^1.7.1 | Google Maps 통합 |
-| html2canvas | ^1.4.1 | 지도 영역 캡처 / PNG 저장 |
+| html2canvas | ^1.4.1 | 지도 영역 캡처 |
 | lucide-react | ^0.577.0 | 아이콘 |
 | @google/genai | ^1.0.0 | Gemini API SDK (지붕 자동 감지) |
 | sharp | ^0.34.5 | 서버 측 이미지 처리 (북방 마커 오버레이) |
@@ -101,7 +100,7 @@ docker run -p 3000:3000 -e GEMINI_API_KEY=your_gemini_api_key_here solar-pv-syst
 src/app/
 ├── components/
 │   ├── AddressSearch.tsx      # Places Autocomplete 주소 검색
-│   ├── CropPopup.tsx          # 크롭 이미지 위 캔버스 폴리곤 에디터 + 패널 렌더링 + PNG 저장
+│   ├── CropPopup.tsx          # 크롭 이미지 위 캔버스 폴리곤 에디터 + 패널 렌더링
 │   ├── Header.tsx             # 사이드바 상단 헤더
 │   ├── MapView.tsx            # Google Maps + 크롭 영역 선택 오버레이 (html2canvas 캡처)
 │   ├── PanelConfig.tsx        # 모듈 프리셋 / 폭·높이(mm) 입력
@@ -182,7 +181,7 @@ src/app/
    - `editRoof`로 꼭짓점을 드래그하거나 더블클릭으로 삭제, `undo`로 직전 작업 되돌리기
 4. 사이드바의 **傾斜設定 / Slope Settings**(寸 단위, 0.5 ~ 10)와 **모듈 선택**(프리셋 또는 커스텀 mm)을 설정합니다.
 5. **モジュール配置 / Place Modules**를 누르면 portrait/landscape 두 방향을 모두 시도해 더 많이 들어가는 쪽이 자동 적용됩니다.
-6. 결과 패널에서 총 패널 수와 설치 용량을 확인하고, 필요 시 **保存 / Save**으로 PNG를 내려받습니다.
+6. 결과 패널에서 총 패널 수와 설치 용량을 확인합니다. (PNG 저장 기능은 향후 도입 예정)
 7. **発電シミュレーション / Simulation Input** 탭에서 방위·배터리·월 평균 전기요금을 입력합니다 (결과 조회 API는 추후 연동).
 
 ## 모듈 프리셋

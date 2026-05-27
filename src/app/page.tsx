@@ -11,6 +11,7 @@ import { placePanels, placePanelsOnCanvasCm } from "./utils/panelPlacement";
 import { t } from "./utils/i18n";
 import type { Lang } from "./utils/i18n";
 import CropPopup from "./components/CropPopup";
+import AiDetectControls from "./components/AiDetectControls";
 import { detectRoofs } from "./utils/aiDetect";
 import type { NormalizedPolygon } from "./utils/aiDetect";
 import type {
@@ -109,6 +110,13 @@ export default function Home() {
   const handleCropComplete = useCallback((data: CropData) => {
     setCropData(data);
     setCropMode(false);
+    // 크롭 영역 센터를 지도 중심으로 이동 (다음 작업 시점 갱신)
+    // viewport 우선순위 해제: ViewUpdater는 viewport가 있으면 fitBounds, 없으면 panTo(center) — 주소 검색 후 viewport가 남아있는 케이스 차단
+    setViewport(null);
+    setCenter({
+      lat: (data.bounds.sw.lat + data.bounds.ne.lat) / 2,
+      lng: (data.bounds.sw.lng + data.bounds.ne.lng) / 2,
+    });
   }, []);
 
   // 크롭 변경 시 AI 분석 상태 reset (Phase 7: 자동 트리거 제거, 사용자 핸들러로 분리)
@@ -497,8 +505,13 @@ export default function Home() {
                 clearSignal={clearSignal}
                 initialAreas={aiSeedAreas}
                 detectStatus={detectStatus}
+              />
+              {/* AI 분석 트리거 — 팝업 박스 외부 하단 (RoofEditToolbar 와 대칭) */}
+              <AiDetectControls
+                detectStatus={detectStatus}
                 onStartDetect={handleStartDetect}
                 onCancelDetect={handleCancelDetect}
+                lang={lang}
               />
             </div>
           )}

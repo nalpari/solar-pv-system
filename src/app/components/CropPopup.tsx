@@ -1,7 +1,7 @@
 "use client";
 
+import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { X, Download } from "lucide-react";
 import type { CropData, CropBounds, DrawingMode, LatLng, PolygonArea, PixelPanel, PixelPolygon, PixelPoint, PolygonSubMode } from "../types";
 import type { Lang } from "../utils/i18n";
 import type { RoofTool } from "./RoofEditToolbar";
@@ -37,12 +37,8 @@ interface CropPopupProps {
   clearSignal?: number;
   /** 외부 주입 폴리곤 (AI 자동 감지 결과, 정규화 [0..1] 좌표). 새 reference로 들어올 때 내부 areas에 1회 머지 */
   initialAreas?: NormalizedPolygon[];
-  /** AI 감지 상태 머신 (Phase 7) */
+  /** AI 감지 상태 머신 (Phase 7) — 로딩 오버레이 + Close X 버튼 가드에 사용 */
   detectStatus?: "idle" | "detecting";
-  /** "AI 분석 시작" 버튼 클릭 핸들러 (Phase 7) */
-  onStartDetect?: () => void;
-  /** "AI 분석 취소" 버튼 클릭 핸들러 (Phase 7) */
-  onCancelDetect?: () => void;
 }
 
 interface AreaEntry {
@@ -204,8 +200,6 @@ export default function CropPopup({
   clearSignal,
   initialAreas,
   detectStatus = "idle",
-  onStartDetect,
-  onCancelDetect,
 }: CropPopupProps) {
   const [areas, setAreas] = useState<AreaEntry[]>([]);
   const [currentPoints, setCurrentPoints] = useState<PixelPoint[]>([]);
@@ -941,7 +935,11 @@ export default function CropPopup({
     }
   }
 
-  /** 캔버스 + 이미지를 합성하여 PNG로 다운로드한다 */
+  /**
+   * 추후 기능 사용 예정으로 현재 임시 주석처리.
+   * 캔버스 + 이미지를 합성하여 PNG로 다운로드한다.
+   */
+  /*
   function handleSave() {
     const canvas = canvasRef.current;
     const img = imgRef.current;
@@ -966,13 +964,15 @@ export default function CropPopup({
     link.href = saveCanvas.toDataURL("image/png");
     link.click();
   }
+  */
 
   return (
-    /* Popup card — 90% of map area. 외부 wrapper(page.tsx)가 zIndex/배치 담당 */
+    /* Popup card — 외부 wrapper(page.tsx)가 zIndex/배치 담당.
+       height 80%: 위 toolbar(2)+guide+아래 AI 버튼+gap 합 약 176px 공간 확보용 (반응형 vh 전환은 별도 트랙) */
     <div
       style={{
         width: "90%",
-        height: "90%",
+        height: "80%",
         position: "relative",
         background: "var(--bg-primary)",
         borderRadius: "var(--radius-lg)",
@@ -1014,116 +1014,32 @@ export default function CropPopup({
           </div>
         )}
 
-        {/* AI 분석 트리거 버튼 영역 (Phase 7: 수동 트리거 — AI 분석 시작/취소)
-            zIndex 55: 로딩 오버레이(50)보다 위에 있어야 분석 중에도 취소 버튼 클릭 가능 */}
-        {onStartDetect && (
-          <div
-            style={{
-              position: "absolute",
-              bottom: 16,
-              left: 0,
-              right: 0,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 12,
-              zIndex: 55,
-              pointerEvents: "none",
-            }}
-          >
-            <button
-              onClick={onCancelDetect}
-              disabled={detectStatus !== "detecting" || !onCancelDetect}
-              style={{
-                padding: "10px 20px",
-                borderRadius: "var(--radius-md)",
-                border: "1px solid var(--border-primary)",
-                background: "var(--bg-surface)",
-                color: "var(--text-primary)",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: detectStatus === "detecting" ? "pointer" : "not-allowed",
-                opacity: detectStatus === "detecting" ? 1 : 0.5,
-                pointerEvents: "auto",
-                transition: "all 0.15s ease",
-              }}
-            >
-              {t("aiDetectCancel", lang)}
-            </button>
-            <button
-              onClick={onStartDetect}
-              disabled={detectStatus === "detecting"}
-              style={{
-                padding: "10px 20px",
-                borderRadius: "var(--radius-md)",
-                border: "none",
-                background: "var(--accent-blue)",
-                color: "#fff",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: detectStatus === "detecting" ? "not-allowed" : "pointer",
-                opacity: detectStatus === "detecting" ? 0.6 : 1,
-                pointerEvents: "auto",
-                transition: "all 0.15s ease",
-              }}
-            >
-              {detectStatus === "detecting" ? t("aiDetectInProgress", lang) : t("aiDetectStart", lang)}
-            </button>
-          </div>
-        )}
-
-        {/* Top-right buttons: Save + Close */}
-        <div
+        {/* Top-right Close button (편집 종료 — 동일 동작이 RoofEditToolbar X 에도 연결됨) */}
+        <button
+          onClick={onClose}
+          disabled={detectStatus === "detecting"}
+          title={detectStatus === "detecting" ? t("aiDetectInProgress", lang) : undefined}
           style={{
             position: "absolute",
             top: 12,
             right: 12,
             zIndex: 10,
             display: "flex",
-            gap: 8,
+            alignItems: "center",
+            justifyContent: "center",
+            width: 32,
+            height: 32,
+            border: "1px solid var(--border-primary)",
+            background: "rgba(255, 255, 255, 0.9)",
+            color: "var(--text-secondary)",
+            borderRadius: "var(--radius-md)",
+            cursor: detectStatus === "detecting" ? "not-allowed" : "pointer",
+            opacity: detectStatus === "detecting" ? 0.5 : 1,
+            backdropFilter: "blur(8px)",
           }}
         >
-          <button
-            onClick={handleSave}
-            title={t("cropSave", lang)}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 32,
-              height: 32,
-              border: "1px solid var(--border-primary)",
-              background: "rgba(255, 255, 255, 0.9)",
-              color: "var(--text-secondary)",
-              borderRadius: "var(--radius-md)",
-              cursor: "pointer",
-              backdropFilter: "blur(8px)",
-            }}
-          >
-            <Download size={16} />
-          </button>
-          <button
-            onClick={onClose}
-            disabled={detectStatus === "detecting"}
-            title={detectStatus === "detecting" ? t("aiDetectInProgress", lang) : undefined}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 32,
-              height: 32,
-              border: "1px solid var(--border-primary)",
-              background: "rgba(255, 255, 255, 0.9)",
-              color: "var(--text-secondary)",
-              borderRadius: "var(--radius-md)",
-              cursor: detectStatus === "detecting" ? "not-allowed" : "pointer",
-              opacity: detectStatus === "detecting" ? 0.5 : 1,
-              backdropFilter: "blur(8px)",
-            }}
-          >
-            <X size={16} />
-          </button>
-        </div>
+          <X size={16} />
+        </button>
 
         {/* Image + Canvas container — fills the popup, image scales to fit */}
         <div

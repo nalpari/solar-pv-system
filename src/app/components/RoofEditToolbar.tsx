@@ -164,14 +164,10 @@ export default function RoofEditToolbar({ lang, activeTool, onToolChange, onActi
         </button>
       </div>
 
-      {/* Bottom guide text (위치/zIndex는 외부 wrapper가 담당. 도움 메시지 배치는 별도 작업) */}
+      {/* Guide text — 외부 wrapper의 flex column에서 toolbar 바로 아래로 자연 배치 */}
       {currentTool && (
         <div
           style={{
-            position: "absolute",
-            bottom: 12,
-            left: "50%",
-            transform: "translateX(-50%)",
             padding: "8px 20px",
             background: "rgba(0, 0, 0, 0.7)",
             borderRadius: "var(--radius-lg)",
