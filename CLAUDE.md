@@ -19,9 +19,10 @@ pnpm dev                     # http://localhost:3000
 ## Always Do
 
 - 모든 답변과 추론과정은 한국어로 작성한다.
-- 가급적 react 19.2 버전의 최신 문법을 사용한다.
-- task가 끝나면 서브 에이전트를 사용해서 린트체크, 타입체크, 빌드체크를 수행한다.
+- 가급적 react 19.2, nextjs 16 버전의 최신 문법을 사용한다.
+- 코드 파일(`.ts/.tsx/.js/.jsx/.mjs/.cjs`)을 수정한 턴이 끝나면 Stop 훅이 자동으로 `pnpm lint` + `npx tsc --noEmit` 을 실행한다 (`.claude/hooks/check-lint-tsc.sh`). 실패 시 stderr 가 Claude 에게 피드백되어 자동 수정 루프에 들어간다.
 - 린트체크시 오류가 있으면 반드시 해결하고 넘어가도록 하고, 경고가 있더라도 해결하려고 노력한다.
+- 빌드 검증(`pnpm build`)은 자동 훅에 포함되지 않는다 — 큰 변경 후 또는 사용자가 명시적으로 요청할 때만 수동 실행한다.
 - 커밋시에 접두사는 영어로 나머지 타이틀과 내용은 한국어로 작성한다.
 - task 완료시 CLAUDE.md, AGENTS.md 및 README.md 문서에 업데이트가 필요하면 진행한다.
 - 작업시 한 문장으로 설명되는 의미있는 단위로 commit 한다.
@@ -53,6 +54,8 @@ pnpm dev                     # http://localhost:3000
 - **Gemini API** — `@google/genai` ^1.0.0 (AI 지붕 자동 감지)
 - **sharp** ^0.34.5 — 서버 측 이미지 처리 (북방 마커 오버레이)
 - **zod** ^4.3.6 — API 응답 스키마 검증
+- **zod-openapi** ^5.4 — 기존 zod 스키마 → OpenAPI 3.1 문서 생성
+- **@scalar/nextjs-api-reference** ^0.10 — `/reference` 페이지에서 Scalar UI 렌더
 
 ## Architecture
 
@@ -62,7 +65,11 @@ pnpm dev                     # http://localhost:3000
 src/
 ├── app/
 │   ├── api/
-│   │   └── detect-roof/      # /api/detect-roof — Gemini Vision 호출 라우트 (서버)
+│   │   ├── detect-roof/      # /api/detect-roof — Gemini Vision 호출 라우트 (서버)
+│   │   ├── openapi/          # /api/openapi — buildOpenApiDocument() JSON 제공
+│   │   ├── qsp/              # /api/qsp/* — QSP BFF (btc-items)
+│   │   └── musbi/            # /api/musbi/* — MUSBI BFF (sim-check / sim-calc)
+│   ├── reference/           # /reference — Scalar API Reference UI
 │   ├── components/          # UI components (all "use client")
 │   │   ├── AddressSearch    # Google Places autocomplete
 │   │   ├── CropPopup        # Crop image popup with Canvas polygon editor, panel rendering, PNG save
@@ -81,8 +88,19 @@ src/
 │   ├── layout.tsx           # Root layout (Server Component, html lang="ja")
 │   └── page.tsx             # Main page (Client Component, owns all state, hosts design/simulation tabs)
 └── lib/
-    └── detect/              # Gemini Vision 백엔드 모듈 (schema.ts / prompt.ts / overlay.ts)
+    ├── detect/              # Gemini Vision 백엔드 모듈 (schema.ts / prompt.ts / overlay.ts)
+    ├── qsp/                 # QSP BFF 모듈 (schema.ts / client.ts)
+    └── openapi.ts           # 기존 zod 스키마 → OpenAPI 3.1 문서 빌더 (SSOT)
 ```
+
+### API Documentation
+
+- 사양 SSOT: `src/lib/qsp/schema.ts`, `src/lib/detect/schema.ts` 의 zod 스키마
+- 빌더: `src/lib/openapi.ts` — `createDocument({ reused: "ref" })` 로 OpenAPI 3.1 생성. `.meta({ id })` 부여된 스키마는 `components.schemas` 에 자동 등록되며 paths 에서 `$ref` 로 참조된다 (8개 컴포넌트: `DetectRequest`, `DetectResponse`, `DetectPolygon`, `BboxResponse`, `ErrorEnvelope`, `BtcItem`, `SimulationInput`, `SimCalcResponse` + 3개 응답 envelope `BtcItemsResponse` / `SimCheckResponse` / `SimCalcSuccessResponse`)
+- 엔드포인트 (둘 다 `ENABLE_API_DOCS=true` 환경에서만 노출, 그 외에는 404 — 내부 API 명세 노출 차단. `NODE_ENV` 가드는 dev/prod 모두 production 빌드를 쓰는 배포 모델과 충돌하므로 사용하지 않음):
+  - `GET /api/openapi` — OpenAPI 3.1 JSON (모듈 스코프 lazy memoize)
+  - `GET /reference` — Scalar 기반 API Reference UI (dev: http://localhost:3000/reference)
+- 라우트 보호: `/api/qsp/*`, `/api/musbi/*` 는 `src/proxy.ts` 에서 Origin 검증 + per-IP rate limit (1분 30회, in-memory sliding window) 적용 — 단일 인스턴스 배포 전제, 스케일아웃 시 분산 저장소로 교체 필요. Next.js 16 의 proxy 컨벤션을 따른다 (구 `middleware` 컨벤션 deprecated)
 
 ### Key Patterns
 
@@ -143,10 +161,37 @@ src/
 
 ## Environment Variables
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Yes | Google Maps API key (Maps JS, Places, Geometry APIs) |
-| `GEMINI_API_KEY` | Yes | Gemini API key for roof auto-detection. Server route only (no `NEXT_PUBLIC_` prefix) |
+`.env` 는 세 파일로 분리되어 운영됩니다:
+
+| 파일 | 역할 | Jenkins credential |
+|------|------|---------------------|
+| `.env` | 공통 키 (dev/prod 모두 동일) | `pv-simulation-env-common` (file) |
+| `.env.dev` | dev 배포 전용 오버라이드 | `pv-simulation-env-dev` (file) |
+| `.env.prod` | prod 배포 전용 오버라이드 | `pv-simulation-env-prod` (file) |
+
+Jenkinsfile 의 `Load Env Credential` 스테이지에서 `cat common + 선택된 profile > .env` 로 병합되며, 같은 키가 양쪽에 있으면 **profile 파일이 공통을 오버라이드** 합니다. docker-compose 는 `env_file: .env` 로 통째 마운트해 컨테이너에 주입합니다.
+
+> ⚠️ 파일명에 `.env.development` / `.env.production` 을 쓰지 않는 이유 — Next.js 가 `NODE_ENV` 에 따라 해당 파일을 자동 로드하기 때문. 배포는 dev/prod 모두 `NODE_ENV=production` 으로 빌드되므로 의미 충돌을 피하기 위해 `.env.dev` / `.env.prod` 로 명명합니다.
+
+| Variable | 위치 | 빌드/런타임 | 설명 |
+|----------|------|-------------|------|
+| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | `.env` (공통) | **빌드타임 ARG** (클라이언트 번들 인라인) | Google Maps API key (Maps JS, Places, Geometry APIs) |
+| `NEXT_PUBLIC_AWS_S3_BASE_URL` | `.env` (공통) | **빌드타임 ARG** (클라이언트 번들 인라인) | S3 기준 이미지 베이스 URL |
+| `GEMINI_API_KEY` | `.env` (공통) | 런타임 | Gemini API key. Server route only |
+| `GEMINI_MODEL` | `.env` (공통) | 런타임 | Gemini model identifier (예: `"gemini-3.1-pro-preview"`). 미설정 시 `/api/detect-roof`는 500 응답 |
+| `AWS_REGION` | `.env` (공통) | 런타임 | S3 리전 (예: `ap-northeast-1`) |
+| `AMPLIFY_BUCKET` | `.env` (공통) | 런타임 | S3 버킷명 (지붕 형상 추론 기준 이미지 업로드용) |
+| `AWS_ACCESS_KEY_ID` | `.env` (공통) | 런타임 | S3 업로드 IAM 자격 |
+| `AWS_SECRET_ACCESS_KEY` | `.env` (공통) | 런타임 | S3 업로드 IAM 자격 |
+| `QSP_API_HOST` | `.env.dev` / `.env.prod` | 런타임 | QSalesPlatform 마스터 데이터 API 호스트. 환경별로 다름 |
+| `MUSBI_API_HOST` | `.env.dev` / `.env.prod` | 런타임 | MUSBI 시뮬레이션 API 호스트. 환경별로 다름 |
+| `ENABLE_API_DOCS` | `.env.dev` / `.env.prod` | 런타임 | `"true"` 일 때만 `/api/openapi` 와 `/reference` 노출. dev=true / prod=false 권장 |
+
+새 키 추가 워크플로:
+- **공통 키**: Jenkins UI 의 `pv-simulation-env-common` credential 파일에 추가
+- **환경별 키**: `pv-simulation-env-dev` / `pv-simulation-env-prod` credential 파일에 추가
+- **`NEXT_PUBLIC_*` 키**: 위 + Dockerfile 에 `ARG`/`ENV` 2줄 + docker-compose.yml 각 서비스 `build.args` 에 1줄 추가
+- **모든 키**: Jenkinsfile `Validate Environment` 스테이지의 `: "${VAR:?...}"` 검증 라인 추가 (전수 검증 정책)
 
 ## Testing
 

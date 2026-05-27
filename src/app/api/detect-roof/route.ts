@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { ApiError, GoogleGenAI, Type, type Schema } from "@google/genai";
 import sharp from "sharp";
+import { envelopeError } from "@/lib/qsp/client";
 import {
   BboxResponseSchema,
   DetectResponseSchema,
@@ -14,7 +15,6 @@ import {
   BBOX_CROP_PADDING,
   BBOX_SYSTEM_PROMPT,
   BBOX_USER_PROMPT,
-  DETECT_MODEL,
   ROOF_DETECT_SYSTEM_PROMPT,
   ROOF_DETECT_USER_PROMPT,
 } from "@/lib/detect/prompt";
@@ -27,6 +27,8 @@ const MAX_REQUEST_BYTES = 5 * 1024 * 1024;
 // 256 = "data:image/...;base64," 헤더 + JSON wrapper 여유.
 const MAX_DATA_URL_LENGTH = Math.ceil((MAX_REQUEST_BYTES * 4) / 3) + 256;
 const MAX_IMAGE_PIXELS = 25_000_000;
+// 환경변수로 모델 식별자 주입. 미설정 시 POST 핸들러에서 500 응답으로 차단.
+const DETECT_MODEL = process.env.GEMINI_MODEL ?? "";
 
 type MediaType = "image/png" | "image/jpeg" | "image/webp";
 
@@ -344,10 +346,11 @@ export async function POST(req: Request) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     console.error("[detect-roof] GEMINI_API_KEY 미설정");
-    return NextResponse.json(
-      { error: "Server is missing GEMINI_API_KEY" },
-      { status: 500 },
-    );
+    return envelopeError(500, 500, "Server is missing GEMINI_API_KEY");
+  }
+  if (!DETECT_MODEL) {
+    console.error("[detect-roof] GEMINI_MODEL 미설정");
+    return envelopeError(500, 500, "Server is missing GEMINI_MODEL");
   }
 
   // Boston H1: Content-Length 헤더는 위조/누락 시 NaN으로 분기 통과 가능 →
@@ -356,39 +359,31 @@ export async function POST(req: Request) {
   try {
     raw = await req.arrayBuffer();
   } catch {
-    return NextResponse.json(
-      { error: "Failed to read request body" },
-      { status: 400 },
-    );
+    return envelopeError(400, 400, "Failed to read request body");
   }
   if (raw.byteLength === 0) {
-    return NextResponse.json({ error: "Empty body" }, { status: 400 });
+    return envelopeError(400, 400, "Empty body");
   }
   if (raw.byteLength > MAX_DATA_URL_LENGTH) {
-    return NextResponse.json(
-      { error: "Request body too large" },
-      { status: 413 },
-    );
+    return envelopeError(413, 413, "Request body too large");
   }
 
   let body: DetectRequestBody;
   try {
     body = JSON.parse(new TextDecoder().decode(raw)) as DetectRequestBody;
   } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    return envelopeError(400, 400, "Invalid JSON body");
   }
 
   if (!body?.imageDataUrl || typeof body.imageDataUrl !== "string") {
-    return NextResponse.json(
-      { error: "imageDataUrl is required" },
-      { status: 400 },
-    );
+    return envelopeError(400, 400, "imageDataUrl is required");
   }
   const image = parseDataUrl(body.imageDataUrl);
   if (!image) {
-    return NextResponse.json(
-      { error: "imageDataUrl must be a base64 data URL (png/jpeg/webp)" },
-      { status: 400 },
+    return envelopeError(
+      400,
+      400,
+      "imageDataUrl must be a base64 data URL (png/jpeg/webp)",
     );
   }
 
@@ -400,9 +395,10 @@ export async function POST(req: Request) {
   } catch (err) {
     if (err instanceof ApiError) return respondWithUpstreamError(err, "호출");
     console.error("[detect-roof] 분석 실패:", err);
-    return NextResponse.json(
-      { error: "분석에 일시적으로 실패했습니다. 잠시 후 다시 시도하세요." },
-      { status: 502 },
+    return envelopeError(
+      502,
+      502,
+      "분석에 일시적으로 실패했습니다. 잠시 후 다시 시도하세요.",
     );
   }
 }
@@ -421,5 +417,5 @@ function respondWithUpstreamError(err: ApiError, stage: string) {
         : "분석 서비스가 일시적으로 응답하지 않습니다. 잠시 후 다시 시도하세요.";
   // Clamp upstream status to safe client-visible codes.
   const clientStatus = err.status === 429 ? 429 : 502;
-  return NextResponse.json({ error: clientMessage }, { status: clientStatus });
+  return envelopeError(clientStatus, clientStatus, clientMessage);
 }

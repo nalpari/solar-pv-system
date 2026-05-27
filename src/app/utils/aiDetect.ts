@@ -24,13 +24,31 @@ export interface DetectApiResponse {
 }
 
 /**
+ * `/api/detect-roof` 에러 응답 (envelopeError 포맷).
+ * - status: HTTP status code (429 / 502 / 504 등으로 클라이언트 분기 가능)
+ * - code: 서버 envelope 의 error.code (현재는 status 와 동일)
+ * 기존 호출자는 Error.message 만 사용하므로 호환 유지된다.
+ */
+export class DetectApiError extends Error {
+  readonly status: number;
+  readonly code: number | undefined;
+  constructor(status: number, message: string, code?: number) {
+    super(message);
+    this.name = "DetectApiError";
+    this.status = status;
+    this.code = code;
+  }
+}
+
+/**
  * Gemini API에 크롭 이미지를 보내 지붕면 폴리곤 자동 감지
  *
  * 응답의 azimuth/tilt/confidence/label은 D4 결정에 따라 버리고
  * points와 reason만 의미를 가짐
  *
  * @param signal AbortSignal — cropData 교체 시 진행 중 fetch 취소(F-1)
- * @throws 네트워크 실패 또는 API 에러 응답 시 (D6: 호출자가 메시지만 표시)
+ * @throws DetectApiError — API 가 envelope 에러를 반환한 경우 (status + code 보존)
+ * @throws Error — 네트워크 실패 등 그 외
  *         AbortError는 호출자가 무시해야 함 (의도된 취소)
  */
 export async function detectRoofs(
@@ -48,8 +66,14 @@ export async function detectRoofs(
   });
 
   if (!res.ok) {
-    const err = (await res.json().catch(() => ({}))) as { error?: string };
-    throw new Error(err.error ?? `API 호출 실패 (HTTP ${res.status})`);
+    const err = (await res.json().catch(() => ({}))) as {
+      error?: { message?: string; code?: number };
+    };
+    throw new DetectApiError(
+      res.status,
+      err.error?.message ?? `API 호출 실패 (HTTP ${res.status})`,
+      err.error?.code,
+    );
   }
 
   return res.json();
