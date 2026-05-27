@@ -1,6 +1,6 @@
 // src/lib/qsp/client.ts
-// QSP 백엔드 호출 + 응답 정규화 (서버 전용).
-// 라우트 핸들러 3개가 공유하는 callQsp 헬퍼와 API 별 호출 함수를 제공한다.
+// QSP/MUSBI 백엔드 호출 + 응답 정규화 (서버 전용).
+// 라우트 핸들러가 공유하는 callQsp 헬퍼와 API 별 호출 함수를 제공한다.
 import { NextResponse } from "next/server";
 import type { z } from "zod";
 import {
@@ -14,9 +14,28 @@ import {
 } from "./schema";
 
 const QSP_API_HOST = process.env.QSP_API_HOST ?? "";
+const MUSBI_API_HOST = process.env.MUSBI_API_HOST ?? "";
 const DEFAULT_TIMEOUT_MS = 30_000;
 
 type QueryValue = string | number | undefined;
+type UpstreamOptions = {
+  host: string;
+  hostEnvName: "QSP_API_HOST" | "MUSBI_API_HOST";
+  logPrefix: "qsp" | "musbi";
+  timeoutMs?: number;
+};
+
+const QSP_UPSTREAM = {
+  host: QSP_API_HOST,
+  hostEnvName: "QSP_API_HOST",
+  logPrefix: "qsp",
+} satisfies UpstreamOptions;
+
+const MUSBI_UPSTREAM = {
+  host: MUSBI_API_HOST,
+  hostEnvName: "MUSBI_API_HOST",
+  logPrefix: "musbi",
+} satisfies UpstreamOptions;
 
 export type QspCallResult<T> =
   | { success: true; data: T }
@@ -62,24 +81,29 @@ function mapUpstreamCodeToStatus(code: number): number {
   return 502; // 그 외 upstream 오류
 }
 
+// upstream 3개 API (btc-items / sim-check / sim-calc) 모두 GET + querystring 사양.
+// BFF 라우트가 POST/JSON 으로 받더라도 여기서 querystring 으로 변환해 GET 으로 호출한다.
 async function callQsp<T>(
   routeName: string,
   path: string,
   query: Record<string, QueryValue>,
   schema: z.ZodType<T>,
-  timeoutMs: number = DEFAULT_TIMEOUT_MS,
+  options: UpstreamOptions = QSP_UPSTREAM,
 ): Promise<QspCallResult<T>> {
-  if (!QSP_API_HOST) {
-    console.error(`[qsp/${routeName}] QSP_API_HOST 미설정`);
+  const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  const logName = `${options.logPrefix}/${routeName}`;
+
+  if (!options.host) {
+    console.error(`[${logName}] ${options.hostEnvName} 미설정`);
     return {
       success: false,
       status: 500,
       code: 0,
-      message: "QSP_API_HOST not configured",
+      message: `${options.hostEnvName} not configured`,
     };
   }
 
-  const url = buildUrl(QSP_API_HOST, path, query);
+  const url = buildUrl(options.host, path, query);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -95,7 +119,7 @@ async function callQsp<T>(
     clearTimeout(timer);
     const name = err instanceof Error ? err.name : "";
     if (name === "AbortError") {
-      console.warn(`[qsp/${routeName}] timeout after ${timeoutMs}ms`);
+      console.warn(`[${logName}] timeout after ${timeoutMs}ms`);
       return {
         success: false,
         status: 504,
@@ -103,7 +127,7 @@ async function callQsp<T>(
         message: "Upstream timeout",
       };
     }
-    console.warn(`[qsp/${routeName}] fetch error: ${String(err)}`);
+    console.warn(`[${logName}] fetch error: ${String(err)}`);
     return {
       success: false,
       status: 502,
@@ -118,7 +142,7 @@ async function callQsp<T>(
     body = await res.json();
   } catch {
     console.warn(
-      `[qsp/${routeName}] invalid JSON from upstream (http=${res.status})`,
+      `[${logName}] invalid JSON from upstream (http=${res.status})`,
     );
     return {
       success: false,
@@ -133,7 +157,7 @@ async function callQsp<T>(
     const issueSummary = parsed.error.issues
       .map((i) => `${i.path.join(".")} ${i.message}`)
       .join("; ");
-    console.warn(`[qsp/${routeName}] schema violation: ${issueSummary}`);
+    console.warn(`[${logName}] schema violation: ${issueSummary}`);
     return {
       success: false,
       status: 502,
@@ -144,7 +168,7 @@ async function callQsp<T>(
 
   const { code, message } = extractUpstreamStatus(parsed.data);
   if (code !== 200) {
-    console.warn(`[qsp/${routeName}] upstream code=${code} message=${message}`);
+    console.warn(`[${logName}] upstream code=${code} message=${message}`);
     return {
       success: false,
       status: mapUpstreamCodeToStatus(code),
@@ -181,6 +205,7 @@ export async function postSimCheck(
     "/qm/pwrgnSimulationM/checkCalcResults",
     input,
     SimCheckResponseSchema,
+    MUSBI_UPSTREAM,
   );
   if (!result.success) return result;
   return { success: true, data: null };
@@ -195,6 +220,7 @@ export async function postSimCalc(
     "/qm/pwrgnSimulationM/calcResults",
     input,
     SimCalcResponseSchema,
+    MUSBI_UPSTREAM,
   );
 }
 
@@ -221,4 +247,46 @@ export function formatZodError(error: z.ZodError): string {
   return error.issues
     .map((i) => `${i.path.join(".") || "(root)"} ${i.message}`)
     .join("; ");
+}
+
+// Boston H1: req.json() 직접 호출은 body 크기 제한 없이 메모리/CPU 를 소비.
+// arrayBuffer 로 먼저 읽고 byte cap 으로 차단한 뒤 파싱한다.
+// 호출자는 success 분기에서 unknown 을 zod 로 검증한다.
+export type ReadJsonBodyResult =
+  | { success: true; data: unknown }
+  | { success: false; response: NextResponse };
+
+export async function readJsonBodyWithLimit(
+  req: Request,
+  maxBytes: number,
+): Promise<ReadJsonBodyResult> {
+  let raw: ArrayBuffer;
+  try {
+    raw = await req.arrayBuffer();
+  } catch {
+    return {
+      success: false,
+      response: envelopeError(400, 400, "Failed to read request body"),
+    };
+  }
+  if (raw.byteLength === 0) {
+    return { success: false, response: envelopeError(400, 400, "Empty body") };
+  }
+  if (raw.byteLength > maxBytes) {
+    return {
+      success: false,
+      response: envelopeError(413, 413, "Request body too large"),
+    };
+  }
+  try {
+    return {
+      success: true,
+      data: JSON.parse(new TextDecoder().decode(raw)) as unknown,
+    };
+  } catch {
+    return {
+      success: false,
+      response: envelopeError(400, 400, "Invalid JSON body"),
+    };
+  }
 }

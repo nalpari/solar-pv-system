@@ -67,7 +67,8 @@ src/
 │   ├── api/
 │   │   ├── detect-roof/      # /api/detect-roof — Gemini Vision 호출 라우트 (서버)
 │   │   ├── openapi/          # /api/openapi — buildOpenApiDocument() JSON 제공
-│   │   └── qsp/              # /api/qsp/* — QSP BFF 3종 (btc-items / sim-check / sim-calc)
+│   │   ├── qsp/              # /api/qsp/* — QSP BFF (btc-items)
+│   │   └── musbi/            # /api/musbi/* — MUSBI BFF (sim-check / sim-calc)
 │   ├── reference/           # /reference — Scalar API Reference UI
 │   ├── components/          # UI components (all "use client")
 │   │   ├── AddressSearch    # Google Places autocomplete
@@ -99,7 +100,7 @@ src/
 - 엔드포인트 (둘 다 `ENABLE_API_DOCS=true` 환경에서만 노출, 그 외에는 404 — 내부 API 명세 노출 차단. `NODE_ENV` 가드는 dev/prod 모두 production 빌드를 쓰는 배포 모델과 충돌하므로 사용하지 않음):
   - `GET /api/openapi` — OpenAPI 3.1 JSON (모듈 스코프 lazy memoize)
   - `GET /reference` — Scalar 기반 API Reference UI (dev: http://localhost:3000/reference)
-- 라우트 보호: `/api/qsp/*` 는 `src/proxy.ts` 에서 Origin 검증 + per-IP rate limit (1분 30회, in-memory sliding window) 적용 — 단일 인스턴스 배포 전제, 스케일아웃 시 분산 저장소로 교체 필요. Next.js 16 의 proxy 컨벤션을 따른다 (구 `middleware` 컨벤션 deprecated)
+- 라우트 보호: `/api/qsp/*`, `/api/musbi/*` 는 `src/proxy.ts` 에서 Origin 검증 + per-IP rate limit (1분 30회, in-memory sliding window) 적용 — 단일 인스턴스 배포 전제, 스케일아웃 시 분산 저장소로 교체 필요. Next.js 16 의 proxy 컨벤션을 따른다 (구 `middleware` 컨벤션 deprecated)
 
 ### Key Patterns
 
@@ -183,6 +184,7 @@ Jenkinsfile 의 `Load Env Credential` 스테이지에서 `cat common + 선택된
 | `AWS_ACCESS_KEY_ID` | `.env` (공통) | 런타임 | S3 업로드 IAM 자격 |
 | `AWS_SECRET_ACCESS_KEY` | `.env` (공통) | 런타임 | S3 업로드 IAM 자격 |
 | `QSP_API_HOST` | `.env.dev` / `.env.prod` | 런타임 | QSalesPlatform 마스터 데이터 API 호스트. 환경별로 다름 |
+| `MUSBI_API_HOST` | `.env.dev` / `.env.prod` | 런타임 | MUSBI 시뮬레이션 API 호스트. 환경별로 다름 |
 | `ENABLE_API_DOCS` | `.env.dev` / `.env.prod` | 런타임 | `"true"` 일 때만 `/api/openapi` 와 `/reference` 노출. dev=true / prod=false 권장 |
 
 새 키 추가 워크플로:

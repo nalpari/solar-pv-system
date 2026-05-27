@@ -136,14 +136,15 @@ export function buildOpenApiDocument() {
       version: "0.1.0",
       description:
         "Solar PV 옥상 패널 레이아웃 플래너의 내부 API. " +
-        "지붕 자동 감지(Gemini Vision)와 QSP 시뮬레이션 BFF 4종을 노출한다.",
+        "지붕 자동 감지(Gemini Vision)와 QSP/MUSBI BFF를 노출한다.",
     },
     servers: [
       { url: "http://localhost:3000", description: "Local dev" },
     ],
     tags: [
       { name: "detect", description: "지붕 자동 감지" },
-      { name: "qsp", description: "QSP.Connector BFF — 마스터/시뮬레이션" },
+      { name: "qsp", description: "QSP.Connector BFF — 마스터" },
+      { name: "musbi", description: "MUSBI BFF — 시뮬레이션" },
     ],
     // DetectPolygon / BboxResponse 는 paths 에서 직접 참조되지 않으므로
     // 여기서 명시 등록해 노출. 그 외 .meta({id}) 부여 스키마는 paths 안
@@ -198,9 +199,9 @@ export function buildOpenApiDocument() {
           },
         },
       },
-      "/api/qsp/sim-check": {
+      "/api/musbi/sim-check": {
         post: {
-          tags: ["qsp"],
+          tags: ["musbi"],
           summary: "PV 발전 시뮬레이션 결과 사전 검증",
           description: "계산 전 입력 파라미터 검증을 수행한다. (사양 04)",
           requestBody: {
@@ -221,9 +222,9 @@ export function buildOpenApiDocument() {
           },
         },
       },
-      "/api/qsp/sim-calc": {
+      "/api/musbi/sim-calc": {
         post: {
-          tags: ["qsp"],
+          tags: ["musbi"],
           summary: "PV 발전 시뮬레이션 결과 계산",
           description: "실제 시뮬레이션 결과를 계산하여 반환한다. (사양 05)",
           requestBody: {
