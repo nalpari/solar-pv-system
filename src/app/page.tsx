@@ -111,6 +111,8 @@ export default function Home() {
     setCropData(data);
     setCropMode(false);
     // 크롭 영역 센터를 지도 중심으로 이동 (다음 작업 시점 갱신)
+    // viewport 우선순위 해제: ViewUpdater는 viewport가 있으면 fitBounds, 없으면 panTo(center) — 주소 검색 후 viewport가 남아있는 케이스 차단
+    setViewport(null);
     setCenter({
       lat: (data.bounds.sw.lat + data.bounds.ne.lat) / 2,
       lng: (data.bounds.sw.lng + data.bounds.ne.lng) / 2,
