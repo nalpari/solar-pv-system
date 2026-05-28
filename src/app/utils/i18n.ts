@@ -172,7 +172,11 @@ const translations = {
     ja: "直前の操作を元に戻します",
     en: "Undo the last operation",
   },
-  retEndEditing: { ja: "編集終了", en: "End Editing" },
+  retComplete: { ja: "作成完了", en: "Complete" },
+  retCompleteGuide: {
+    ja: "編集を終え、選択/移動モードに戻ります",
+    en: "Finish editing and return to select/move mode",
+  },
 
   // North roof warning
   northRoofWarning: {

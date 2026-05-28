@@ -9,13 +9,13 @@ import {
   Trash2,
   XCircle,
   Undo2,
-  X,
+  CheckCircle2,
 } from "lucide-react";
 import { t } from "../utils/i18n";
 import type { Lang } from "../utils/i18n";
 
 export type RoofTool = "select" | "drawRoof" | "drawOpening" | "flowSetting" | "editRoof";
-export type RoofAction = "deleteSelected" | "deleteAll" | "undo";
+export type RoofAction = "deleteSelected" | "deleteAll" | "undo" | "complete";
 export type RoofEditTool = RoofTool | RoofAction;
 
 interface ToolDef {
@@ -36,6 +36,7 @@ const TOOLS: ToolDef[] = [
   { id: "deleteSelected", icon: Trash2, labelKey: "retDeleteSelected", guideKey: "retDeleteSelectedGuide", isAction: true, danger: true },
   { id: "deleteAll", icon: XCircle, labelKey: "retDeleteAll", guideKey: "retDeleteAllGuide", isAction: true, danger: true },
   { id: "undo", icon: Undo2, labelKey: "retUndo", guideKey: "retUndoGuide", isAction: true },
+  { id: "complete", icon: CheckCircle2, labelKey: "retComplete", guideKey: "retCompleteGuide", isAction: true },
 ];
 
 interface RoofEditToolbarProps {
@@ -43,10 +44,9 @@ interface RoofEditToolbarProps {
   activeTool: RoofTool;
   onToolChange: (tool: RoofTool) => void;
   onAction: (action: RoofAction) => void;
-  onClose: () => void;
 }
 
-export default function RoofEditToolbar({ lang, activeTool, onToolChange, onAction, onClose }: RoofEditToolbarProps) {
+export default function RoofEditToolbar({ lang, activeTool, onToolChange, onAction }: RoofEditToolbarProps) {
   const currentTool = TOOLS.find((tool) => tool.id === activeTool);
 
   function handleToolClick(tool: ToolDef) {
@@ -78,8 +78,8 @@ export default function RoofEditToolbar({ lang, activeTool, onToolChange, onActi
           const Icon = tool.icon;
           return (
             <div key={tool.id} style={{ display: "flex", alignItems: "center" }}>
-              {/* 구분선: select 뒤, editRoof 뒤 */}
-              {(i === 1 || i === 5) && (
+              {/* 구분선: select 뒤, editRoof 뒤, undo 뒤(작성 완료 앞) */}
+              {(i === 1 || i === 5 || i === 8) && (
                 <div
                   style={{
                     width: 1,
@@ -128,40 +128,6 @@ export default function RoofEditToolbar({ lang, activeTool, onToolChange, onActi
           );
         })}
 
-        {/* 구분선 + 편집 종료 */}
-        <div
-          style={{
-            width: 1,
-            height: 24,
-            background: "var(--border-primary)",
-            margin: "0 4px",
-            flexShrink: 0,
-          }}
-        />
-        <button
-          onClick={onClose}
-          title={t("retEndEditing", lang)}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: 36,
-            height: 36,
-            borderRadius: "var(--radius-md)",
-            border: "none",
-            background: "transparent",
-            color: "var(--text-secondary)",
-            transition: "all 0.15s ease",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "var(--bg-surface-hover)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "transparent";
-          }}
-        >
-          <X size={18} />
-        </button>
       </div>
 
       {/* Guide text — 외부 wrapper의 flex column에서 toolbar 바로 아래로 자연 배치 */}

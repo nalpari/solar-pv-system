@@ -486,9 +486,11 @@ export default function Home() {
                     setUndoSignal((n) => n + 1);
                   } else if (action === "deleteAll") {
                     handleDeleteAll();
+                  } else if (action === "complete") {
+                    // Slide 21: 작성 완료 → 선택/이동 모드 자동 전환
+                    setRoofEditTool("select");
                   }
                 }}
-                onClose={() => setRoofEditTool("select")}
               />
               <CropPopup
                 cropData={cropData}
