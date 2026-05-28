@@ -95,7 +95,7 @@ export function LnbDesign({
         dir="rtl"
         style={{ scrollbarWidth: "thin", scrollbarColor: "#c4c4c4 transparent" }}
       >
-        <div className="flex flex-col divide-y divide-[#eef2f7]" dir="ltr">
+        <div className="flex flex-col gap-3" dir="ltr">
           {/* Section 1: モジュール配置 (address + building confirm) */}
           <Section
             title={t("sectionModulePlacement", lang)}

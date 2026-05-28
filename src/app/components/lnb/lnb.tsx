@@ -20,7 +20,7 @@ interface LnbProps {
 export function Lnb({ tab, onTabChange, lang, onLangToggle, design, sim }: LnbProps) {
   return (
     <aside
-      className="w-[360px] h-screen flex flex-col px-6 pt-6 bg-white/85 backdrop-blur-[7px] shrink-0"
+      className="w-[360px] h-screen flex flex-col px-6 pt-6 bg-[#ededed] shrink-0"
       style={{ fontFamily: '"Noto Sans JP", var(--font-noto-sans-jp), system-ui, sans-serif' }}
     >
       <header className="flex items-center justify-center pt-[10px] pb-[20px] shrink-0">
