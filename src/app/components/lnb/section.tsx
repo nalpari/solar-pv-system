@@ -17,7 +17,7 @@ export function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="flex flex-col gap-4 py-3.5">
+    <section className="flex flex-col gap-4 p-4 bg-white rounded-xl">
       <header className="flex items-center gap-2">
         <span className="flex items-center justify-center size-[34px] bg-[#f5f7fb] rounded-full">
           <Image src={iconSrc} alt="" width={iconWidth} height={iconHeight} />
