@@ -77,6 +77,14 @@ function findNearestSnapVertex(
   return best;
 }
 
+/** 두 폴리곤이 일부라도 겹치는지 근사 판정 — 한쪽의 꼭짓점이 다른 쪽 내부에 있으면 겹침으로 본다 */
+function polygonsOverlap(a: PixelPoint[], b: PixelPoint[]): boolean {
+  return (
+    a.some((p) => isPointInPolygon(p, b)) ||
+    b.some((p) => isPointInPolygon(p, a))
+  );
+}
+
 /** 가장 긴 변의 인덱스를 반환 (i → i+1 기준) */
 function findLongestEdgeIndex(points: PixelPoint[]): number {
   let maxLen = 0;
@@ -212,8 +220,10 @@ export default function CropPopup({
   const [tooltipPos, setTooltipPos] = useState<PixelPoint | null>(null);
 
   // Polygon drag-move refs
+  // 이동 시작 시 이동 대상(install)과 함께 움직일 폴리곤들(install 본체 + 겹치는 exclude 장애물)의
+  // 원본 좌표를 id별로 저장 — 그룹 단위로 같은 dx/dy 만큼 이동시킨다.
   const dragStartRef = useRef<PixelPoint | null>(null);
-  const dragOriginalPointsRef = useRef<PixelPoint[] | null>(null);
+  const dragOriginalGroupRef = useRef<Map<string, PixelPoint[]> | null>(null);
 
   // Vertex editing
   const [draggingVertexIdx, setDraggingVertexIdx] = useState<number | null>(null);
@@ -273,7 +283,7 @@ export default function CropPopup({
       setTooltipPos(null);
       setDraggingVertexIdx(null);
       dragStartRef.current = null;
-      dragOriginalPointsRef.current = null;
+      dragOriginalGroupRef.current = null;
       if (longPressTimerRef.current) {
         clearTimeout(longPressTimerRef.current);
         longPressTimerRef.current = null;
@@ -613,12 +623,22 @@ export default function CropPopup({
           const selArea = areas.find((a) => a.id === selectedPolygonId);
           if (selArea && isPointInPolygon(pt, selArea.points)) {
             dragStartRef.current = pt;
-            dragOriginalPointsRef.current = selArea.points.map((p) => ({ ...p }));
+            // 이동 대상 본체 + (install인 경우) 겹치는 exclude 장애물을 그룹으로 묶어 원본 좌표 저장
+            const group = new Map<string, PixelPoint[]>();
+            group.set(selArea.id, selArea.points.map((p) => ({ ...p })));
+            if (selArea.type === "install") {
+              for (const a of areas) {
+                if (a.type === "exclude" && polygonsOverlap(a.points, selArea.points)) {
+                  group.set(a.id, a.points.map((p) => ({ ...p })));
+                }
+              }
+            }
+            dragOriginalGroupRef.current = group;
             e.currentTarget.setPointerCapture(e.pointerId);
           } else {
             // Click outside: cancel moving
             dragStartRef.current = null;
-            dragOriginalPointsRef.current = null;
+            dragOriginalGroupRef.current = null;
             setSelectedPolygonId(null);
             setSubMode("idle");
           }
@@ -763,7 +783,7 @@ export default function CropPopup({
       setTooltipPos(null);
       setDraggingVertexIdx(null);
       dragStartRef.current = null;
-      dragOriginalPointsRef.current = null;
+      dragOriginalGroupRef.current = null;
       if (longPressTimerRef.current) {
         clearTimeout(longPressTimerRef.current);
         longPressTimerRef.current = null;
@@ -783,28 +803,29 @@ export default function CropPopup({
     const py = e.clientY - rect.top;
 
     // Polygon drag-move (캔버스 경계 내로 클램핑)
-    if (drawingMode === null && subMode === "moving" && dragStartRef.current && dragOriginalPointsRef.current && selectedPolygonId) {
+    if (drawingMode === null && subMode === "moving" && dragStartRef.current && dragOriginalGroupRef.current && selectedPolygonId) {
       const canvas = canvasRef.current;
       const cw = canvas ? canvas.width : Infinity;
       const ch = canvas ? canvas.height : Infinity;
-      const orig = dragOriginalPointsRef.current;
+      const group = dragOriginalGroupRef.current;
+      // 클램핑 기준은 이동 본체(install) 좌표 — 동반 장애물은 본체와 같은 offset으로 따라간다
+      const selOrig = group.get(selectedPolygonId);
+      if (!selOrig) return;
       let dx = px - dragStartRef.current.x;
       let dy = py - dragStartRef.current.y;
-      // 폴리곤 전체가 캔버스 안에 머물도록 dx/dy 클램핑
-      const minX = Math.min(...orig.map((p) => p.x));
-      const maxX = Math.max(...orig.map((p) => p.x));
-      const minY = Math.min(...orig.map((p) => p.y));
-      const maxY = Math.max(...orig.map((p) => p.y));
+      // 본체가 캔버스 안에 머물도록 dx/dy 클램핑
+      const minX = Math.min(...selOrig.map((p) => p.x));
+      const maxX = Math.max(...selOrig.map((p) => p.x));
+      const minY = Math.min(...selOrig.map((p) => p.y));
+      const maxY = Math.max(...selOrig.map((p) => p.y));
       dx = Math.max(-minX, Math.min(cw - maxX, dx));
       dy = Math.max(-minY, Math.min(ch - maxY, dy));
-      const newPoints = orig.map((p) => ({
-        x: p.x + dx,
-        y: p.y + dy,
-      }));
       setAreas((prev) =>
-        prev.map((a) =>
-          a.id === selectedPolygonId ? { ...a, points: newPoints } : a,
-        ),
+        prev.map((a) => {
+          const orig = group.get(a.id);
+          if (!orig) return a;
+          return { ...a, points: orig.map((p) => ({ x: p.x + dx, y: p.y + dy })) };
+        }),
       );
       return;
     }
@@ -844,9 +865,12 @@ export default function CropPopup({
     }
     // End polygon drag-move
     if (subMode === "moving" && dragStartRef.current) {
+      const movedId = selectedPolygonId;
       dragStartRef.current = null;
-      dragOriginalPointsRef.current = null;
+      dragOriginalGroupRef.current = null;
       notifyParent(areasRef.current);
+      // 이동 완료 시 해당 지붕면 위에 배치된 모듈 자동 삭제 (지붕 형상이 바뀐 폴리곤 패널 정리 동작 재사용)
+      if (movedId) onEaveChange?.(movedId);
       setSelectedPolygonId(null);
       setSubMode("idle");
       return;
@@ -882,7 +906,7 @@ export default function CropPopup({
       longPressTimerRef.current = null;
     }
     dragStartRef.current = null;
-    dragOriginalPointsRef.current = null;
+    dragOriginalGroupRef.current = null;
     if (draggingVertexIdx !== null) {
       finalizeVertexDrag();
     }
