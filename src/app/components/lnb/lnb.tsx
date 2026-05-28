@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { Globe } from "lucide-react";
 import { LnbDesign, type LnbDesignProps } from "./lnb-design";
 import { LnbSim, type LnbSimProps } from "./lnb-sim";
 import { t, type Lang } from "../../utils/i18n";
@@ -12,12 +11,11 @@ interface LnbProps {
   tab: LnbTab;
   onTabChange: (tab: LnbTab) => void;
   lang: Lang;
-  onLangToggle: () => void;
   design: LnbDesignProps;
   sim: LnbSimProps;
 }
 
-export function Lnb({ tab, onTabChange, lang, onLangToggle, design, sim }: LnbProps) {
+export function Lnb({ tab, onTabChange, lang, design, sim }: LnbProps) {
   return (
     <aside
       className="w-[360px] h-screen flex flex-col px-6 pt-6 bg-[#ededed] shrink-0"
@@ -59,8 +57,6 @@ export function Lnb({ tab, onTabChange, lang, onLangToggle, design, sim }: LnbPr
           <LnbSim {...sim} lang={lang} />
         )}
       </div>
-
-      <LangFooter lang={lang} onLangToggle={onLangToggle} />
     </aside>
   );
 }
@@ -101,21 +97,5 @@ function TabItem({
         {label}
       </span>
     </button>
-  );
-}
-
-function LangFooter({ lang, onLangToggle }: { lang: Lang; onLangToggle: () => void }) {
-  return (
-    <div className="shrink-0 flex items-center justify-center gap-2 py-3 text-[11px] text-[#999]">
-      <span>Hanwha Japan PV Simulation v0.1.0</span>
-      <button
-        type="button"
-        onClick={onLangToggle}
-        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-[#e1e3e6] text-[10px] text-[#555] hover:border-[#36a] hover:text-[#36a] transition-colors bg-white cursor-pointer"
-      >
-        <Globe size={10} />
-        {lang === "ja" ? "EN" : "JA"}
-      </button>
-    </div>
   );
 }

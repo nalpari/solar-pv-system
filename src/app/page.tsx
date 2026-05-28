@@ -35,7 +35,7 @@ const GAP_CM = 0.3; // 모듈 간격 3mm
 const MARGIN_CM = 30; // 외곽 여백 300mm
 
 export default function Home() {
-  const [lang, setLang] = useState<Lang>("ja");
+  const [lang] = useState<Lang>("ja");
   const [activeTab, setActiveTab] = useState<SidebarTab>("design");
   const [slope, setSlope] = useState(4); // 4寸 default
   const [roofEditTool, setRoofEditTool] = useState<RoofTool>("select");
@@ -326,7 +326,6 @@ export default function Home() {
           tab={activeTab}
           onTabChange={setActiveTab}
           lang={lang}
-          onLangToggle={() => setLang(lang === "ja" ? "en" : "ja")}
           design={{
             onPlaceSelect: handlePlaceSelect,
             cropMode,
