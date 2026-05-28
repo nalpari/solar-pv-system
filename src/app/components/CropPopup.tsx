@@ -35,6 +35,10 @@ interface CropPopupProps {
   undoSignal?: number;
   /** 외부(툴바 deleteAll)로부터 전체 초기화 신호. 값이 바뀔 때마다 내부 areas/currentPoints/선택 상태 초기화 */
   clearSignal?: number;
+  /** 외부(툴바 선택 삭제)로부터 선택 삭제 신호. 값이 바뀔 때마다 선택된 지붕면/장애물 삭제 */
+  deleteSelectedSignal?: number;
+  /** 선택된 지붕면/장애물 존재 여부를 부모에 알림 (툴바 선택 삭제 버튼 활성화 판정용) */
+  onSelectionChange?: (hasSelection: boolean) => void;
   /** 외부 주입 폴리곤 (AI 자동 감지 결과, 정규화 [0..1] 좌표). 새 reference로 들어올 때 내부 areas에 1회 머지 */
   initialAreas?: NormalizedPolygon[];
   /** AI 감지 상태 머신 (Phase 7) — 로딩 오버레이 + Close X 버튼 가드에 사용 */
@@ -83,6 +87,11 @@ function polygonsOverlap(a: PixelPoint[], b: PixelPoint[]): boolean {
     a.some((p) => isPointInPolygon(p, b)) ||
     b.some((p) => isPointInPolygon(p, a))
   );
+}
+
+/** inner 폴리곤이 outer 폴리곤 안에 완전히 포함되는지 — inner의 모든 꼭짓점이 outer 내부 */
+function polygonFullyInside(inner: PixelPoint[], outer: PixelPoint[]): boolean {
+  return inner.every((p) => isPointInPolygon(p, outer));
 }
 
 /** 가장 긴 변의 인덱스를 반환 (i → i+1 기준) */
@@ -179,6 +188,8 @@ export default function CropPopup({
   onEaveChange,
   undoSignal,
   clearSignal,
+  deleteSelectedSignal,
+  onSelectionChange,
   initialAreas,
   detectStatus = "idle",
 }: CropPopupProps) {
@@ -743,6 +754,37 @@ export default function CropPopup({
       }
     }
   }, [clearSignal]);
+
+  // 선택 상태를 부모에 통지 (툴바 선택 삭제 버튼 활성화 판정)
+  useEffect(() => {
+    onSelectionChange?.(selectedPolygonId !== null);
+  }, [selectedPolygonId, onSelectionChange]);
+
+  // 외부(툴바 선택 삭제) 신호 수신 — 선택된 지붕면/장애물 삭제
+  // 지붕면(install) 삭제 시 그 안에 완전히 포함된 장애물(exclude)도 함께 삭제.
+  // 모듈은 notifyParent 후 부모가 없어진 폴리곤 기준으로 자동 제거한다.
+  const prevDeleteSelectedRef = useRef<number | undefined>(deleteSelectedSignal);
+  useEffect(() => {
+    if (deleteSelectedSignal === undefined) return;
+    if (prevDeleteSelectedRef.current === deleteSelectedSignal) return;
+    prevDeleteSelectedRef.current = deleteSelectedSignal;
+    if (!selectedPolygonId) return;
+    const target = areasRef.current.find((a) => a.id === selectedPolygonId);
+    if (!target) return;
+    const toRemove = new Set<string>([selectedPolygonId]);
+    if (target.type === "install") {
+      for (const a of areasRef.current) {
+        if (a.type === "exclude" && polygonFullyInside(a.points, target.points)) {
+          toRemove.add(a.id);
+        }
+      }
+    }
+    const updated = areasRef.current.filter((a) => !toRemove.has(a.id));
+    setAreas(updated);
+    notifyParent(updated);
+    setSelectedPolygonId(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- areasRef/notifyParent는 stable, signal·선택 변경에만 반응
+  }, [deleteSelectedSignal, selectedPolygonId]);
 
   /** 캔버스에서 브라우저 기본 컨텍스트 메뉴를 차단한다 */
   function handleContextMenu(e: React.MouseEvent<HTMLCanvasElement>) {

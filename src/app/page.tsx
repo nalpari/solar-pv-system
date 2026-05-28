@@ -71,6 +71,8 @@ export default function Home() {
   // drawingMode는 roofEditTool에서 파생 (drawRoof → install, drawOpening → exclude, 그 외 → null)
   const [undoSignal, setUndoSignal] = useState(0);
   const [clearSignal, setClearSignal] = useState(0);
+  const [deleteSelectedSignal, setDeleteSelectedSignal] = useState(0);
+  const [hasRoofSelection, setHasRoofSelection] = useState(false);
   const [areas, setAreas] = useState<PolygonArea[]>([]);
   const [panelSize, setPanelSize] = useState<PanelSize>({
     // Default matches first option in Lnb design's MODULE_PRESETS catalog
@@ -486,11 +488,14 @@ export default function Home() {
                     setUndoSignal((n) => n + 1);
                   } else if (action === "deleteAll") {
                     handleDeleteAll();
+                  } else if (action === "deleteSelected") {
+                    setDeleteSelectedSignal((n) => n + 1);
                   } else if (action === "complete") {
                     // 작성 완료 → 선택/이동 모드로 자동 전환
                     setRoofEditTool("select");
                   }
                 }}
+                hasSelection={hasRoofSelection}
               />
               <CropPopup
                 cropData={cropData}
@@ -504,6 +509,8 @@ export default function Home() {
                 onEaveChange={handleEaveChange}
                 undoSignal={undoSignal}
                 clearSignal={clearSignal}
+                deleteSelectedSignal={deleteSelectedSignal}
+                onSelectionChange={setHasRoofSelection}
                 initialAreas={aiSeedAreas}
                 detectStatus={detectStatus}
               />

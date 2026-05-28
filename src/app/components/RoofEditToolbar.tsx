@@ -44,9 +44,11 @@ interface RoofEditToolbarProps {
   activeTool: RoofTool;
   onToolChange: (tool: RoofTool) => void;
   onAction: (action: RoofAction) => void;
+  /** 선택된 지붕면/장애물 존재 여부 — 선택 삭제 버튼 활성화 판정에 사용 */
+  hasSelection?: boolean;
 }
 
-export default function RoofEditToolbar({ lang, activeTool, onToolChange, onAction }: RoofEditToolbarProps) {
+export default function RoofEditToolbar({ lang, activeTool, onToolChange, onAction, hasSelection = false }: RoofEditToolbarProps) {
   const currentTool = TOOLS.find((tool) => tool.id === activeTool);
 
   function handleToolClick(tool: ToolDef) {
@@ -75,6 +77,8 @@ export default function RoofEditToolbar({ lang, activeTool, onToolChange, onActi
       >
         {TOOLS.map((tool, i) => {
           const isActive = !tool.isAction && activeTool === tool.id;
+          // 선택 삭제 버튼은 선택된 지붕면/장애물이 없으면 비활성화
+          const isDisabled = tool.id === "deleteSelected" && !hasSelection;
           const Icon = tool.icon;
           return (
             <div key={tool.id} style={{ display: "flex", alignItems: "center" }}>
@@ -91,7 +95,8 @@ export default function RoofEditToolbar({ lang, activeTool, onToolChange, onActi
                 />
               )}
               <button
-                onClick={() => handleToolClick(tool)}
+                onClick={() => { if (!isDisabled) handleToolClick(tool); }}
+                disabled={isDisabled}
                 title={t(tool.labelKey as Parameters<typeof t>[0], lang)}
                 style={{
                   display: "flex",
@@ -107,10 +112,12 @@ export default function RoofEditToolbar({ lang, activeTool, onToolChange, onActi
                     : tool.danger
                       ? "var(--accent-red)"
                       : "var(--text-secondary)",
+                  opacity: isDisabled ? 0.35 : 1,
+                  cursor: isDisabled ? "not-allowed" : "pointer",
                   transition: "all 0.15s ease",
                 }}
                 onMouseEnter={(e) => {
-                  if (!isActive) {
+                  if (!isActive && !isDisabled) {
                     e.currentTarget.style.background = tool.danger
                       ? "var(--accent-red-muted)"
                       : "var(--bg-surface-hover)";
