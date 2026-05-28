@@ -130,7 +130,6 @@ src/
 | `PixelPoint` | x/y coordinate in pixel space |
 | `PixelPolygon` | Install/exclude polygon in pixel coordinates (optional `eaveEdgeIndex`) |
 | `PixelPanel` | Placed panel (`polygonId` + 4 pixel corners) |
-| `PolygonSubMode` | `"idle"` \| `"selected"` \| `"moving"` \| `"editing_vertices"` |
 
 ### Supplementary Guides
 

@@ -2,7 +2,7 @@
 
 import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import type { CropData, CropBounds, DrawingMode, LatLng, PolygonArea, PixelPanel, PixelPolygon, PixelPoint, PolygonSubMode } from "../types";
+import type { CropData, CropBounds, DrawingMode, LatLng, PolygonArea, PixelPanel, PixelPolygon, PixelPoint } from "../types";
 import type { Lang } from "../utils/i18n";
 import type { RoofTool } from "./RoofEditToolbar";
 import type { NormalizedPolygon } from "../utils/aiDetect";
@@ -162,33 +162,6 @@ function convertToPixelPolygons(entries: AreaEntry[]): PixelPolygon[] {
     }));
 }
 
-/** 폴리곤 선택 툴팁 내부의 호버 스타일 버튼 */
-function TooltipButton({ label, color, onClick }: { label: string; color?: string; onClick: () => void }) {
-  const [hovered, setHovered] = useState(false);
-  return (
-    <button
-      onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        display: "block",
-        width: "100%",
-        padding: "4px 8px",
-        border: "none",
-        background: hovered ? "var(--border-primary)" : "transparent",
-        color: color ?? "var(--text-primary)",
-        fontSize: 13,
-        textAlign: "left",
-        cursor: "pointer",
-        borderRadius: 4,
-        whiteSpace: "nowrap",
-      }}
-    >
-      {label}
-    </button>
-  );
-}
-
 const HANDLE_RADIUS = 12;
 const HANDLE_VISUAL_RADIUS = 6;
 
@@ -216,17 +189,20 @@ export default function CropPopup({
     w: number; h: number; offsetX: number; offsetY: number;
   } | null>(null);
   const [selectedPolygonId, setSelectedPolygonId] = useState<string | null>(null);
-  const [subMode, setSubMode] = useState<PolygonSubMode>("idle");
-  const [tooltipPos, setTooltipPos] = useState<PixelPoint | null>(null);
 
-  // Polygon drag-move refs
+  // Polygon drag-move refs (select 모드)
   // 이동 시작 시 이동 대상(install)과 함께 움직일 폴리곤들(install 본체 + 겹치는 exclude 장애물)의
   // 원본 좌표를 id별로 저장 — 그룹 단위로 같은 dx/dy 만큼 이동시킨다.
   const dragStartRef = useRef<PixelPoint | null>(null);
   const dragOriginalGroupRef = useRef<Map<string, PixelPoint[]> | null>(null);
+  // press 후 실제 이동이 발생했는지 — pointerUp 시 "클릭(선택/해제)"과 "드래그 이동"을 구분
+  const didDragRef = useRef<boolean>(false);
 
-  // Vertex editing
+  // Vertex editing (editRoof 모드)
   const [draggingVertexIdx, setDraggingVertexIdx] = useState<number | null>(null);
+  // 꼭짓점 드래그/삽입/삭제 중인 폴리곤 id — editRoof가 모든 폴리곤을 대상으로 하므로
+  // selectedPolygonId 대신 별도 ref로 편집 대상 폴리곤을 추적한다.
+  const editingPolygonIdRef = useRef<string | null>(null);
 
   // Long-press timer for vertex deletion on touch
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -279,11 +255,11 @@ export default function CropPopup({
       setCurrentPoints([]);
       setMousePos(null);
       setSelectedPolygonId(null);
-      setSubMode("idle");
-      setTooltipPos(null);
       setDraggingVertexIdx(null);
       dragStartRef.current = null;
       dragOriginalGroupRef.current = null;
+      didDragRef.current = false;
+      editingPolygonIdRef.current = null;
       if (longPressTimerRef.current) {
         clearTimeout(longPressTimerRef.current);
         longPressTimerRef.current = null;
@@ -391,17 +367,6 @@ export default function CropPopup({
     }
   }
 
-  /** 선택된 폴리곤을 삭제한다 */
-  function handleDeletePolygon() {
-    if (!selectedPolygonId) return;
-    const updated = areas.filter((a) => a.id !== selectedPolygonId);
-    setAreas(updated);
-    setSelectedPolygonId(null);
-    setSubMode("idle");
-    setTooltipPos(null);
-    notifyParent(updated);
-  }
-
   // Canvas rendering
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -446,14 +411,15 @@ export default function CropPopup({
       }
     }
 
-    // Draw vertex handles when editing_vertices
-    if (subMode === "editing_vertices" && selectedPolygonId) {
-      const selArea = areas.find((a) => a.id === selectedPolygonId);
-      if (selArea && selArea.points.length >= 3) {
+    // Draw vertex/midpoint handles for ALL polygons in editRoof mode
+    // (Spec Slide 18: 그려진 모든 지붕면과 모든 장애물에 점 표시)
+    if (roofEditTool === "editRoof") {
+      for (const area of areas) {
+        if (area.points.length < 3) continue;
         // Draw edge midpoint handles with + sign
-        for (let i = 0; i < selArea.points.length; i++) {
-          const p1 = selArea.points[i];
-          const p2 = selArea.points[(i + 1) % selArea.points.length];
+        for (let i = 0; i < area.points.length; i++) {
+          const p1 = area.points[i];
+          const p2 = area.points[(i + 1) % area.points.length];
           const mx = (p1.x + p2.x) / 2;
           const my = (p1.y + p2.y) / 2;
           ctx.beginPath();
@@ -475,7 +441,7 @@ export default function CropPopup({
           ctx.stroke();
         }
         // Draw vertex handles (gold)
-        for (const pt of selArea.points) {
+        for (const pt of area.points) {
           ctx.beginPath();
           ctx.arc(pt.x, pt.y, HANDLE_VISUAL_RADIUS, 0, Math.PI * 2);
           ctx.fillStyle = COLOR_SELECTED;
@@ -544,7 +510,7 @@ export default function CropPopup({
       ctx.fill();
       ctx.stroke();
     }
-  }, [areas, currentPoints, mousePos, drawingMode, placedPanels, selectedPolygonId, subMode]);
+  }, [areas, currentPoints, mousePos, drawingMode, placedPanels, selectedPolygonId, roofEditTool]);
 
   /** 포인터 이벤트에서 캔버스 로컬 좌표를 추출한다 */
   function getCanvasCoords(e: React.PointerEvent<HTMLCanvasElement>): PixelPoint {
@@ -594,35 +560,14 @@ export default function CropPopup({
     }
 
     if (drawingMode === null) {
-      if (subMode === "idle") {
-        // Check if click is inside any polygon (last to first for z-order)
-        for (let i = areas.length - 1; i >= 0; i--) {
-          if (areas[i].points.length >= 3 && isPointInPolygon(pt, areas[i].points)) {
-            setSelectedPolygonId(areas[i].id);
-            setSubMode("selected");
-            setTooltipPos(pt);
-            return;
-          }
-        }
-      } else if (subMode === "selected") {
-        // If clicking on the same polygon again, reposition tooltip
+      // select 모드: 폴리곤 클릭으로 선택/해제, 선택된 폴리곤 위 press+drag로 이동
+      if (roofEditTool === "select") {
+        // 이미 선택된 폴리곤 내부를 누르면 드래그 이동 후보로 준비 (실제 이동/해제는 pointerUp에서 판정)
         if (selectedPolygonId) {
           const selArea = areas.find((a) => a.id === selectedPolygonId);
           if (selArea && selArea.points.length >= 3 && isPointInPolygon(pt, selArea.points)) {
-            setTooltipPos(pt);
-            return;
-          }
-        }
-        // Clicking outside dismisses selection
-        setSelectedPolygonId(null);
-        setSubMode("idle");
-        setTooltipPos(null);
-      } else if (subMode === "moving") {
-        // Start drag if inside selected polygon
-        if (selectedPolygonId) {
-          const selArea = areas.find((a) => a.id === selectedPolygonId);
-          if (selArea && isPointInPolygon(pt, selArea.points)) {
             dragStartRef.current = pt;
+            didDragRef.current = false;
             // 이동 대상 본체 + (install인 경우) 겹치는 exclude 장애물을 그룹으로 묶어 원본 좌표 저장
             const group = new Map<string, PixelPoint[]>();
             group.set(selArea.id, selArea.points.map((p) => ({ ...p })));
@@ -635,67 +580,75 @@ export default function CropPopup({
             }
             dragOriginalGroupRef.current = group;
             e.currentTarget.setPointerCapture(e.pointerId);
-          } else {
-            // Click outside: cancel moving
-            dragStartRef.current = null;
-            dragOriginalGroupRef.current = null;
-            setSelectedPolygonId(null);
-            setSubMode("idle");
+            return;
           }
         }
-      } else if (subMode === "editing_vertices") {
-        // Check vertex hit, then midpoint hit, then empty space
-        if (selectedPolygonId) {
-          const selArea = areas.find((a) => a.id === selectedPolygonId);
-          if (selArea) {
-            // Check vertex handles
-            for (let i = 0; i < selArea.points.length; i++) {
-              const vp = selArea.points[i];
-              if (Math.hypot(pt.x - vp.x, pt.y - vp.y) <= HANDLE_RADIUS) {
-                setDraggingVertexIdx(i);
-                e.currentTarget.setPointerCapture(e.pointerId);
-                // 터치 입력에서만 롱프레스 삭제 활성화 (마우스/펜은 더블클릭 사용)
-                if (e.pointerType === "touch") {
-                  longPressTimerRef.current = setTimeout(() => {
-                    longPressTimerRef.current = null;
-                    tryDeleteVertex(i);
-                    setDraggingVertexIdx(null);
-                  }, 500);
-                }
-                return;
+        // 다른 폴리곤을 누르면 그 폴리곤을 선택 (z-order: 마지막부터)
+        for (let i = areas.length - 1; i >= 0; i--) {
+          if (areas[i].points.length >= 3 && isPointInPolygon(pt, areas[i].points)) {
+            setSelectedPolygonId(areas[i].id);
+            return;
+          }
+        }
+        // 빈 공간 클릭: 선택 해제
+        setSelectedPolygonId(null);
+        return;
+      }
+
+      // editRoof 모드: 모든 폴리곤의 꼭짓점/변 중점 핸들을 대상으로 편집
+      if (roofEditTool === "editRoof") {
+        // 꼭짓점 hit 검사 (모든 폴리곤, z-order 역순)
+        for (let ai = areas.length - 1; ai >= 0; ai--) {
+          const area = areas[ai];
+          if (area.points.length < 3) continue;
+          for (let i = 0; i < area.points.length; i++) {
+            const vp = area.points[i];
+            if (Math.hypot(pt.x - vp.x, pt.y - vp.y) <= HANDLE_RADIUS) {
+              editingPolygonIdRef.current = area.id;
+              setDraggingVertexIdx(i);
+              e.currentTarget.setPointerCapture(e.pointerId);
+              // 터치 입력에서만 롱프레스 삭제 활성화 (마우스/펜은 더블클릭 사용)
+              if (e.pointerType === "touch") {
+                longPressTimerRef.current = setTimeout(() => {
+                  longPressTimerRef.current = null;
+                  tryDeleteVertex(i);
+                  setDraggingVertexIdx(null);
+                }, 500);
               }
+              return;
             }
-            // Check edge midpoint handles
-            for (let i = 0; i < selArea.points.length; i++) {
-              const p1 = selArea.points[i];
-              const p2 = selArea.points[(i + 1) % selArea.points.length];
-              const mx = (p1.x + p2.x) / 2;
-              const my = (p1.y + p2.y) / 2;
-              if (Math.hypot(pt.x - mx, pt.y - my) <= HANDLE_RADIUS) {
-                // Insert new point at midpoint, start dragging it
-                const insertIdx = i + 1;
-                const newPoints = [...selArea.points];
-                newPoints.splice(insertIdx, 0, { x: mx, y: my });
-                const updated = areas.map((a) =>
-                  a.id === selectedPolygonId
-                    ? {
-                        ...a,
-                        points: newPoints,
-                        // 꼭짓점 편집 시 기준선을 가장 긴 변으로 자동 리셋 (install만)
-                        eaveEdgeIndex: a.type === "install" ? findLongestEdgeIndex(newPoints) : undefined,
-                      }
-                    : a,
-                );
-                setAreas(updated);
-                setDraggingVertexIdx(insertIdx);
-                e.currentTarget.setPointerCapture(e.pointerId);
-                onEaveChange?.(selectedPolygonId);
-                return;
-              }
+          }
+        }
+        // 변 중점 hit 검사 (모든 폴리곤, z-order 역순) — 새 점 삽입 후 드래그 시작
+        for (let ai = areas.length - 1; ai >= 0; ai--) {
+          const area = areas[ai];
+          if (area.points.length < 3) continue;
+          for (let i = 0; i < area.points.length; i++) {
+            const p1 = area.points[i];
+            const p2 = area.points[(i + 1) % area.points.length];
+            const mx = (p1.x + p2.x) / 2;
+            const my = (p1.y + p2.y) / 2;
+            if (Math.hypot(pt.x - mx, pt.y - my) <= HANDLE_RADIUS) {
+              const insertIdx = i + 1;
+              const newPoints = [...area.points];
+              newPoints.splice(insertIdx, 0, { x: mx, y: my });
+              const updated = areas.map((a) =>
+                a.id === area.id
+                  ? {
+                      ...a,
+                      points: newPoints,
+                      // 꼭짓점 편집 시 기준선을 가장 긴 변으로 자동 리셋 (install만)
+                      eaveEdgeIndex: a.type === "install" ? findLongestEdgeIndex(newPoints) : undefined,
+                    }
+                  : a,
+              );
+              setAreas(updated);
+              editingPolygonIdRef.current = area.id;
+              setDraggingVertexIdx(insertIdx);
+              e.currentTarget.setPointerCapture(e.pointerId);
+              onEaveChange?.(area.id);
+              return;
             }
-            // Empty space: exit editing
-            setSelectedPolygonId(null);
-            setSubMode("idle");
           }
         }
       }
@@ -779,11 +732,11 @@ export default function CropPopup({
       setCurrentPoints([]);
       setMousePos(null);
       setSelectedPolygonId(null);
-      setSubMode("idle");
-      setTooltipPos(null);
       setDraggingVertexIdx(null);
       dragStartRef.current = null;
       dragOriginalGroupRef.current = null;
+      didDragRef.current = false;
+      editingPolygonIdRef.current = null;
       if (longPressTimerRef.current) {
         clearTimeout(longPressTimerRef.current);
         longPressTimerRef.current = null;
@@ -802,8 +755,8 @@ export default function CropPopup({
     const px = e.clientX - rect.left;
     const py = e.clientY - rect.top;
 
-    // Polygon drag-move (캔버스 경계 내로 클램핑)
-    if (drawingMode === null && subMode === "moving" && dragStartRef.current && dragOriginalGroupRef.current && selectedPolygonId) {
+    // Polygon drag-move (select 모드, 캔버스 경계 내로 클램핑)
+    if (drawingMode === null && roofEditTool === "select" && dragStartRef.current && dragOriginalGroupRef.current && selectedPolygonId) {
       const canvas = canvasRef.current;
       const cw = canvas ? canvas.width : Infinity;
       const ch = canvas ? canvas.height : Infinity;
@@ -813,6 +766,8 @@ export default function CropPopup({
       if (!selOrig) return;
       let dx = px - dragStartRef.current.x;
       let dy = py - dragStartRef.current.y;
+      // 실제 이동이 일어났음을 표시 (pointerUp에서 클릭 해제와 구분)
+      if (dx !== 0 || dy !== 0) didDragRef.current = true;
       // 본체가 캔버스 안에 머물도록 dx/dy 클램핑
       const minX = Math.min(...selOrig.map((p) => p.x));
       const maxX = Math.max(...selOrig.map((p) => p.x));
@@ -830,18 +785,19 @@ export default function CropPopup({
       return;
     }
 
-    // Vertex dragging
-    if (drawingMode === null && subMode === "editing_vertices" && draggingVertexIdx !== null && selectedPolygonId) {
+    // Vertex dragging (editRoof 모드)
+    const editingId = editingPolygonIdRef.current;
+    if (drawingMode === null && roofEditTool === "editRoof" && draggingVertexIdx !== null && editingId) {
       // Cancel long-press if dragging
       if (longPressTimerRef.current) {
         clearTimeout(longPressTimerRef.current);
         longPressTimerRef.current = null;
       }
       // 스냅: 다른 install 폴리곤의 꼭짓점에 흡착 (자기 폴리곤은 제외)
-      const snapped = findNearestSnapVertex({ x: px, y: py }, areasRef.current, selectedPolygonId) ?? { x: px, y: py };
+      const snapped = findNearestSnapVertex({ x: px, y: py }, areasRef.current, editingId) ?? { x: px, y: py };
       setAreas((prev) =>
         prev.map((a) => {
-          if (a.id !== selectedPolygonId) return a;
+          if (a.id !== editingId) return a;
           const newPoints = [...a.points];
           newPoints[draggingVertexIdx] = snapped;
           return { ...a, points: newPoints };
@@ -863,20 +819,25 @@ export default function CropPopup({
       clearTimeout(longPressTimerRef.current);
       longPressTimerRef.current = null;
     }
-    // End polygon drag-move
-    if (subMode === "moving" && dragStartRef.current) {
+    // End polygon drag-move (select 모드)
+    if (roofEditTool === "select" && dragStartRef.current) {
       const movedId = selectedPolygonId;
+      const moved = didDragRef.current;
       dragStartRef.current = null;
       dragOriginalGroupRef.current = null;
-      notifyParent(areasRef.current);
-      // 이동 완료 시 해당 지붕면 위에 배치된 모듈 자동 삭제 (지붕 형상이 바뀐 폴리곤 패널 정리 동작 재사용)
-      if (movedId) onEaveChange?.(movedId);
-      setSelectedPolygonId(null);
-      setSubMode("idle");
+      didDragRef.current = false;
+      if (moved) {
+        // 실제로 이동한 경우: 부모 동기화 + 해당 지붕면 위 모듈 자동 삭제 (선택은 유지)
+        notifyParent(areasRef.current);
+        if (movedId) onEaveChange?.(movedId);
+      } else {
+        // 이동 없이 선택된 폴리곤을 다시 클릭 → 선택 해제
+        setSelectedPolygonId(null);
+      }
       return;
     }
-    // End vertex drag
-    if (subMode === "editing_vertices" && draggingVertexIdx !== null) {
+    // End vertex drag (editRoof 모드)
+    if (roofEditTool === "editRoof" && draggingVertexIdx !== null) {
       finalizeVertexDrag();
       return;
     }
@@ -888,7 +849,8 @@ export default function CropPopup({
    */
   function finalizeVertexDrag() {
     setDraggingVertexIdx(null);
-    const movedId = selectedPolygonId;
+    const movedId = editingPolygonIdRef.current;
+    editingPolygonIdRef.current = null;
     const resetAreas = areasRef.current.map((a) =>
       a.id === movedId && a.type === "install"
         ? { ...a, eaveEdgeIndex: findLongestEdgeIndex(a.points) }
@@ -907,27 +869,30 @@ export default function CropPopup({
     }
     dragStartRef.current = null;
     dragOriginalGroupRef.current = null;
+    didDragRef.current = false;
     if (draggingVertexIdx !== null) {
       finalizeVertexDrag();
     }
   }
 
-  /** 꼭짓점을 삭제하며, 3개 이하이면 폴리곤 전체를 제거한다 (areasRef로 최신 상태 참조) */
-  function tryDeleteVertex(vertexIdx: number) {
-    if (!selectedPolygonId) return;
+  /**
+   * 지정 폴리곤의 꼭짓점을 삭제하며, 3개 이하이면 폴리곤 전체를 제거한다 (areasRef로 최신 상태 참조).
+   * editRoof 모드에서 편집 대상 폴리곤(targetId)을 명시해 호출한다.
+   */
+  function tryDeleteVertex(vertexIdx: number, targetId: string | null = editingPolygonIdRef.current) {
+    if (!targetId) return;
     const currentAreas = areasRef.current;
-    const selArea = currentAreas.find((a) => a.id === selectedPolygonId);
+    const selArea = currentAreas.find((a) => a.id === targetId);
     if (!selArea) return;
     let updated: AreaEntry[];
     if (selArea.points.length <= 3) {
       // Delete entire polygon
-      updated = currentAreas.filter((a) => a.id !== selectedPolygonId);
-      setSelectedPolygonId(null);
-      setSubMode("idle");
+      updated = currentAreas.filter((a) => a.id !== targetId);
+      editingPolygonIdRef.current = null;
     } else {
       const newPoints = selArea.points.filter((_, i) => i !== vertexIdx);
       updated = currentAreas.map((a) =>
-        a.id === selectedPolygonId
+        a.id === targetId
           ? {
               ...a,
               points: newPoints,
@@ -936,25 +901,28 @@ export default function CropPopup({
             }
           : a,
       );
-      onEaveChange?.(selectedPolygonId);
+      onEaveChange?.(targetId);
     }
     setAreas(updated);
     notifyParent(updated);
   }
 
-  /** 더블클릭으로 꼭짓점을 삭제한다 */
+  /** editRoof 모드에서 더블클릭으로 (모든 폴리곤 중) 꼭짓점을 삭제한다 */
   function handleDoubleClick(e: React.MouseEvent<HTMLCanvasElement>) {
-    if (subMode !== "editing_vertices" || !selectedPolygonId) return;
+    if (roofEditTool !== "editRoof") return;
     const rect = canvasRef.current!.getBoundingClientRect();
     const px = e.clientX - rect.left;
     const py = e.clientY - rect.top;
-    const selArea = areas.find((a) => a.id === selectedPolygonId);
-    if (!selArea) return;
-    for (let i = 0; i < selArea.points.length; i++) {
-      const vp = selArea.points[i];
-      if (Math.hypot(px - vp.x, py - vp.y) <= HANDLE_RADIUS) {
-        tryDeleteVertex(i);
-        return;
+    // z-order 역순으로 꼭짓점 hit 검사
+    for (let ai = areas.length - 1; ai >= 0; ai--) {
+      const area = areas[ai];
+      if (area.points.length < 3) continue;
+      for (let i = 0; i < area.points.length; i++) {
+        const vp = area.points[i];
+        if (Math.hypot(px - vp.x, py - vp.y) <= HANDLE_RADIUS) {
+          tryDeleteVertex(i, area.id);
+          return;
+        }
       }
     }
   }
@@ -1096,9 +1064,9 @@ export default function CropPopup({
               cursor:
                 drawingMode === "install" || drawingMode === "exclude"
                   ? "crosshair"
-                  : subMode === "moving"
-                    ? "grabbing"
-                    : subMode === "editing_vertices"
+                  : roofEditTool === "select" && selectedPolygonId
+                    ? "grab"
+                    : roofEditTool === "editRoof"
                       ? "pointer"
                       : "default",
               ...(canvasLayout
@@ -1124,43 +1092,6 @@ export default function CropPopup({
           />
 
         </div>
-
-        {/* Polygon selection tooltip (경계 클램핑 적용) */}
-        {subMode === "selected" && tooltipPos && (() => {
-          const tooltipW = 88;
-          const tooltipH = 90;
-          const ox = canvasLayout?.offsetX ?? 0;
-          const oy = canvasLayout?.offsetY ?? 0;
-          const cw = canvasRef.current?.width ?? 300;
-          const ch = canvasRef.current?.height ?? 300;
-          const rawX = ox + tooltipPos.x + 8;
-          const rawY = oy + tooltipPos.y - 8;
-          const clampedX = Math.max(ox, Math.min(rawX, ox + cw - tooltipW));
-          const clampedY = Math.max(oy, Math.min(rawY, oy + ch - tooltipH));
-          return (
-          <div
-            style={{
-              position: "absolute",
-              left: clampedX,
-              top: clampedY,
-              zIndex: 20,
-              display: "flex",
-              flexDirection: "column",
-              gap: 2,
-              background: "var(--bg-primary)",
-              border: "1px solid var(--border-primary)",
-              borderRadius: "var(--radius-md)",
-              boxShadow: "var(--shadow-lg)",
-              padding: 4,
-              minWidth: 80,
-            }}
-          >
-            <TooltipButton label={t("polygonMove", lang)} onClick={() => { setSubMode("moving"); setTooltipPos(null); }} />
-            <TooltipButton label={t("polygonDelete", lang)} color="var(--accent-red)" onClick={handleDeletePolygon} />
-            <TooltipButton label={t("polygonEditVertices", lang)} onClick={() => { setSubMode("editing_vertices"); setTooltipPos(null); }} />
-          </div>
-          );
-        })()}
 
     </div>
   );
