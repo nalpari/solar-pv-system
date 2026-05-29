@@ -219,9 +219,6 @@ export default function CropPopup({
   // 선택 상태(selectedPolygonIds)와 무관하게 별도 ref로 편집 대상 폴리곤을 추적한다.
   const editingPolygonIdRef = useRef<string | null>(null);
 
-  // Long-press timer for vertex deletion on touch
-  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   // Debounce rapid clicks in drawing mode (prevents double-click adding 2 points)
   const lastPointTimeRef = useRef<number>(0);
 
@@ -258,7 +255,7 @@ export default function CropPopup({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
 
-  // 그리기 모드 또는 지붕편집 툴 변경 시 진행 중 점·선택·드래그·롱프레스 상태 전부 초기화
+  // 그리기 모드 또는 지붕편집 툴 변경 시 진행 중 점·선택·드래그 상태 전부 초기화
   const prevDrawingModeRef = useRef<DrawingMode>(drawingMode);
   const prevRoofEditToolRef = useRef<RoofTool | undefined>(roofEditTool);
   useEffect(() => {
@@ -276,21 +273,8 @@ export default function CropPopup({
       dragCandidateIdRef.current = null;
       didDragRef.current = false;
       editingPolygonIdRef.current = null;
-      if (longPressTimerRef.current) {
-        clearTimeout(longPressTimerRef.current);
-        longPressTimerRef.current = null;
-      }
     }
   }, [drawingMode, roofEditTool]);
-
-  // Cleanup long-press timer on unmount
-  useEffect(() => {
-    return () => {
-      if (longPressTimerRef.current) {
-        clearTimeout(longPressTimerRef.current);
-      }
-    };
-  }, []);
 
   /** object-fit: contain 적용 후 이미지의 실제 렌더링 영역을 계산한다 */
   function getRenderedImageRect() {
@@ -636,14 +620,6 @@ export default function CropPopup({
               editingPolygonIdRef.current = area.id;
               setDraggingVertexIdx(i);
               e.currentTarget.setPointerCapture(e.pointerId);
-              // 터치 입력에서만 롱프레스 삭제 활성화 (마우스/펜은 더블클릭 사용)
-              if (e.pointerType === "touch") {
-                longPressTimerRef.current = setTimeout(() => {
-                  longPressTimerRef.current = null;
-                  tryDeleteVertex(i);
-                  setDraggingVertexIdx(null);
-                }, 500);
-              }
               return;
             }
           }
@@ -767,10 +743,6 @@ export default function CropPopup({
       dragCandidateIdRef.current = null;
       didDragRef.current = false;
       editingPolygonIdRef.current = null;
-      if (longPressTimerRef.current) {
-        clearTimeout(longPressTimerRef.current);
-        longPressTimerRef.current = null;
-      }
     }
   }, [clearSignal]);
 
@@ -850,11 +822,6 @@ export default function CropPopup({
     // Vertex dragging (editRoof 모드)
     const editingId = editingPolygonIdRef.current;
     if (drawingMode === null && roofEditTool === "editRoof" && draggingVertexIdx !== null && editingId) {
-      // Cancel long-press if dragging
-      if (longPressTimerRef.current) {
-        clearTimeout(longPressTimerRef.current);
-        longPressTimerRef.current = null;
-      }
       // 스냅: 다른 install 폴리곤의 꼭짓점에 흡착 (자기 폴리곤은 제외)
       const snapped = findNearestSnapVertex({ x: px, y: py }, areasRef.current, editingId) ?? { x: px, y: py };
       setAreas((prev) =>
@@ -876,11 +843,6 @@ export default function CropPopup({
 
   /** 포인터 업 시 드래그 이동·꼭짓점 편집을 종료한다 */
   function handlePointerUp() {
-    // Always clear long-press timer on pointer up
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
-    }
     // End polygon drag-move / click-toggle (select 모드)
     if (roofEditTool === "select" && dragStartRef.current) {
       const candidateId = dragCandidateIdRef.current;
@@ -939,10 +901,6 @@ export default function CropPopup({
 
   /** 포인터 캡처가 강제 해제될 때 드래그 상태를 정리한다 */
   function handlePointerCancel() {
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
-    }
     dragStartRef.current = null;
     dragOriginalGroupRef.current = null;
     dragCandidateIdRef.current = null;
@@ -956,7 +914,7 @@ export default function CropPopup({
    * 지정 폴리곤의 꼭짓점을 삭제하며, 3개 이하이면 폴리곤 전체를 제거한다 (areasRef로 최신 상태 참조).
    * editRoof 모드에서 편집 대상 폴리곤(targetId)을 명시해 호출한다.
    */
-  function tryDeleteVertex(vertexIdx: number, targetId: string | null = editingPolygonIdRef.current) {
+  function tryDeleteVertex(vertexIdx: number, targetId: string) {
     if (!targetId) return;
     const currentAreas = areasRef.current;
     const selArea = currentAreas.find((a) => a.id === targetId);
