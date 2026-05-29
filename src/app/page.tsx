@@ -112,12 +112,16 @@ export default function Home() {
   const handleCropComplete = useCallback((data: CropData) => {
     setCropData(data);
     setCropMode(false);
-    // 크롭 영역 센터를 지도 중심으로 이동 (다음 작업 시점 갱신)
-    // viewport 우선순위 해제: ViewUpdater는 viewport가 있으면 fitBounds, 없으면 panTo(center) — 주소 검색 후 viewport가 남아있는 케이스 차단
-    setViewport(null);
-    setCenter({
+    const center = {
       lat: (data.bounds.sw.lat + data.bounds.ne.lat) / 2,
       lng: (data.bounds.sw.lng + data.bounds.ne.lng) / 2,
+    };
+    // 팝업이 지도를 완전히 가린 다음 프레임에 센터 이동 — panTo 애니메이션이
+    // 팝업 뜨기 전에 보여서 깜박이는 현상 방지. viewport도 함께 해제하여
+    // ViewUpdater가 fitBounds 대신 panTo(center)로 분기하도록 한다.
+    requestAnimationFrame(() => {
+      setViewport(null);
+      setCenter(center);
     });
   }, []);
 
