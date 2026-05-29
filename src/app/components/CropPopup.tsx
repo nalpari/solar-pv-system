@@ -199,20 +199,24 @@ export default function CropPopup({
   const [canvasLayout, setCanvasLayout] = useState<{
     w: number; h: number; offsetX: number; offsetY: number;
   } | null>(null);
-  const [selectedPolygonId, setSelectedPolygonId] = useState<string | null>(null);
+  // 다중 선택 (select 모드): 클릭 토글로 여러 폴리곤을 동시에 선택한다.
+  const [selectedPolygonIds, setSelectedPolygonIds] = useState<Set<string>>(new Set());
 
   // Polygon drag-move refs (select 모드)
   // 이동 시작 시 이동 대상(install)과 함께 움직일 폴리곤들(install 본체 + 겹치는 exclude 장애물)의
   // 원본 좌표를 id별로 저장 — 그룹 단위로 같은 dx/dy 만큼 이동시킨다.
   const dragStartRef = useRef<PixelPoint | null>(null);
   const dragOriginalGroupRef = useRef<Map<string, PixelPoint[]> | null>(null);
+  // 드래그 후보 — pointerdown 시 포인터 아래에 있던 폴리곤 id (장애물 우선).
+  // 다중 선택 상태여도 드래그는 이 단일 폴리곤만 이동시킨다.
+  const dragCandidateIdRef = useRef<string | null>(null);
   // press 후 실제 이동이 발생했는지 — pointerUp 시 "클릭(선택/해제)"과 "드래그 이동"을 구분
   const didDragRef = useRef<boolean>(false);
 
   // Vertex editing (editRoof 모드)
   const [draggingVertexIdx, setDraggingVertexIdx] = useState<number | null>(null);
   // 꼭짓점 드래그/삽입/삭제 중인 폴리곤 id — editRoof가 모든 폴리곤을 대상으로 하므로
-  // selectedPolygonId 대신 별도 ref로 편집 대상 폴리곤을 추적한다.
+  // 선택 상태(selectedPolygonIds)와 무관하게 별도 ref로 편집 대상 폴리곤을 추적한다.
   const editingPolygonIdRef = useRef<string | null>(null);
 
   // Long-press timer for vertex deletion on touch
@@ -265,10 +269,11 @@ export default function CropPopup({
       prevRoofEditToolRef.current = roofEditTool;
       setCurrentPoints([]);
       setMousePos(null);
-      setSelectedPolygonId(null);
+      setSelectedPolygonIds(new Set());
       setDraggingVertexIdx(null);
       dragStartRef.current = null;
       dragOriginalGroupRef.current = null;
+      dragCandidateIdRef.current = null;
       didDragRef.current = false;
       editingPolygonIdRef.current = null;
       if (longPressTimerRef.current) {
@@ -391,7 +396,7 @@ export default function CropPopup({
     for (const area of areas) {
       if (area.points.length < 3) continue;
       const isInstall = area.type === "install";
-      const isSelected = area.id === selectedPolygonId;
+      const isSelected = selectedPolygonIds.has(area.id);
       ctx.beginPath();
       ctx.moveTo(area.points[0].x, area.points[0].y);
       for (let i = 1; i < area.points.length; i++) {
@@ -521,7 +526,7 @@ export default function CropPopup({
       ctx.fill();
       ctx.stroke();
     }
-  }, [areas, currentPoints, mousePos, drawingMode, placedPanels, selectedPolygonId, roofEditTool]);
+  }, [areas, currentPoints, mousePos, drawingMode, placedPanels, selectedPolygonIds, roofEditTool]);
 
   /** 포인터 이벤트에서 캔버스 로컬 좌표를 추출한다 */
   function getCanvasCoords(e: React.PointerEvent<HTMLCanvasElement>): PixelPoint {
@@ -571,38 +576,51 @@ export default function CropPopup({
     }
 
     if (drawingMode === null) {
-      // select 모드: 폴리곤 클릭으로 선택/해제, 선택된 폴리곤 위 press+drag로 이동
+      // select 모드: 폴리곤 클릭으로 토글 선택/해제, press+drag로 단일 폴리곤 이동
       if (roofEditTool === "select") {
-        // 이미 선택된 폴리곤 내부를 누르면 드래그 이동 후보로 준비 (실제 이동/해제는 pointerUp에서 판정)
-        if (selectedPolygonId) {
-          const selArea = areas.find((a) => a.id === selectedPolygonId);
-          if (selArea && selArea.points.length >= 3 && isPointInPolygon(pt, selArea.points)) {
-            dragStartRef.current = pt;
-            didDragRef.current = false;
-            // 이동 대상 본체 + (install인 경우) 겹치는 exclude 장애물을 그룹으로 묶어 원본 좌표 저장
-            const group = new Map<string, PixelPoint[]>();
-            group.set(selArea.id, selArea.points.map((p) => ({ ...p })));
-            if (selArea.type === "install") {
-              for (const a of areas) {
-                if (a.type === "exclude" && polygonsOverlap(a.points, selArea.points)) {
-                  group.set(a.id, a.points.map((p) => ({ ...p })));
-                }
+        // 포인터 아래 폴리곤 탐색 — 장애물(exclude)을 지붕면(install)보다 우선해서 hit-test
+        // (지붕면과 장애물이 겹친 경우 장애물 선택 우선). 같은 타입 내에서는 z-order 역순.
+        let hit: AreaEntry | null = null;
+        for (let i = areas.length - 1; i >= 0; i--) {
+          const a = areas[i];
+          if (a.type === "exclude" && a.points.length >= 3 && isPointInPolygon(pt, a.points)) {
+            hit = a;
+            break;
+          }
+        }
+        if (!hit) {
+          for (let i = areas.length - 1; i >= 0; i--) {
+            const a = areas[i];
+            if (a.type === "install" && a.points.length >= 3 && isPointInPolygon(pt, a.points)) {
+              hit = a;
+              break;
+            }
+          }
+        }
+
+        if (hit) {
+          // 드래그 후보로 준비 (실제 토글/이동 구분은 pointerUp에서). 다중 선택 여부와 무관하게
+          // 드래그하면 이 폴리곤만 단독 이동한다.
+          dragCandidateIdRef.current = hit.id;
+          dragStartRef.current = pt;
+          didDragRef.current = false;
+          // 이동 대상 본체 + (install인 경우) 겹치는 exclude 장애물을 그룹으로 묶어 원본 좌표 저장 (#16)
+          const group = new Map<string, PixelPoint[]>();
+          group.set(hit.id, hit.points.map((p) => ({ ...p })));
+          if (hit.type === "install") {
+            for (const a of areas) {
+              if (a.type === "exclude" && polygonsOverlap(a.points, hit.points)) {
+                group.set(a.id, a.points.map((p) => ({ ...p })));
               }
             }
-            dragOriginalGroupRef.current = group;
-            e.currentTarget.setPointerCapture(e.pointerId);
-            return;
           }
+          dragOriginalGroupRef.current = group;
+          e.currentTarget.setPointerCapture(e.pointerId);
+          return;
         }
-        // 다른 폴리곤을 누르면 그 폴리곤을 선택 (z-order: 마지막부터)
-        for (let i = areas.length - 1; i >= 0; i--) {
-          if (areas[i].points.length >= 3 && isPointInPolygon(pt, areas[i].points)) {
-            setSelectedPolygonId(areas[i].id);
-            return;
-          }
-        }
-        // 빈 공간 클릭: 선택 해제
-        setSelectedPolygonId(null);
+
+        // 빈 공간 클릭: 전체 선택 해제
+        setSelectedPolygonIds(new Set());
         return;
       }
 
@@ -742,10 +760,11 @@ export default function CropPopup({
       setAreas([]);
       setCurrentPoints([]);
       setMousePos(null);
-      setSelectedPolygonId(null);
+      setSelectedPolygonIds(new Set());
       setDraggingVertexIdx(null);
       dragStartRef.current = null;
       dragOriginalGroupRef.current = null;
+      dragCandidateIdRef.current = null;
       didDragRef.current = false;
       editingPolygonIdRef.current = null;
       if (longPressTimerRef.current) {
@@ -757,8 +776,8 @@ export default function CropPopup({
 
   // 선택 상태를 부모에 통지 (툴바 선택 삭제 버튼 활성화 판정)
   useEffect(() => {
-    onSelectionChange?.(selectedPolygonId !== null);
-  }, [selectedPolygonId, onSelectionChange]);
+    onSelectionChange?.(selectedPolygonIds.size > 0);
+  }, [selectedPolygonIds, onSelectionChange]);
 
   // 외부(툴바 선택 삭제) 신호 수신 — 선택된 지붕면/장애물 삭제
   // 지붕면(install) 삭제 시 그 안에 완전히 포함된 장애물(exclude)도 함께 삭제.
@@ -768,11 +787,12 @@ export default function CropPopup({
     if (deleteSelectedSignal === undefined) return;
     if (prevDeleteSelectedRef.current === deleteSelectedSignal) return;
     prevDeleteSelectedRef.current = deleteSelectedSignal;
-    if (!selectedPolygonId) return;
-    const target = areasRef.current.find((a) => a.id === selectedPolygonId);
-    if (!target) return;
-    const toRemove = new Set<string>([selectedPolygonId]);
-    if (target.type === "install") {
+    if (selectedPolygonIds.size === 0) return;
+    // 선택된 모든 폴리곤 삭제. 각 install 삭제 시 그 안에 완전히 포함된 exclude 장애물도 함께 삭제.
+    const toRemove = new Set<string>(selectedPolygonIds);
+    for (const id of selectedPolygonIds) {
+      const target = areasRef.current.find((a) => a.id === id);
+      if (!target || target.type !== "install") continue;
       for (const a of areasRef.current) {
         if (a.type === "exclude" && polygonFullyInside(a.points, target.points)) {
           toRemove.add(a.id);
@@ -782,9 +802,9 @@ export default function CropPopup({
     const updated = areasRef.current.filter((a) => !toRemove.has(a.id));
     setAreas(updated);
     notifyParent(updated);
-    setSelectedPolygonId(null);
+    setSelectedPolygonIds(new Set());
   // eslint-disable-next-line react-hooks/exhaustive-deps -- areasRef/notifyParent는 stable, signal·선택 변경에만 반응
-  }, [deleteSelectedSignal, selectedPolygonId]);
+  }, [deleteSelectedSignal, selectedPolygonIds]);
 
   /** 캔버스에서 브라우저 기본 컨텍스트 메뉴를 차단한다 */
   function handleContextMenu(e: React.MouseEvent<HTMLCanvasElement>) {
@@ -798,13 +818,13 @@ export default function CropPopup({
     const py = e.clientY - rect.top;
 
     // Polygon drag-move (select 모드, 캔버스 경계 내로 클램핑)
-    if (drawingMode === null && roofEditTool === "select" && dragStartRef.current && dragOriginalGroupRef.current && selectedPolygonId) {
+    if (drawingMode === null && roofEditTool === "select" && dragStartRef.current && dragOriginalGroupRef.current && dragCandidateIdRef.current) {
       const canvas = canvasRef.current;
       const cw = canvas ? canvas.width : Infinity;
       const ch = canvas ? canvas.height : Infinity;
       const group = dragOriginalGroupRef.current;
-      // 클램핑 기준은 이동 본체(install) 좌표 — 동반 장애물은 본체와 같은 offset으로 따라간다
-      const selOrig = group.get(selectedPolygonId);
+      // 클램핑 기준은 이동 본체(드래그 후보) 좌표 — 동반 장애물은 본체와 같은 offset으로 따라간다
+      const selOrig = group.get(dragCandidateIdRef.current);
       if (!selOrig) return;
       let dx = px - dragStartRef.current.x;
       let dy = py - dragStartRef.current.y;
@@ -861,20 +881,34 @@ export default function CropPopup({
       clearTimeout(longPressTimerRef.current);
       longPressTimerRef.current = null;
     }
-    // End polygon drag-move (select 모드)
+    // End polygon drag-move / click-toggle (select 모드)
     if (roofEditTool === "select" && dragStartRef.current) {
-      const movedId = selectedPolygonId;
+      const candidateId = dragCandidateIdRef.current;
       const moved = didDragRef.current;
       dragStartRef.current = null;
       dragOriginalGroupRef.current = null;
+      dragCandidateIdRef.current = null;
       didDragRef.current = false;
       if (moved) {
-        // 실제로 이동한 경우: 부모 동기화 + 해당 지붕면 위 모듈 자동 삭제 (선택은 유지)
+        // 실제로 이동한 경우: 부모 동기화 + 해당 지붕면 위 모듈 자동 삭제. 이동한 폴리곤은 선택 유지(추가).
         notifyParent(areasRef.current);
-        if (movedId) onEaveChange?.(movedId);
-      } else {
-        // 이동 없이 선택된 폴리곤을 다시 클릭 → 선택 해제
-        setSelectedPolygonId(null);
+        if (candidateId) {
+          onEaveChange?.(candidateId);
+          setSelectedPolygonIds((prev) => {
+            if (prev.has(candidateId)) return prev;
+            const next = new Set(prev);
+            next.add(candidateId);
+            return next;
+          });
+        }
+      } else if (candidateId) {
+        // 이동 없이 클릭 → 해당 폴리곤을 Set에서 토글 (있으면 해제, 없으면 추가)
+        setSelectedPolygonIds((prev) => {
+          const next = new Set(prev);
+          if (next.has(candidateId)) next.delete(candidateId);
+          else next.add(candidateId);
+          return next;
+        });
       }
       return;
     }
@@ -911,6 +945,7 @@ export default function CropPopup({
     }
     dragStartRef.current = null;
     dragOriginalGroupRef.current = null;
+    dragCandidateIdRef.current = null;
     didDragRef.current = false;
     if (draggingVertexIdx !== null) {
       finalizeVertexDrag();
@@ -1106,7 +1141,7 @@ export default function CropPopup({
               cursor:
                 drawingMode === "install" || drawingMode === "exclude"
                   ? "crosshair"
-                  : roofEditTool === "select" && selectedPolygonId
+                  : roofEditTool === "select" && selectedPolygonIds.size > 0
                     ? "grab"
                     : roofEditTool === "editRoof"
                       ? "pointer"
