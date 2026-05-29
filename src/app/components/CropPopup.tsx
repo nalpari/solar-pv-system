@@ -81,14 +81,6 @@ function findNearestSnapVertex(
   return best;
 }
 
-/** 두 폴리곤이 일부라도 겹치는지 근사 판정 — 한쪽의 꼭짓점이 다른 쪽 내부에 있으면 겹침으로 본다 */
-function polygonsOverlap(a: PixelPoint[], b: PixelPoint[]): boolean {
-  return (
-    a.some((p) => isPointInPolygon(p, b)) ||
-    b.some((p) => isPointInPolygon(p, a))
-  );
-}
-
 /** inner 폴리곤이 outer 폴리곤 안에 완전히 포함되는지 — inner의 모든 꼭짓점이 outer 내부 */
 function polygonFullyInside(inner: PixelPoint[], outer: PixelPoint[]): boolean {
   return inner.every((p) => isPointInPolygon(p, outer));
@@ -588,12 +580,12 @@ export default function CropPopup({
           dragCandidateIdRef.current = hit.id;
           dragStartRef.current = pt;
           didDragRef.current = false;
-          // 이동 대상 본체 + (install인 경우) 겹치는 exclude 장애물을 그룹으로 묶어 원본 좌표 저장 (#16)
+          // 이동 대상 본체 + (install인 경우) 완전히 포함된 exclude 장애물을 그룹으로 묶어 원본 좌표 저장
           const group = new Map<string, PixelPoint[]>();
           group.set(hit.id, hit.points.map((p) => ({ ...p })));
           if (hit.type === "install") {
             for (const a of areas) {
-              if (a.type === "exclude" && polygonsOverlap(a.points, hit.points)) {
+              if (a.type === "exclude" && polygonFullyInside(a.points, hit.points)) {
                 group.set(a.id, a.points.map((p) => ({ ...p })));
               }
             }
