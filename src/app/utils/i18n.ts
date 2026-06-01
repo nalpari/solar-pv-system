@@ -172,7 +172,11 @@ const translations = {
     ja: "直前の操作を元に戻します",
     en: "Undo the last operation",
   },
-  retEndEditing: { ja: "編集終了", en: "End Editing" },
+  retComplete: { ja: "作成完了", en: "Complete" },
+  retCompleteGuide: {
+    ja: "編集を終え、選択/移動モードに戻ります",
+    en: "Finish editing and return to select/move mode",
+  },
 
   // North roof warning
   northRoofWarning: {
@@ -205,9 +209,6 @@ const translations = {
   },
 
   // Polygon edit
-  polygonMove: { ja: "移動", en: "Move" },
-  polygonDelete: { ja: "削除", en: "Delete" },
-  polygonEditVertices: { ja: "頂点編集", en: "Edit Vertices" },
   undoLastPoint: { ja: "元に戻す", en: "Undo" },
 
   // page.tsx (legacy key kept for compatibility)

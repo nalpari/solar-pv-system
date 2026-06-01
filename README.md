@@ -168,7 +168,6 @@ src/app/
 | `PixelPoint` | 캔버스 픽셀 좌표 |
 | `PixelPolygon` | 픽셀 폴리곤 (id, type, points, `eaveEdgeIndex?`) |
 | `PixelPanel` | 픽셀로 표현된 배치 패널 (`polygonId`, 4 corners) |
-| `PolygonSubMode` | `"idle"` \| `"selected"` \| `"moving"` \| `"editing_vertices"` |
 
 ## 사용 방법
 

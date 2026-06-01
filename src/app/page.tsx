@@ -55,6 +55,7 @@ export default function Home() {
   const [detectStatus, setDetectStatus] = useState<"idle" | "detecting">("idle");
   const [aiSeedAreas, setAiSeedAreas] = useState<NormalizedPolygon[]>([]);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const cropRafRef = useRef<number | null>(null);
 
   // detect useEffect 의존성에서 lang 제거 (I-5: 사용자 토글 시 재호출 방지)
   // 단 catch 시점의 메시지는 latest lang으로 보여야 하므로 ref로 read
@@ -71,6 +72,8 @@ export default function Home() {
   // drawingMode는 roofEditTool에서 파생 (drawRoof → install, drawOpening → exclude, 그 외 → null)
   const [undoSignal, setUndoSignal] = useState(0);
   const [clearSignal, setClearSignal] = useState(0);
+  const [deleteSelectedSignal, setDeleteSelectedSignal] = useState(0);
+  const [hasRoofSelection, setHasRoofSelection] = useState(false);
   const [areas, setAreas] = useState<PolygonArea[]>([]);
   const [panelSize, setPanelSize] = useState<PanelSize>({
     // Default matches first option in Lnb design's MODULE_PRESETS catalog
@@ -110,13 +113,25 @@ export default function Home() {
   const handleCropComplete = useCallback((data: CropData) => {
     setCropData(data);
     setCropMode(false);
-    // 크롭 영역 센터를 지도 중심으로 이동 (다음 작업 시점 갱신)
-    // viewport 우선순위 해제: ViewUpdater는 viewport가 있으면 fitBounds, 없으면 panTo(center) — 주소 검색 후 viewport가 남아있는 케이스 차단
-    setViewport(null);
-    setCenter({
+    const center = {
       lat: (data.bounds.sw.lat + data.bounds.ne.lat) / 2,
       lng: (data.bounds.sw.lng + data.bounds.ne.lng) / 2,
+    };
+    // 팝업이 지도를 완전히 가린 다음 프레임에 센터 이동 — panTo 애니메이션이
+    // 팝업 뜨기 전에 보여서 깜박이는 현상 방지. viewport도 함께 해제하여
+    // ViewUpdater가 fitBounds 대신 panTo(center)로 분기하도록 한다.
+    cropRafRef.current = requestAnimationFrame(() => {
+      cropRafRef.current = null;
+      setViewport(null);
+      setCenter(center);
     });
+  }, []);
+
+  // 언마운트 시 예약된 crop 센터 이동 rAF 취소
+  useEffect(() => {
+    return () => {
+      if (cropRafRef.current !== null) cancelAnimationFrame(cropRafRef.current);
+    };
   }, []);
 
   // 크롭 변경 시 AI 분석 상태 reset (Phase 7: 자동 트리거 제거, 사용자 핸들러로 분리)
@@ -486,9 +501,14 @@ export default function Home() {
                     setUndoSignal((n) => n + 1);
                   } else if (action === "deleteAll") {
                     handleDeleteAll();
+                  } else if (action === "deleteSelected") {
+                    setDeleteSelectedSignal((n) => n + 1);
+                  } else if (action === "complete") {
+                    // 작성 완료 → 선택/이동 모드로 자동 전환
+                    setRoofEditTool("select");
                   }
                 }}
-                onClose={() => setRoofEditTool("select")}
+                hasSelection={hasRoofSelection}
               />
               <CropPopup
                 cropData={cropData}
@@ -502,6 +522,8 @@ export default function Home() {
                 onEaveChange={handleEaveChange}
                 undoSignal={undoSignal}
                 clearSignal={clearSignal}
+                deleteSelectedSignal={deleteSelectedSignal}
+                onSelectionChange={setHasRoofSelection}
                 initialAreas={aiSeedAreas}
                 detectStatus={detectStatus}
               />
