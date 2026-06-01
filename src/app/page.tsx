@@ -55,6 +55,7 @@ export default function Home() {
   const [detectStatus, setDetectStatus] = useState<"idle" | "detecting">("idle");
   const [aiSeedAreas, setAiSeedAreas] = useState<NormalizedPolygon[]>([]);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const cropRafRef = useRef<number | null>(null);
 
   // detect useEffect 의존성에서 lang 제거 (I-5: 사용자 토글 시 재호출 방지)
   // 단 catch 시점의 메시지는 latest lang으로 보여야 하므로 ref로 read
@@ -119,10 +120,18 @@ export default function Home() {
     // 팝업이 지도를 완전히 가린 다음 프레임에 센터 이동 — panTo 애니메이션이
     // 팝업 뜨기 전에 보여서 깜박이는 현상 방지. viewport도 함께 해제하여
     // ViewUpdater가 fitBounds 대신 panTo(center)로 분기하도록 한다.
-    requestAnimationFrame(() => {
+    cropRafRef.current = requestAnimationFrame(() => {
+      cropRafRef.current = null;
       setViewport(null);
       setCenter(center);
     });
+  }, []);
+
+  // 언마운트 시 예약된 crop 센터 이동 rAF 취소
+  useEffect(() => {
+    return () => {
+      if (cropRafRef.current !== null) cancelAnimationFrame(cropRafRef.current);
+    };
   }, []);
 
   // 크롭 변경 시 AI 분석 상태 reset (Phase 7: 자동 트리거 제거, 사용자 핸들러로 분리)

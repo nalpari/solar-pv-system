@@ -165,6 +165,7 @@ function convertToPixelPolygons(entries: AreaEntry[]): PixelPolygon[] {
 
 const HANDLE_RADIUS = 12;
 const HANDLE_VISUAL_RADIUS = 6;
+const DRAG_THRESHOLD = 8; // 드래그로 인정할 최소 이동 거리(px) — 터치 미세 지터를 클릭으로 처리
 
 
 /** 크롭된 위성 이미지 위에서 폴리곤 편집·패널 배치를 수행하는 팝업 컴포넌트 */
@@ -193,6 +194,8 @@ export default function CropPopup({
   } | null>(null);
   // 다중 선택 (select 모드): 클릭 토글로 여러 폴리곤을 동시에 선택한다.
   const [selectedPolygonIds, setSelectedPolygonIds] = useState<Set<string>>(new Set());
+  // select 모드에서 폴리곤을 실제로 잡고 끌고 있는 상태 — grabbing 커서 표시용
+  const [isDraggingPolygon, setIsDraggingPolygon] = useState(false);
 
   // Polygon drag-move refs (select 모드)
   // 이동 시작 시 이동 대상(install)과 함께 움직일 폴리곤들(install 본체 + 겹치는 exclude 장애물)의
@@ -204,6 +207,9 @@ export default function CropPopup({
   const dragCandidateIdRef = useRef<string | null>(null);
   // press 후 실제 이동이 발생했는지 — pointerUp 시 "클릭(선택/해제)"과 "드래그 이동"을 구분
   const didDragRef = useRef<boolean>(false);
+  // 꼭짓점 드래그 임계값 체크용 — 시작 좌표와 실제 이동 여부 (editRoof 모드)
+  const vertexDragStartRef = useRef<PixelPoint | null>(null);
+  const didVertexDragRef = useRef<boolean>(false);
 
   // Vertex editing (editRoof 모드)
   const [draggingVertexIdx, setDraggingVertexIdx] = useState<number | null>(null);
@@ -591,6 +597,7 @@ export default function CropPopup({
             }
           }
           dragOriginalGroupRef.current = group;
+          setIsDraggingPolygon(true);
           e.currentTarget.setPointerCapture(e.pointerId);
           return;
         }
@@ -611,6 +618,8 @@ export default function CropPopup({
             if (Math.hypot(pt.x - vp.x, pt.y - vp.y) <= HANDLE_RADIUS) {
               editingPolygonIdRef.current = area.id;
               setDraggingVertexIdx(i);
+              vertexDragStartRef.current = pt;
+              didVertexDragRef.current = false;
               e.currentTarget.setPointerCapture(e.pointerId);
               return;
             }
@@ -642,6 +651,9 @@ export default function CropPopup({
               setAreas(updated);
               editingPolygonIdRef.current = area.id;
               setDraggingVertexIdx(insertIdx);
+              vertexDragStartRef.current = pt;
+              // 변 중점 클릭은 점 삽입 자체가 변경 — finalize가 미이동이어도 마무리되도록 true로 시작
+              didVertexDragRef.current = true;
               e.currentTarget.setPointerCapture(e.pointerId);
               onEaveChange?.(area.id);
               return;
@@ -792,8 +804,9 @@ export default function CropPopup({
       if (!selOrig) return;
       let dx = px - dragStartRef.current.x;
       let dy = py - dragStartRef.current.y;
-      // 실제 이동이 일어났음을 표시 (pointerUp에서 클릭 해제와 구분)
-      if (dx !== 0 || dy !== 0) didDragRef.current = true;
+      // 임계값 미만 이동은 클릭으로 간주 — 터치 미세 지터로 인한 오이동/모듈 증발 방지
+      if (!didDragRef.current && Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
+      didDragRef.current = true;
       // 본체가 캔버스 안에 머물도록 dx/dy 클램핑
       const minX = Math.min(...selOrig.map((p) => p.x));
       const maxX = Math.max(...selOrig.map((p) => p.x));
@@ -814,6 +827,12 @@ export default function CropPopup({
     // Vertex dragging (editRoof 모드)
     const editingId = editingPolygonIdRef.current;
     if (drawingMode === null && roofEditTool === "editRoof" && draggingVertexIdx !== null && editingId) {
+      // 임계값 미만 이동은 무시 — 꼭짓점 탭만으로 모양 변경/모듈 삭제 방지 (변 중점 삽입 경로는 시작 시 true라 영향 없음)
+      if (!didVertexDragRef.current) {
+        const start = vertexDragStartRef.current;
+        if (start && Math.hypot(px - start.x, py - start.y) < DRAG_THRESHOLD) return;
+        didVertexDragRef.current = true;
+      }
       // 스냅: 다른 install 폴리곤의 꼭짓점에 흡착 (자기 폴리곤은 제외)
       const snapped = findNearestSnapVertex({ x: px, y: py }, areasRef.current, editingId) ?? { x: px, y: py };
       setAreas((prev) =>
@@ -843,10 +862,12 @@ export default function CropPopup({
       dragOriginalGroupRef.current = null;
       dragCandidateIdRef.current = null;
       didDragRef.current = false;
+      setIsDraggingPolygon(false);
       if (moved) {
         // 실제로 이동한 경우: 부모 동기화 + 해당 지붕면 위 모듈 자동 삭제. 이동한 폴리곤은 선택 유지(추가).
         notifyParent(areasRef.current);
         if (candidateId) {
+          // onEaveChange는 본체(install)에만 호출 — 동반 이동된 exclude(장애물)엔 패널이 없어 모듈 정리 불필요
           onEaveChange?.(candidateId);
           setSelectedPolygonIds((prev) => {
             if (prev.has(candidateId)) return prev;
@@ -881,6 +902,11 @@ export default function CropPopup({
     setDraggingVertexIdx(null);
     const movedId = editingPolygonIdRef.current;
     editingPolygonIdRef.current = null;
+    const didMove = didVertexDragRef.current;
+    didVertexDragRef.current = false;
+    vertexDragStartRef.current = null;
+    // 실제 이동(또는 점 삽입)이 일어난 경우만 모양 변경 마무리 — 단순 탭으로 모듈이 삭제되는 것 방지
+    if (!didMove) return;
     const resetAreas = areasRef.current.map((a) =>
       a.id === movedId && a.type === "install"
         ? { ...a, eaveEdgeIndex: findLongestEdgeIndex(a.points) }
@@ -897,6 +923,7 @@ export default function CropPopup({
     dragOriginalGroupRef.current = null;
     dragCandidateIdRef.current = null;
     didDragRef.current = false;
+    setIsDraggingPolygon(false);
     if (draggingVertexIdx !== null) {
       finalizeVertexDrag();
     }
@@ -1091,8 +1118,12 @@ export default function CropPopup({
               cursor:
                 drawingMode === "install" || drawingMode === "exclude"
                   ? "crosshair"
-                  : roofEditTool === "select" && selectedPolygonIds.size > 0
-                    ? "grab"
+                  : roofEditTool === "select"
+                    ? isDraggingPolygon
+                      ? "grabbing"
+                      : selectedPolygonIds.size > 0
+                        ? "grab"
+                        : "default"
                     : roofEditTool === "editRoof"
                       ? "pointer"
                       : "default",

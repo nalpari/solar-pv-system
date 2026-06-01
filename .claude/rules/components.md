@@ -14,13 +14,13 @@ globs:
 
 - **Header** — App header with logo and navigation
 - **MapView** — Google Maps with satellite imagery and crop area selection overlay (html2canvas capture)
-- **CropPopup** — Cropped image popup with Canvas-based polygon editor and panel rendering. Supports image save (PNG download)
+- **CropPopup** — Cropped image popup with Canvas-based polygon editor and panel rendering. PNG 저장은 향후 도입 예정
 - **AddressSearch** — Places autocomplete to navigate the map
-- **RoofEditToolbar** — Floating toolbar over map for polygon editing (select/drawRoof/drawOpening/flowSetting/editRoof/deleteSelected/deleteAll/undo)
+- **RoofEditToolbar** — Floating toolbar over map for polygon editing (select/drawRoof/drawOpening/flowSetting/editRoof/deleteSelected/deleteAll/undo/complete)
 - **PanelConfig** — Panel size (mm), orientation, gap (cm), and margin (cm) controls
 - **ResultsPanel** — Displays panel count and area calculations
 - **SimulationPanel** — Generation simulation inputs (azimuth, battery, monthly electric cost) and results view
 
 ## Domain Types (`src/app/types/index.ts`)
 
-`LatLng`, `PanelSize`, `PanelOrientation`, `DrawingMode`, `PolygonArea`, `PlacedPanel`, `CropData`, `CropBounds`, `PixelPoint`, `PixelPolygon`, `PixelPanel`, `PolygonSubMode`.
+`LatLng`, `PanelSize`, `PanelOrientation`, `DrawingMode`, `PolygonArea`, `PlacedPanel`, `CropData`, `CropBounds`, `PixelPoint`, `PixelPolygon`, `PixelPanel`.
