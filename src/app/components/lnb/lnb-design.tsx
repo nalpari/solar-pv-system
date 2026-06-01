@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button, SelectBox } from "@/components/common";
 import { ChevronRight, Hint, Section } from "./section";
 import { BaechiTip, TipPopover } from "./tip-popover";
@@ -76,6 +76,15 @@ export function LnbDesign({
   const [moduleOptions, setModuleOptions] = useState(MODULE_PRESETS);
   const [modulesLoading, setModulesLoading] = useState(true);
 
+  // Latest panelSize / setter for the mount-only fetch effect (avoids re-running on every panel change).
+  // Refs are synced in an effect — writing ref.current during render is disallowed.
+  const panelSizeRef = useRef(panelSize);
+  const onPanelSizeChangeRef = useRef(onPanelSizeChange);
+  useEffect(() => {
+    panelSizeRef.current = panelSize;
+    onPanelSizeChangeRef.current = onPanelSizeChange;
+  });
+
   useEffect(() => {
     let cancelled = false;
     fetch("/api/qsp/btc-items?schItemTp=M")
@@ -103,6 +112,14 @@ export function LnbDesign({
             }));
           if (modules.length > 0) {
             setModuleOptions(modules);
+            // Keep the parent's panelSize in sync with what the dropdown shows:
+            // if the current size isn't in the loaded catalog, the SelectBox falls
+            // back to modules[0], so adopt that size for placement calculations too.
+            const current = panelSizeRef.current;
+            const matched = modules.some(
+              (m) => m.size.width === current.width && m.size.height === current.height,
+            );
+            if (!matched) onPanelSizeChangeRef.current({ ...modules[0].size });
           }
         }
       })
