@@ -104,6 +104,7 @@ async function callQsp<T>(
   }
 
   const url = buildUrl(options.host, path, query);
+  console.log(`[${logName}] → GET ${url}`);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -136,6 +137,10 @@ async function callQsp<T>(
     };
   }
   clearTimeout(timer);
+
+  if (!res.ok) {
+    console.warn(`[${logName}] upstream HTTP ${res.status} (url=${url})`);
+  }
 
   let body: unknown;
   try {

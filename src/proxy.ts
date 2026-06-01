@@ -68,11 +68,17 @@ export function proxy(req: NextRequest) {
   const origin = req.headers.get("origin");
   const expected = req.nextUrl.origin;
   if (!origin || origin !== expected) {
+    console.warn(
+      `[proxy] 403 Forbidden origin — path=${req.nextUrl.pathname} origin=${origin ?? "(none)"} expected=${expected}`,
+    );
     return envelopeError(403, 403, "Forbidden origin");
   }
 
   const rl = checkRateLimit(clientIp(req));
   if (!rl.ok) {
+    console.warn(
+      `[proxy] 429 Too many requests — path=${req.nextUrl.pathname} ip=${clientIp(req)}`,
+    );
     const res = envelopeError(429, 429, "Too many requests");
     res.headers.set("Retry-After", String(Math.ceil(rl.resetMs / 1000)));
     return res;

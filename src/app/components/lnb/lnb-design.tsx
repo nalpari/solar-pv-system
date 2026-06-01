@@ -74,11 +74,10 @@ export function LnbDesign({
   const detecting = detectStatus === "detecting";
 
   const [moduleOptions, setModuleOptions] = useState(MODULE_PRESETS);
-  const [modulesLoading, setModulesLoading] = useState(false);
+  const [modulesLoading, setModulesLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
-    setModulesLoading(true);
     fetch("/api/qsp/btc-items?schItemTp=M")
       .then((res) => res.json())
       .then((json) => {
