@@ -363,7 +363,6 @@ export default function Home() {
         {/* Left Sidebar — pv-pub design */}
         <Lnb
           tab={activeTab}
-          onTabChange={setActiveTab}
           lang={lang}
           design={{
             onPlaceSelect: handlePlaceSelect,

@@ -9,13 +9,12 @@ export type LnbTab = "design" | "simulation";
 
 interface LnbProps {
   tab: LnbTab;
-  onTabChange: (tab: LnbTab) => void;
   lang: Lang;
   design: LnbDesignProps;
   sim: LnbSimProps;
 }
 
-export function Lnb({ tab, onTabChange, lang, design, sim }: LnbProps) {
+export function Lnb({ tab, lang, design, sim }: LnbProps) {
   return (
     <aside
       className="w-[360px] h-screen flex flex-col px-6 pt-6 bg-[#ededed] shrink-0"
@@ -39,7 +38,6 @@ export function Lnb({ tab, onTabChange, lang, design, sim }: LnbProps) {
             iconSrc="/assets/images/contents/tab_icon01.svg"
             iconWidth={18}
             iconHeight={18}
-            onClick={() => onTabChange("design")}
           />
           <TabItem
             active={tab === "simulation"}
@@ -47,7 +45,6 @@ export function Lnb({ tab, onTabChange, lang, design, sim }: LnbProps) {
             iconSrc="/assets/images/contents/tab_icon02.svg"
             iconWidth={16}
             iconHeight={16}
-            onClick={() => onTabChange("simulation")}
           />
         </nav>
 
@@ -67,21 +64,18 @@ function TabItem({
   iconSrc,
   iconWidth,
   iconHeight,
-  onClick,
 }: {
   active?: boolean;
   label: string;
   iconSrc: string;
   iconWidth: number;
   iconHeight: number;
-  onClick?: () => void;
 }) {
   const color = active ? "#e74" : "#767676";
+  // 단계 표시는 시각 강조용 — 사용자 클릭으로 단계 전환되지 않음
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex-1 flex flex-col items-center justify-center gap-2 pb-5 border-b-2 cursor-pointer bg-transparent"
+    <div
+      className="flex-1 flex flex-col items-center justify-center gap-2 pb-5 border-b-2 cursor-default"
       style={{ borderColor: color }}
     >
       <span
@@ -96,6 +90,6 @@ function TabItem({
       >
         {label}
       </span>
-    </button>
+    </div>
   );
 }

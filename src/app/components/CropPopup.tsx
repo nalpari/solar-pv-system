@@ -410,7 +410,7 @@ export default function CropPopup({
     }
 
     // Draw vertex/midpoint handles for ALL polygons in editRoof mode
-    // (Spec Slide 18: 그려진 모든 지붕면과 모든 장애물에 점 표시)
+    // (editRoof 모드: 그려진 모든 지붕면과 모든 장애물에 점 표시)
     if (roofEditTool === "editRoof") {
       for (const area of areas) {
         if (area.points.length < 3) continue;
