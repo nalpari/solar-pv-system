@@ -64,12 +64,16 @@ function envelopeError(
 }
 
 export function proxy(req: NextRequest) {
-  // CSRF 보호 — Origin 헤더가 없거나 사이트 origin과 다르면 차단
+  // CSRF 보호 — Origin 헤더가 있으면 사이트 origin 과 일치해야 한다(cross-origin 차단).
+  // same-origin GET/HEAD 는 브라우저가 Origin 헤더를 붙이지 않으므로(safe method),
+  // Origin 부재 시에는 GET/HEAD 만 통과시키고 그 외 메서드는 차단한다.
   const origin = req.headers.get("origin");
   const expected = req.nextUrl.origin;
-  if (!origin || origin !== expected) {
+  const isSafeMethod = req.method === "GET" || req.method === "HEAD";
+  const blocked = origin ? origin !== expected : !isSafeMethod;
+  if (blocked) {
     console.warn(
-      `[proxy] 403 Forbidden origin — path=${req.nextUrl.pathname} origin=${origin ?? "(none)"} expected=${expected}`,
+      `[proxy] 403 Forbidden origin — path=${req.nextUrl.pathname} method=${req.method} origin=${origin ?? "(none)"} expected=${expected}`,
     );
     return envelopeError(403, 403, "Forbidden origin");
   }
