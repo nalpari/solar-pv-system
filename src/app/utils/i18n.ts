@@ -25,6 +25,11 @@ const translations = {
   // Slope Settings
   slopeSettings: { ja: "傾斜設定", en: "Slope Settings" },
   slopeUnit: { ja: "寸", en: " sun" },
+  slopeLabel1: { ja: "緩やかな屋根（約1寸）", en: "Gentle roof (~1寸)" },
+  slopeLabel3: { ja: "やや緩やかな屋根（約3寸）", en: "Slightly gentle roof (~3寸)" },
+  slopeLabel4: { ja: "標準屋根（約4寸）", en: "Standard roof (~4寸)" },
+  slopeLabel6: { ja: "やや急な屋根（約6寸）", en: "Slightly steep roof (~6寸)" },
+  slopeLabel8: { ja: "急な屋根（約8寸）", en: "Steep roof (~8寸)" },
   slopePlaceholder: { ja: "傾斜を選択", en: "Select slope" },
 
   // PanelConfig
@@ -76,6 +81,7 @@ const translations = {
   // PV logo + new Lnb section titles
   pvLogoAlt: { ja: "Hanwha Japan PV Simulation", en: "Hanwha Japan PV Simulation" },
   sectionRoofSlope: { ja: "屋根面傾斜", en: "Roof Slope" },
+  selectPlaceholder: { ja: "選択", en: "Select" },
   tabSolarDesignShort: { ja: "ソーラーデザイン", en: "Solar Design" },
   tabSimulationShort: { ja: "発電シミュレーション", en: "Simulation" },
   buildingConfirmHint: {

@@ -28,7 +28,7 @@ import type {
 const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
 
 const DEFAULT_CENTER = { lat: 35.6850697, lng: 139.7619073 }; // 〒100-0005 東京都千代田区丸の内1-1-1
-const DEFAULT_SLOPE = 4; // 4寸 default
+const DEFAULT_SLOPE: number | null = null; // 미선택 상태로 시작
 const DEFAULT_PANEL_SIZE: PanelSize = { label: "Re-RIZE-G3 440", width: 991, height: 1722 }; // Lnb design MODULE_PRESETS 첫 항목
 const DEFAULT_ORIENTATION: PanelOrientation = "portrait";
 
@@ -40,7 +40,7 @@ const MARGIN_CM = 30; // 외곽 여백 300mm
 export default function Home() {
   const [lang] = useState<Lang>("ja");
   const [activeTab, setActiveTab] = useState<SidebarTab>("design");
-  const [slope, setSlope] = useState(DEFAULT_SLOPE);
+  const [slope, setSlope] = useState<number | null>(DEFAULT_SLOPE);
   const [roofEditTool, setRoofEditTool] = useState<RoofTool>("select");
   const [simForm, setSimForm] = useState<SimulationFormState>({
     azimuth: "",
@@ -378,6 +378,7 @@ export default function Home() {
             },
             slope,
             onSlopeChange: setSlope,
+            areaCount: areas.length,
             panelSize,
             onPanelSizeChange: setPanelSize,
             orientation,

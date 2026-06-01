@@ -9,7 +9,14 @@ import { AddressInputLnb } from "./address-input-lnb";
 import { t, type Lang } from "../../utils/i18n";
 import type { PanelSize, PanelOrientation } from "../../types";
 
-const SLOPE_OPTIONS = Array.from({ length: 20 }, (_, i) => (i + 1) * 0.5);
+// 5단계 경사 옵션 — value는 寸 숫자, label은 풍부 텍스트(명세)
+const SLOPE_OPTIONS: { value: number; labelKey: "slopeLabel1" | "slopeLabel3" | "slopeLabel4" | "slopeLabel6" | "slopeLabel8" }[] = [
+  { value: 1, labelKey: "slopeLabel1" },
+  { value: 3, labelKey: "slopeLabel3" },
+  { value: 4, labelKey: "slopeLabel4" },
+  { value: 6, labelKey: "slopeLabel6" },
+  { value: 8, labelKey: "slopeLabel8" },
+];
 
 // Panel preset catalog — pv-pub style single-line module names.
 // Eventually swapped out by a module-loading API; for now the first option
@@ -35,8 +42,10 @@ export interface LnbDesignProps {
   cropPopupOpen: boolean;
   onCropModeToggle: () => void;
   // Slope
-  slope: number;
-  onSlopeChange: (slope: number) => void;
+  slope: number | null;
+  onSlopeChange: (slope: number | null) => void;
+  /** 지붕면 개수 — 1개 이상일 때만 경사 셀렉트 활성화 */
+  areaCount: number;
   // Panel config
   panelSize: PanelSize;
   onPanelSizeChange: (size: PanelSize) => void;
@@ -62,6 +71,7 @@ export function LnbDesign({
   onCropModeToggle,
   slope,
   onSlopeChange,
+  areaCount,
   panelSize,
   onPanelSizeChange,
   orientation,
@@ -204,13 +214,16 @@ export function LnbDesign({
             tip
           >
             <SelectBox
-              value={String(slope)}
-              onChange={(e) => onSlopeChange(Number(e.target.value))}
-              disabled={detecting}
-              options={SLOPE_OPTIONS.map((val) => ({
-                value: String(val),
-                label: `${val}${t("slopeUnit", lang)}`,
-              }))}
+              value={slope === null ? "" : String(slope)}
+              onChange={(e) => onSlopeChange(e.target.value === "" ? null : Number(e.target.value))}
+              disabled={detecting || areaCount === 0}
+              options={[
+                { value: "", label: t("selectPlaceholder", lang) },
+                ...SLOPE_OPTIONS.map((opt) => ({
+                  value: String(opt.value),
+                  label: t(opt.labelKey, lang),
+                })),
+              ]}
             />
           </Section>
 
