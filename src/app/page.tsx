@@ -28,6 +28,9 @@ import type {
 const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
 
 const DEFAULT_CENTER = { lat: 35.6850697, lng: 139.7619073 }; // 〒100-0005 東京都千代田区丸の内1-1-1
+const DEFAULT_SLOPE = 4; // 4寸 default
+const DEFAULT_PANEL_SIZE: PanelSize = { label: "Re-RIZE-G3 440", width: 991, height: 1722 }; // Lnb design MODULE_PRESETS 첫 항목
+const DEFAULT_ORIENTATION: PanelOrientation = "portrait";
 
 type SidebarTab = "design" | "simulation";
 
@@ -37,7 +40,7 @@ const MARGIN_CM = 30; // 외곽 여백 300mm
 export default function Home() {
   const [lang] = useState<Lang>("ja");
   const [activeTab, setActiveTab] = useState<SidebarTab>("design");
-  const [slope, setSlope] = useState(4); // 4寸 default
+  const [slope, setSlope] = useState(DEFAULT_SLOPE);
   const [roofEditTool, setRoofEditTool] = useState<RoofTool>("select");
   const [simForm, setSimForm] = useState<SimulationFormState>({
     azimuth: "",
@@ -100,14 +103,8 @@ export default function Home() {
   const [deleteSelectedSignal, setDeleteSelectedSignal] = useState(0);
   const [hasRoofSelection, setHasRoofSelection] = useState(false);
   const [areas, setAreas] = useState<PolygonArea[]>([]);
-  const [panelSize, setPanelSize] = useState<PanelSize>({
-    // Default matches first option in Lnb design's MODULE_PRESETS catalog
-    // (placeholder until module-loading API is wired).
-    label: "Re-RIZE-G3 440",
-    width: 991,
-    height: 1722,
-  });
-  const [orientation, setOrientation] = useState<PanelOrientation>("portrait");
+  const [panelSize, setPanelSize] = useState<PanelSize>(DEFAULT_PANEL_SIZE);
+  const [orientation, setOrientation] = useState<PanelOrientation>(DEFAULT_ORIENTATION);
   const [placedPanelsList, setPlacedPanelsList] = useState<PlacedPanel[]>([]);
   const [pixelAreas, setPixelAreas] = useState<{ areas: PixelPolygon[]; metersPerPixel: number } | null>(null);
   const [placedPixelPanels, setPlacedPixelPanels] = useState<PixelPanel[]>([]);
@@ -197,6 +194,10 @@ export default function Home() {
       if (!ok) return;
       handleDeleteAll();
       setAiSeedAreas([]);
+      // 재분석 시 경사/모듈/배치 방향도 기본값으로 초기화
+      setSlope(DEFAULT_SLOPE);
+      setPanelSize(DEFAULT_PANEL_SIZE);
+      setOrientation(DEFAULT_ORIENTATION);
     }
 
     // 이전 진행 중 요청 정리
