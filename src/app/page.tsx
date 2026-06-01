@@ -65,6 +65,29 @@ export default function Home() {
   }, [lang]);
 
   const [center, setCenter] = useState(DEFAULT_CENTER);
+
+  // 마운트 시 1회: 브라우저 geolocation 권한 요청 → 허용 시 현재 위치로 지도 이동,
+  // 거부/실패 시 기본값(마루노우치) 유지. 권한 결과는 어디에도 저장하지 않으며 (브라우저가 자체 관리),
+  // 매 접속(마운트)마다 getCurrentPosition을 호출한다. 사용자가 주소를 선택한 후 응답이
+  // 늦게 도착하면 무시 (race 가드)
+  const userOverrodeRef = useRef(false);
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !navigator.geolocation) return;
+    let cancelled = false;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        if (cancelled || userOverrodeRef.current) return;
+        setCenter({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+      },
+      () => {
+        // 권한 거부 / 디바이스 위치 비활성 / 타임아웃 — silent fallback (기본값 유지)
+      },
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 60_000 },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const [viewport, setViewport] = useState<google.maps.LatLngBounds | null>(null);
   const [cropMode, setCropMode] = useState(false);
   const [cropData, setCropData] = useState<CropData | null>(null);
@@ -105,6 +128,7 @@ export default function Home() {
     address: string;
     viewport?: google.maps.LatLngBounds;
   }) {
+    userOverrodeRef.current = true; // 사용자가 명시적으로 위치 선택 — 늦게 도착한 geolocation 응답 무시
     setCenter({ lat: location.lat, lng: location.lng });
     setAddress(location.address);
     setViewport(location.viewport ?? null);
