@@ -31,6 +31,8 @@ export interface LnbDesignProps {
     viewport?: google.maps.LatLngBounds;
   }) => void;
   cropMode: boolean;
+  /** 크롭 팝업(CropPopup)이 열려있는 상태 — 명세상 건물 확정 완료 후에만 노출되는 섹션 토글에 사용 */
+  cropPopupOpen: boolean;
   onCropModeToggle: () => void;
   // Slope
   slope: number;
@@ -56,6 +58,7 @@ export function LnbDesign({
   lang = "ja",
   onPlaceSelect,
   cropMode,
+  cropPopupOpen,
   onCropModeToggle,
   slope,
   onSlopeChange,
@@ -166,12 +169,13 @@ export function LnbDesign({
             iconHeight={16}
           >
             <div className="flex flex-col gap-2">
-              <AddressInputLnb lang={lang} onPlaceSelect={onPlaceSelect} />
+              <AddressInputLnb lang={lang} onPlaceSelect={onPlaceSelect} disabled={cropMode} />
               <Button
                 variant="primary"
                 className="w-full"
                 onClick={onCropModeToggle}
                 aria-pressed={cropMode}
+                disabled={cropPopupOpen}
                 icon={
                   <Image
                     src="/assets/images/common/btn_icon01.svg"
@@ -189,6 +193,8 @@ export function LnbDesign({
             </Hint>
           </Section>
 
+          {/* Sections 2~4: 명세상 "건물 확정 완료 후"에만 노출 (CropPopup 열림 = cropData 존재) */}
+          {cropPopupOpen && <>
           {/* Section 2: 屋根面傾斜 */}
           <Section
             title={t("sectionRoofSlope", lang)}
@@ -276,10 +282,11 @@ export function LnbDesign({
               </p>
             </div>
           </Section>
+          </>}
         </div>
       </div>
 
-      <div className="flex flex-col gap-2 shrink-0 pb-4">
+      {cropPopupOpen && <div className="flex flex-col gap-2 shrink-0 pb-4">
         <Button
           variant="orange"
           iconPosition="right"
@@ -300,7 +307,7 @@ export function LnbDesign({
         >
           {t("simulationCalcInput", lang)}
         </Button>
-      </div>
+      </div>}
     </>
   );
 }

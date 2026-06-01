@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Map, useMap } from "@vis.gl/react-google-maps";
+import { X } from "lucide-react";
 import html2canvas from "html2canvas";
 import { t } from "../utils/i18n";
 import type { Lang } from "../utils/i18n";
@@ -13,6 +14,10 @@ interface MapViewProps {
   cropMode: boolean;
   locked: boolean;
   onCropComplete: (cropData: CropData) => void;
+  /** 크롭모드 취소(X 버튼) — cropMode를 false로 되돌린다 */
+  onCropCancel: () => void;
+  /** 좌측 사이드바 건물확정 재클릭(2차) 시 증가하는 신호 — 영역이 그려져 있으면 확정 처리 */
+  confirmCropSignal: number;
   address: string;
   lang: Lang;
 }
@@ -105,11 +110,15 @@ function getCursorForTarget(target: DragTarget): string {
 function CropOverlay({
   active,
   onCropComplete,
+  onCropCancel,
+  confirmCropSignal,
   address,
   lang,
 }: {
   active: boolean;
   onCropComplete: (cropData: CropData) => void;
+  onCropCancel: () => void;
+  confirmCropSignal: number;
   address: string;
   lang: Lang;
 }) {
@@ -364,6 +373,16 @@ function CropOverlay({
       });
   }
 
+  // 좌측 사이드바 건물확정 재클릭(signal) → 그려진 영역이 있으면 확정 처리
+  const prevConfirmSignalRef = useRef(confirmCropSignal);
+  useEffect(() => {
+    if (confirmCropSignal === prevConfirmSignalRef.current) return;
+    prevConfirmSignalRef.current = confirmCropSignal;
+    if (!active || !rect) return;
+    handleConfirm();
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- handleConfirm은 매 렌더마다 재생성되지만 signal 변경에만 반응
+  }, [confirmCropSignal, active, rect]);
+
   if (!active) return null;
 
   // Build dark overlay with cutout using clip-path
@@ -441,34 +460,63 @@ function CropOverlay({
             );
           })}
 
-          {/* Confirm button — hidden while dragging, flips above if no space below */}
-          {!isDragging && (() => {
-            const btnH = 44;
-            const showAbove = rect.top + rect.height + 12 + btnH > containerSize.h;
-            return <button
-            onClick={handleConfirm}
-            style={{
-              position: "absolute",
-              left: rect.left + rect.width / 2,
-              top: showAbove ? rect.top - 12 - btnH : rect.top + rect.height + 12,
-              transform: "translateX(-50%)",
-              padding: "8px 24px",
-              background: "var(--accent-blue)",
-              color: "white",
-              border: "none",
-              borderRadius: "var(--radius-md)",
-              fontSize: 14,
-              fontWeight: 600,
-              cursor: "pointer",
-              zIndex: 1,
-              boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
-            }}
-          >
-            {t("cropConfirmArea", lang)}
-          </button>;
-          })()}
         </>
       )}
+
+      {/* 지도 상단 안내문구 + 취소 버튼 — 크롭모드 활성 동안 노출. 확정은 좌측 사이드바 건물확정 재클릭으로 수행. */}
+      <div
+        style={{
+          position: "absolute",
+          top: 16,
+          left: "50%",
+          transform: "translateX(-50%)",
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          zIndex: 2,
+          pointerEvents: "auto",
+          whiteSpace: "nowrap",
+        }}
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        {/* 안내문구 박스 */}
+        <div
+          style={{
+            padding: "8px 20px",
+            background: "rgba(0, 0, 0, 0.7)",
+            borderRadius: "var(--radius-lg)",
+            border: "1px solid transparent",
+            color: "#fff",
+            fontSize: 13,
+            fontWeight: 500,
+          }}
+        >
+          {t("cropAreaSelectGuide", lang)}
+        </div>
+        {/* 취소 버튼 (X 아이콘 + 라벨) — AI 분석 컨트롤과 동일 디자인 패턴 */}
+        <button
+          type="button"
+          onClick={onCropCancel}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            padding: "8px 20px",
+            background: "var(--bg-surface)",
+            borderRadius: "var(--radius-lg)",
+            border: "1px solid var(--border-primary)",
+            color: "var(--text-primary)",
+            fontSize: 13,
+            fontWeight: 500,
+            cursor: "pointer",
+            boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)",
+            transition: "all 0.15s ease",
+          }}
+        >
+          <X size={14} />
+          <span>{t("cropAreaCancel", lang)}</span>
+        </button>
+      </div>
     </div>
   );
 }
@@ -480,6 +528,8 @@ export default function MapView({
   cropMode,
   locked,
   onCropComplete,
+  onCropCancel,
+  confirmCropSignal,
   address,
   lang,
 }: MapViewProps) {
@@ -504,6 +554,8 @@ export default function MapView({
       <CropOverlay
         active={cropMode}
         onCropComplete={onCropComplete}
+        onCropCancel={onCropCancel}
+        confirmCropSignal={confirmCropSignal}
         address={address}
         lang={lang}
       />

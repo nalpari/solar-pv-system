@@ -90,6 +90,8 @@ export default function Home() {
   }, []);
   const [viewport, setViewport] = useState<google.maps.LatLngBounds | null>(null);
   const [cropMode, setCropMode] = useState(false);
+  // 좌측 사이드바 건물확정 버튼 재클릭(2차) 시 증가 — MapView/CropOverlay가 watch해서 그려진 영역으로 확정
+  const [confirmCropSignal, setConfirmCropSignal] = useState(0);
   const [cropData, setCropData] = useState<CropData | null>(null);
   const [address, setAddress] = useState("");
   // drawingMode는 roofEditTool에서 파생 (drawRoof → install, drawOpening → exclude, 그 외 → null)
@@ -367,7 +369,12 @@ export default function Home() {
           design={{
             onPlaceSelect: handlePlaceSelect,
             cropMode,
-            onCropModeToggle: () => setCropMode(!cropMode),
+            cropPopupOpen: cropData !== null,
+            // 1차 클릭: 크롭모드 활성화 / 2차 클릭(이미 활성): 확정 signal 증가 (MapView가 영역 있으면 확정 처리)
+            onCropModeToggle: () => {
+              if (cropMode) setConfirmCropSignal((n) => n + 1);
+              else setCropMode(true);
+            },
             slope,
             onSlopeChange: setSlope,
             panelSize,
@@ -402,6 +409,8 @@ export default function Home() {
               cropMode={cropMode}
               locked={cropData !== null}
               onCropComplete={handleCropComplete}
+              onCropCancel={() => setCropMode(false)}
+              confirmCropSignal={confirmCropSignal}
               address={address}
               lang={lang}
             />
