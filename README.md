@@ -56,6 +56,15 @@ NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_api_key_here
 GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
+QSP/MUSBI BFF API(모듈 목록 조회 등)와 API 문서(`/reference`)를 로컬에서 호출하려면 dev 전용 키(`QSP_API_HOST`, `MUSBI_API_HOST`, `ENABLE_API_DOCS`)도 필요합니다. 이 키들은 `.env.dev`에 있지만 **`next dev`는 `.env.dev` 파일명을 자동 로드하지 않습니다** — Next.js가 자동 로드하는 파일은 `.env` · `.env.local` · `.env.development` 등으로 한정되며, `.env.dev`/`.env.prod`는 배포 시 Jenkins가 `.env`로 병합하는 용도입니다. 따라서 로컬에서는 `.env.dev`를 `.env.local`로 복사해 사용합니다:
+
+```bash
+cp .env.dev .env.local        # 기존 .env.local 이 있으면 append: cat .env.dev >> .env.local
+```
+
+> - `.env.local`은 `.gitignore` 대상이라 커밋되지 않습니다.
+> - env 파일은 서버 시작 시점에만 로드되므로, 복사 후 `pnpm dev`를 **재시작**해야 적용됩니다.
+
 개발 서버 실행:
 
 ```bash
