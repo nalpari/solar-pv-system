@@ -127,8 +127,6 @@ function CropOverlay({
 
   // Selection rect: { left, top, width, height } in px
   const [rect, setRect] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [containerSize, setContainerSize] = useState({ w: 0, h: 0 });
   const dragTargetRef = useRef<DragTarget>(null);
   const dragStartRef = useRef<{ x: number; y: number; rect: { left: number; top: number; width: number; height: number } } | null>(null);
 
@@ -142,7 +140,6 @@ function CropOverlay({
       const cw = el.clientWidth;
       const ch = el.clientHeight;
       if (cw === 0 || ch === 0) return;
-      setContainerSize({ w: cw, h: ch });
       const rw = Math.round(cw * 0.5);
       const rh = Math.round(ch * 0.5);
       setRect({
@@ -198,7 +195,6 @@ function CropOverlay({
     e.currentTarget.setPointerCapture(e.pointerId);
     dragTargetRef.current = target;
     dragStartRef.current = { x, y, rect: { ...rect } };
-    setIsDragging(true);
   }
 
   /** 포인터 이동 시 크롭 영역 이동/리사이즈 처리 */
@@ -262,14 +258,12 @@ function CropOverlay({
   function handlePointerUp() {
     dragTargetRef.current = null;
     dragStartRef.current = null;
-    setIsDragging(false);
   }
 
   /** 포인터 캡처가 강제 해제될 때 드래그 상태를 정리한다 */
   function handlePointerCancel() {
     dragTargetRef.current = null;
     dragStartRef.current = null;
-    setIsDragging(false);
   }
 
   /** 크롭 영역 확정 후 이미지 캡처 및 콜백 호출 */
