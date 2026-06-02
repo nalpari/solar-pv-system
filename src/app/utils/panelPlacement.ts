@@ -118,7 +118,8 @@ export function placePanels(
   excludeAreas: PolygonArea[],
   panelSize: PanelSize,
   orientation: PanelOrientation,
-  gap: number,
+  gapX: number,
+  gapY: number,
   margin: number,
 ): PlacedPanel[] {
   if (panelSize.width <= 0 || panelSize.height <= 0) return [];
@@ -128,11 +129,13 @@ export function placePanels(
   // Convert panel dimensions from mm to meters; swap width/height for landscape orientation
   const pw = (orientation === "landscape" ? panelSize.height : panelSize.width) / 1000;
   const ph = (orientation === "landscape" ? panelSize.width : panelSize.height) / 1000;
-  const gapM = gap / 1000;
+  // 간격은 그리드 축 기준 — x축(처마 평행, 좌우) gapX / y축(처마 수직, 상하) gapY
+  const gapXM = gapX / 1000;
+  const gapYM = gapY / 1000;
   const marginM = margin / 1000;
 
-  const stepX = pw + gapM;
-  const stepY = ph + gapM;
+  const stepX = pw + gapXM;
+  const stepY = ph + gapYM;
   if (stepX <= 0 || stepY <= 0) return [];
 
   // Convert exclude areas to local coords for point-in-polygon checks
@@ -234,7 +237,8 @@ export function placePanelsOnCanvas(
   panelWidthMm: number,
   panelHeightMm: number,
   orientation: "portrait" | "landscape",
-  gapMm: number,
+  gapXMm: number,
+  gapYMm: number,
   marginMm: number,
   metersPerPixel: number,
 ): PixelPanel[] {
@@ -243,11 +247,13 @@ export function placePanelsOnCanvas(
   // Convert mm → meters → pixels
   const pw = (orientation === "landscape" ? panelHeightMm : panelWidthMm) / 1000 / metersPerPixel;
   const ph = (orientation === "landscape" ? panelWidthMm : panelHeightMm) / 1000 / metersPerPixel;
-  const gapPx = gapMm / 1000 / metersPerPixel;
+  // 간격은 그리드 축 기준 — x축(처마 평행, 좌우) gapX / y축(처마 수직, 상하) gapY
+  const gapXPx = gapXMm / 1000 / metersPerPixel;
+  const gapYPx = gapYMm / 1000 / metersPerPixel;
   const marginPx = marginMm / 1000 / metersPerPixel;
 
-  const stepX = pw + gapPx;
-  const stepY = ph + gapPx;
+  const stepX = pw + gapXPx;
+  const stepY = ph + gapYPx;
   if (stepX <= 0 || stepY <= 0) return [];
 
   const allPanels: PixelPanel[] = [];
@@ -358,7 +364,8 @@ export function placePanelsOnCanvasCm(
   panelWidthMm: number,
   panelHeightMm: number,
   orientation: "portrait" | "landscape",
-  gapCm: number,
+  gapXCm: number,
+  gapYCm: number,
   marginCm: number,
   metersPerPixel: number,
 ): PixelPanel[] {
@@ -369,7 +376,8 @@ export function placePanelsOnCanvasCm(
     panelWidthMm,
     panelHeightMm,
     orientation,
-    gapCm * 10,
+    gapXCm * 10,
+    gapYCm * 10,
     marginCm * 10,
     metersPerPixel,
   );

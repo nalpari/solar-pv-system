@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Button, SelectBox } from "@/components/common";
 import { ChevronRight, Hint, Section } from "./section";
 import { BaechiTip, TipPopover } from "./tip-popover";
@@ -46,8 +46,8 @@ export interface LnbDesignProps {
   onSlopeChange: (slope: number | null) => void;
   /** 지붕면 개수 — 1개 이상일 때만 경사 셀렉트 활성화 */
   areaCount: number;
-  // Panel config
-  panelSize: PanelSize;
+  // Panel config — null이면 모듈 미선택 상태
+  panelSize: PanelSize | null;
   onPanelSizeChange: (size: PanelSize) => void;
   // Results
   orientation: PanelOrientation;
@@ -89,15 +89,6 @@ export function LnbDesign({
   const [moduleOptions, setModuleOptions] = useState(MODULE_PRESETS);
   const [modulesLoading, setModulesLoading] = useState(true);
 
-  // Latest panelSize / setter for the mount-only fetch effect (avoids re-running on every panel change).
-  // Refs are synced in an effect — writing ref.current during render is disallowed.
-  const panelSizeRef = useRef(panelSize);
-  const onPanelSizeChangeRef = useRef(onPanelSizeChange);
-  useEffect(() => {
-    panelSizeRef.current = panelSize;
-    onPanelSizeChangeRef.current = onPanelSizeChange;
-  });
-
   useEffect(() => {
     let cancelled = false;
     fetch("/api/qsp/btc-items?schItemTp=M")
@@ -124,15 +115,8 @@ export function LnbDesign({
               } as PanelSize,
             }));
           if (modules.length > 0) {
+            // 명세: 모듈은 기본 미선택 — 카탈로그만 채우고 자동 선택하지 않음
             setModuleOptions(modules);
-            // Keep the parent's panelSize in sync with what the dropdown shows:
-            // if the current size isn't in the loaded catalog, the SelectBox falls
-            // back to modules[0], so adopt that size for placement calculations too.
-            const current = panelSizeRef.current;
-            const matched = modules.some(
-              (m) => m.size.width === current.width && m.size.height === current.height,
-            );
-            if (!matched) onPanelSizeChangeRef.current({ ...modules[0].size });
           }
         }
       })
@@ -147,19 +131,23 @@ export function LnbDesign({
     };
   }, []);
 
-  // Match the currently-selected panelSize against the loaded catalog.
-  const currentModule =
-    moduleOptions.find(
-      (p) => p.size.width === panelSize.width && p.size.height === panelSize.height,
-    )?.value ?? moduleOptions[0]?.value;
+  // 선택된 panelSize를 카탈로그와 매칭 — 미선택(null)이면 placeholder("") 노출
+  const currentModule = panelSize
+    ? moduleOptions.find(
+        (p) => p.size.width === panelSize.width && p.size.height === panelSize.height,
+      )?.value ?? ""
+    : "";
 
   function handleModuleChange(value: string) {
     const preset = moduleOptions.find((p) => p.value === value);
-    if (preset) onPanelSizeChange({ ...preset.size });
+    if (preset) {
+      onPanelSizeChange({ ...preset.size });
+      onDeleteAllPanels(); // 모듈 변경 시 기존 배치 모듈 전체 삭제
+    }
   }
 
-  const panelW = orientation === "landscape" ? panelSize.height : panelSize.width;
-  const panelH = orientation === "landscape" ? panelSize.width : panelSize.height;
+  const panelW = panelSize ? (orientation === "landscape" ? panelSize.height : panelSize.width) : 0;
+  const panelH = panelSize ? (orientation === "landscape" ? panelSize.width : panelSize.height) : 0;
   const panelKw = (panelW * panelH) / 1_000_000 * 0.2; // rough estimate ~200W/m²
   const totalKw = panelCount * panelKw;
 
@@ -238,8 +226,11 @@ export function LnbDesign({
               <SelectBox
                 value={currentModule}
                 onChange={(e) => handleModuleChange(e.target.value)}
-                disabled={detecting || modulesLoading}
-                options={moduleOptions.map((p) => ({ value: p.value, label: p.label }))}
+                disabled={detecting || modulesLoading || slope === null}
+                options={[
+                  { value: "", label: t("moduleSelectPlaceholder", lang) },
+                  ...moduleOptions.map((p) => ({ value: p.value, label: p.label })),
+                ]}
               />
               <div className="flex items-center gap-2">
                 <Button

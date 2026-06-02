@@ -36,7 +36,7 @@ const translations = {
   panelConfig: { ja: "パネル設定", en: "Panel Configuration" },
   panelType: { ja: "パネルタイプ", en: "Panel Type" },
   moduleSelect: { ja: "モジュール選択", en: "Module Selection" },
-  moduleSelectPlaceholder: { ja: "選択", en: "Select" },
+  moduleSelectPlaceholder: { ja: "太陽電池モジュール選択", en: "Select solar module" },
   widthMm: { ja: "幅 (mm)", en: "Width (mm)" },
   heightMm: { ja: "高さ (mm)", en: "Height (mm)" },
   orientation: { ja: "向き", en: "Orientation" },

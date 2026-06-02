@@ -29,12 +29,13 @@ const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
 
 const DEFAULT_CENTER = { lat: 35.6850697, lng: 139.7619073 }; // 〒100-0005 東京都千代田区丸の内1-1-1
 const DEFAULT_SLOPE: number | null = null; // 미선택 상태로 시작
-const DEFAULT_PANEL_SIZE: PanelSize = { label: "Re-RIZE-G3 440", width: 991, height: 1722 }; // Lnb design MODULE_PRESETS 첫 항목
+const DEFAULT_PANEL_SIZE: PanelSize | null = null; // 모듈 미선택 상태로 시작
 const DEFAULT_ORIENTATION: PanelOrientation = "portrait";
 
 type SidebarTab = "design" | "simulation";
 
-const GAP_CM = 0.3; // 모듈 간격 3mm
+const GAP_X_CM = 0.3; // 모듈 간격 좌우 3mm (처마 평행)
+const GAP_Y_CM = 3; // 모듈 간격 상하 30mm (처마 수직)
 const MARGIN_CM = 30; // 외곽 여백 300mm
 
 export default function Home() {
@@ -103,7 +104,7 @@ export default function Home() {
   const [deleteSelectedSignal, setDeleteSelectedSignal] = useState(0);
   const [hasRoofSelection, setHasRoofSelection] = useState(false);
   const [areas, setAreas] = useState<PolygonArea[]>([]);
-  const [panelSize, setPanelSize] = useState<PanelSize>(DEFAULT_PANEL_SIZE);
+  const [panelSize, setPanelSize] = useState<PanelSize | null>(DEFAULT_PANEL_SIZE);
   const [orientation, setOrientation] = useState<PanelOrientation>(DEFAULT_ORIENTATION);
   const [placedPanelsList, setPlacedPanelsList] = useState<PlacedPanel[]>([]);
   const [pixelAreas, setPixelAreas] = useState<{ areas: PixelPolygon[]; metersPerPixel: number } | null>(null);
@@ -289,6 +290,7 @@ export default function Home() {
 
   function handlePlacePanels() {
     setPlacementError(null);
+    if (!panelSize) return; // 모듈 미선택 시 배치 불가
     const orientations: PanelOrientation[] = ["portrait", "landscape"];
 
     if (pixelAreas) {
@@ -304,7 +306,7 @@ export default function Home() {
           const panels = placePanelsOnCanvasCm(
             installPx, excludePx,
             panelSize.width, panelSize.height,
-            ori, GAP_CM, MARGIN_CM, metersPerPixel,
+            ori, GAP_X_CM, GAP_Y_CM, MARGIN_CM, metersPerPixel,
           );
           if (panels.length > bestPanels.length) {
             bestPanels = panels;
@@ -327,7 +329,7 @@ export default function Home() {
           const panels = placePanels(
             installAreas, excludeAreas,
             panelSize, ori,
-            GAP_CM * 10, MARGIN_CM * 10,
+            GAP_X_CM * 10, GAP_Y_CM * 10, MARGIN_CM * 10,
           );
           if (panels.length > bestPanels.length) {
             bestPanels = panels;
@@ -344,9 +346,9 @@ export default function Home() {
     }
   }
 
-  const canPlace = cropData !== null
+  const canPlace = panelSize !== null && (cropData !== null
     ? pixelAreas !== null && pixelAreas.areas.some((a) => a.type === "install")
-    : installAreas.length > 0;
+    : installAreas.length > 0);
 
   const panelCount = placedPixelPanels.length || placedPanelsList.length;
 
