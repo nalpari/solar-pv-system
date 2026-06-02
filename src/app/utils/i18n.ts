@@ -92,7 +92,6 @@ const translations = {
   // Lnb design tab — module placement actions
   btnAlignedPlacement: { ja: "整列配置", en: "Aligned Layout" },
   btnStaggeredPlacement: { ja: "千鳥配置", en: "Staggered Layout" },
-  btnStaggeredUnsupported: { ja: "未対応", en: "Not supported" },
   btnDeleteModule: { ja: "モジュールの削除", en: "Delete Modules" },
   hintNorthRoofNotRecommended: {
     ja: "※北面への設置は日射量が少なく、発電量や経済効果が低下しやすいです. また、反射光により近隣とのトラブルにつながる可能性があるため、原則として推奨しておりません.",

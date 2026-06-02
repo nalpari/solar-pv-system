@@ -54,7 +54,7 @@ export interface LnbDesignProps {
   panelCount: number;
   canPlace: boolean;
   placementError: string | null;
-  onPlacePanels: () => void;
+  onPlacePanels: (layout: "aligned" | "staggered") => void;
   onDeleteAllPanels: () => void;
   // Detect state
   detectStatus: "idle" | "detecting";
@@ -236,7 +236,7 @@ export function LnbDesign({
                 <Button
                   variant="outline"
                   className="flex-1"
-                  onClick={onPlacePanels}
+                  onClick={() => onPlacePanels("aligned")}
                   disabled={!canPlace || detecting}
                 >
                   {t("btnAlignedPlacement", lang)}
@@ -244,8 +244,8 @@ export function LnbDesign({
                 <Button
                   variant="outline"
                   className="flex-1"
-                  disabled
-                  title={t("btnStaggeredUnsupported", lang)}
+                  onClick={() => onPlacePanels("staggered")}
+                  disabled={!canPlace || detecting}
                 >
                   {t("btnStaggeredPlacement", lang)}
                 </Button>

@@ -288,7 +288,7 @@ export default function Home() {
     setActiveTab("simulation");
   }
 
-  function handlePlacePanels() {
+  function handlePlacePanels(layout: "aligned" | "staggered" = "aligned") {
     setPlacementError(null);
     if (!panelSize) return; // 모듈 미선택 시 배치 불가
     const orientations: PanelOrientation[] = ["portrait", "landscape"];
@@ -306,7 +306,7 @@ export default function Home() {
           const panels = placePanelsOnCanvasCm(
             installPx, excludePx,
             panelSize.width, panelSize.height,
-            ori, GAP_X_CM, GAP_Y_CM, MARGIN_CM, metersPerPixel,
+            ori, layout, GAP_X_CM, GAP_Y_CM, MARGIN_CM, metersPerPixel,
           );
           if (panels.length > bestPanels.length) {
             bestPanels = panels;
@@ -328,7 +328,7 @@ export default function Home() {
         for (const ori of orientations) {
           const panels = placePanels(
             installAreas, excludeAreas,
-            panelSize, ori,
+            panelSize, ori, layout,
             GAP_X_CM * 10, GAP_Y_CM * 10, MARGIN_CM * 10,
           );
           if (panels.length > bestPanels.length) {

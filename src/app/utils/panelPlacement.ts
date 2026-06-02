@@ -118,6 +118,7 @@ export function placePanels(
   excludeAreas: PolygonArea[],
   panelSize: PanelSize,
   orientation: PanelOrientation,
+  layout: "aligned" | "staggered",
   gapX: number,
   gapY: number,
   margin: number,
@@ -190,9 +191,13 @@ export function placePanels(
       maxY = Math.max(maxY, p.y);
     }
 
-    // Place panels in a grid aligned to the longest edge
-    for (let x = minX + pw / 2; x <= maxX - pw / 2; x += stepX) {
-      for (let y = minY + ph / 2; y <= maxY - ph / 2; y += stepY) {
+    // Place panels in a grid aligned to the longest edge.
+    // 치도리(staggered): 행마다 가로로 stepX/2씩 어긋나게 배치
+    let row = 0;
+    for (let y = minY + ph / 2; y <= maxY - ph / 2; y += stepY) {
+      const xOffset = layout === "staggered" ? (row % 2) * (stepX / 2) : 0;
+      row++;
+      for (let x = minX + pw / 2 + xOffset; x <= maxX - pw / 2; x += stepX) {
         const corners: Point[] = [
           { x: x - pw / 2, y: y - ph / 2 },
           { x: x + pw / 2, y: y - ph / 2 },
@@ -237,6 +242,7 @@ export function placePanelsOnCanvas(
   panelWidthMm: number,
   panelHeightMm: number,
   orientation: "portrait" | "landscape",
+  layout: "aligned" | "staggered",
   gapXMm: number,
   gapYMm: number,
   marginMm: number,
@@ -317,9 +323,13 @@ export function placePanelsOnCanvas(
       maxY = Math.max(maxY, p.y);
     }
 
-    // Place panels in a grid aligned to the longest edge
-    for (let x = minX + pw / 2; x <= maxX - pw / 2; x += stepX) {
-      for (let y = minY + ph / 2; y <= maxY - ph / 2; y += stepY) {
+    // Place panels in a grid aligned to the longest edge.
+    // 치도리(staggered): 행마다 가로로 stepX/2씩 어긋나게 배치
+    let row = 0;
+    for (let y = minY + ph / 2; y <= maxY - ph / 2; y += stepY) {
+      const xOffset = layout === "staggered" ? (row % 2) * (stepX / 2) : 0;
+      row++;
+      for (let x = minX + pw / 2 + xOffset; x <= maxX - pw / 2; x += stepX) {
         const corners: Point[] = [
           { x: x - pw / 2, y: y - ph / 2 },
           { x: x + pw / 2, y: y - ph / 2 },
@@ -364,6 +374,7 @@ export function placePanelsOnCanvasCm(
   panelWidthMm: number,
   panelHeightMm: number,
   orientation: "portrait" | "landscape",
+  layout: "aligned" | "staggered",
   gapXCm: number,
   gapYCm: number,
   marginCm: number,
@@ -376,6 +387,7 @@ export function placePanelsOnCanvasCm(
     panelWidthMm,
     panelHeightMm,
     orientation,
+    layout,
     gapXCm * 10,
     gapYCm * 10,
     marginCm * 10,
