@@ -206,7 +206,7 @@ export function LnbDesign({
               onChange={(e) => onSlopeChange(e.target.value === "" ? null : Number(e.target.value))}
               disabled={detecting || areaCount === 0}
               options={[
-                { value: "", label: t("selectPlaceholder", lang) },
+                { value: "", label: t("selectPlaceholder", lang), disabled: true, hidden: true },
                 ...SLOPE_OPTIONS.map((opt) => ({
                   value: String(opt.value),
                   label: t(opt.labelKey, lang),
@@ -228,7 +228,7 @@ export function LnbDesign({
                 onChange={(e) => handleModuleChange(e.target.value)}
                 disabled={detecting || modulesLoading || slope === null}
                 options={[
-                  { value: "", label: t("moduleSelectPlaceholder", lang) },
+                  { value: "", label: t("moduleSelectPlaceholder", lang), disabled: true, hidden: true },
                   ...moduleOptions.map((p) => ({ value: p.value, label: p.label })),
                 ]}
               />

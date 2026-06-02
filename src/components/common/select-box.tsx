@@ -3,6 +3,8 @@ import Image from "next/image";
 export type SelectBoxOption = {
   value: string;
   label: string;
+  disabled?: boolean;
+  hidden?: boolean;
 };
 
 type SelectBoxProps = Omit<
@@ -28,7 +30,7 @@ export function SelectBox({
         className="flex-1 min-w-0 h-full pl-4 pr-12 py-0 bg-transparent border-0 rounded-none text-[13px] leading-[1.5] text-[#333] text-ellipsis whitespace-nowrap overflow-hidden outline-none appearance-none cursor-pointer shadow-none focus:shadow-none focus:outline-none focus:border-0"
       >
         {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
+          <option key={opt.value} value={opt.value} disabled={opt.disabled} hidden={opt.hidden}>
             {opt.label}
           </option>
         ))}
