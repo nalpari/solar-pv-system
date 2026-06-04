@@ -148,6 +148,7 @@ src/
 | `docs/codemap-playground.html` | 인터랙티브 코드맵 (브라우저 열람용) |
 | `docs/plans/` | UX 개선·기능 도입 계획 문서 |
 | `docs/security-review-2026-06-02.md` | 멀티에이전트 보안 코드리뷰 결과 (BFF/detect 공격면·심각도별 발견·완화책) |
+| `docs/investigations/2026-06-04-detect-roof-latency-analysis.md` | detect-roof Gemini 지연 진단 (근본원인 랭킹·해결책 우선순위·측정 공백) |
 
 ## Coding Conventions
 
