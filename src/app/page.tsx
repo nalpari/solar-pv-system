@@ -30,7 +30,7 @@ const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
 const DEFAULT_CENTER = { lat: 35.6850697, lng: 139.7619073 }; // 〒100-0005 東京都千代田区丸の内1-1-1
 const DEFAULT_SLOPE: number | null = null; // 미선택 상태로 시작
 const DEFAULT_PANEL_SIZE: PanelSize | null = null; // 모듈 미선택 상태로 시작
-const DEFAULT_ORIENTATION: PanelOrientation = "portrait";
+const DEFAULT_ORIENTATION: PanelOrientation = "landscape"; // 패널 긴 변(longAxis)을 처마 기준선과 평행하게 배치
 
 type SidebarTab = "design" | "simulation";
 
@@ -290,8 +290,10 @@ export default function Home() {
 
   function handlePlacePanels(layout: "aligned" | "staggered" = "aligned") {
     setPlacementError(null);
-    if (!panelSize) return; // 모듈 미선택 시 배치 불가
-    const orientations: PanelOrientation[] = ["portrait", "landscape"];
+    // 경사·모듈 미선택 시 배치 불가 (UI 비활성화에 더해 함수 레벨 방어)
+    if (slope === null || !panelSize) return;
+    // 패널 긴 변을 처마 기준선과 평행하게 — landscape 고정 (명세)
+    const ori: PanelOrientation = "landscape";
 
     if (pixelAreas) {
       try {
@@ -299,46 +301,28 @@ export default function Home() {
         const installPx = pxAreas.filter((a) => a.type === "install");
         const excludePx = pxAreas.filter((a) => a.type === "exclude");
 
-        let bestPanels: PixelPanel[] = [];
-        let bestOrientation: PanelOrientation = orientation;
+        const panels = placePanelsOnCanvasCm(
+          installPx, excludePx,
+          panelSize.width, panelSize.height,
+          ori, layout, GAP_X_CM, GAP_Y_CM, MARGIN_CM, metersPerPixel, slope ?? 0,
+        );
 
-        for (const ori of orientations) {
-          const panels = placePanelsOnCanvasCm(
-            installPx, excludePx,
-            panelSize.width, panelSize.height,
-            ori, layout, GAP_X_CM, GAP_Y_CM, MARGIN_CM, metersPerPixel,
-          );
-          if (panels.length > bestPanels.length) {
-            bestPanels = panels;
-            bestOrientation = ori;
-          }
-        }
-
-        setOrientation(bestOrientation);
-        setPlacedPixelPanels(bestPanels);
+        setOrientation(ori);
+        setPlacedPixelPanels(panels);
       } catch (e) {
         console.error("Panel placement failed:", e);
         setPlacementError(t("panelPlacementFailed", lang));
       }
     } else {
       try {
-        let bestPanels: PlacedPanel[] = [];
-        let bestOrientation: PanelOrientation = orientation;
+        const panels = placePanels(
+          installAreas, excludeAreas,
+          panelSize, ori, layout,
+          GAP_X_CM * 10, GAP_Y_CM * 10, MARGIN_CM * 10, slope ?? 0,
+        );
 
-        for (const ori of orientations) {
-          const panels = placePanels(
-            installAreas, excludeAreas,
-            panelSize, ori, layout,
-            GAP_X_CM * 10, GAP_Y_CM * 10, MARGIN_CM * 10,
-          );
-          if (panels.length > bestPanels.length) {
-            bestPanels = panels;
-            bestOrientation = ori;
-          }
-        }
-
-        setOrientation(bestOrientation);
-        setPlacedPanelsList(bestPanels);
+        setOrientation(ori);
+        setPlacedPanelsList(panels);
       } catch (e) {
         console.error("Panel placement failed:", e);
         setPlacementError(t("panelPlacementFailed", lang));
@@ -346,7 +330,7 @@ export default function Home() {
     }
   }
 
-  const canPlace = panelSize !== null && (cropData !== null
+  const canPlace = slope !== null && panelSize !== null && (cropData !== null
     ? pixelAreas !== null && pixelAreas.areas.some((a) => a.type === "install")
     : installAreas.length > 0);
 
