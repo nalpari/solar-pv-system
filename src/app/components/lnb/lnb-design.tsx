@@ -7,7 +7,7 @@ import { ChevronRight, Hint, Section } from "./section";
 import { BaechiTip, TipPopover } from "./tip-popover";
 import { AddressInputLnb } from "./address-input-lnb";
 import { t, type Lang } from "../../utils/i18n";
-import type { PanelSize, PanelOrientation } from "../../types";
+import type { PanelSize } from "../../types";
 
 // 5단계 경사 옵션 — value는 寸 숫자, label은 풍부 텍스트(명세)
 const SLOPE_OPTIONS: { value: number; labelKey: "slopeLabel1" | "slopeLabel3" | "slopeLabel4" | "slopeLabel6" | "slopeLabel8" }[] = [
@@ -50,7 +50,6 @@ export interface LnbDesignProps {
   panelSize: PanelSize | null;
   onPanelSizeChange: (size: PanelSize) => void;
   // Results
-  orientation: PanelOrientation;
   panelCount: number;
   canPlace: boolean;
   placementError: string | null;
@@ -74,7 +73,6 @@ export function LnbDesign({
   areaCount,
   panelSize,
   onPanelSizeChange,
-  orientation,
   panelCount,
   canPlace,
   placementError,
@@ -100,6 +98,7 @@ export function LnbDesign({
             matlCd: string;
             qcastCustPrdNm: string;
             matlGbnCd: string;
+            wpOut: string;
             shortAxis: number;
             longAxis: number;
           }>;
@@ -112,6 +111,7 @@ export function LnbDesign({
                 label: item.qcastCustPrdNm,
                 width: item.shortAxis,
                 height: item.longAxis,
+                watt: Number(item.wpOut) || 0,
               } as PanelSize,
             }));
           if (modules.length > 0) {
@@ -146,10 +146,8 @@ export function LnbDesign({
     }
   }
 
-  const panelW = panelSize ? (orientation === "landscape" ? panelSize.height : panelSize.width) : 0;
-  const panelH = panelSize ? (orientation === "landscape" ? panelSize.width : panelSize.height) : 0;
-  const panelKw = (panelW * panelH) / 1_000_000 * 0.2; // rough estimate ~200W/m²
-  const totalKw = panelCount * panelKw;
+  // 설치 용량 = Σ(모듈 수 × wpOut[W]) → kW. 부동소수 꼬리만 정리
+  const totalKw = parseFloat(((panelCount * (panelSize?.watt ?? 0)) / 1000).toFixed(3));
 
   return (
     <>
@@ -282,7 +280,7 @@ export function LnbDesign({
           >
             <div className="flex items-center justify-center h-[72px] px-4 bg-[#f5f5f5] border border-[#f2f2f2] rounded-[14px]">
               <p className="text-[18px] font-medium leading-[1.5] text-[#101010]">
-                {panelCount}{t("capacityUnit", lang)} · {totalKw.toFixed(1).replace(/\.0$/, "")}kW
+                {panelCount}{t("capacityUnit", lang)} · {totalKw}kW
               </p>
             </div>
           </Section>

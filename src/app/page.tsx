@@ -30,7 +30,6 @@ const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
 const DEFAULT_CENTER = { lat: 35.6850697, lng: 139.7619073 }; // 〒100-0005 東京都千代田区丸の内1-1-1
 const DEFAULT_SLOPE: number | null = null; // 미선택 상태로 시작
 const DEFAULT_PANEL_SIZE: PanelSize | null = null; // 모듈 미선택 상태로 시작
-const DEFAULT_ORIENTATION: PanelOrientation = "landscape"; // 패널 긴 변(longAxis)을 처마 기준선과 평행하게 배치
 
 type SidebarTab = "design" | "simulation";
 
@@ -105,7 +104,6 @@ export default function Home() {
   const [hasRoofSelection, setHasRoofSelection] = useState(false);
   const [areas, setAreas] = useState<PolygonArea[]>([]);
   const [panelSize, setPanelSize] = useState<PanelSize | null>(DEFAULT_PANEL_SIZE);
-  const [orientation, setOrientation] = useState<PanelOrientation>(DEFAULT_ORIENTATION);
   const [placedPanelsList, setPlacedPanelsList] = useState<PlacedPanel[]>([]);
   const [pixelAreas, setPixelAreas] = useState<{ areas: PixelPolygon[]; metersPerPixel: number } | null>(null);
   const [placedPixelPanels, setPlacedPixelPanels] = useState<PixelPanel[]>([]);
@@ -198,7 +196,6 @@ export default function Home() {
       // 재분석 시 경사/모듈/배치 방향도 기본값으로 초기화
       setSlope(DEFAULT_SLOPE);
       setPanelSize(DEFAULT_PANEL_SIZE);
-      setOrientation(DEFAULT_ORIENTATION);
     }
 
     // 이전 진행 중 요청 정리
@@ -307,7 +304,6 @@ export default function Home() {
           ori, layout, GAP_X_CM, GAP_Y_CM, MARGIN_CM, metersPerPixel, slope ?? 0,
         );
 
-        setOrientation(ori);
         setPlacedPixelPanels(panels);
       } catch (e) {
         console.error("Panel placement failed:", e);
@@ -321,7 +317,6 @@ export default function Home() {
           GAP_X_CM * 10, GAP_Y_CM * 10, MARGIN_CM * 10, slope ?? 0,
         );
 
-        setOrientation(ori);
         setPlacedPanelsList(panels);
       } catch (e) {
         console.error("Panel placement failed:", e);
@@ -367,7 +362,6 @@ export default function Home() {
             areaCount: areas.length,
             panelSize,
             onPanelSizeChange: setPanelSize,
-            orientation,
             panelCount,
             canPlace,
             placementError,
