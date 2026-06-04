@@ -134,23 +134,20 @@ sequenceDiagram
     participant CP as CropPopup
     participant RP as ResultsPanel
 
-    U->>H: Place Modules 클릭
+    U->>H: Place Modules 클릭 (정렬/치도리)
     H->>H: placementError 초기화
+    H->>H: 경사·모듈 미선택 시 early return
 
     alt cropData + pixelAreas 있음
-        loop portrait / landscape
-            H->>PC: installPx, excludePx, panel size,<br/>orientation, GAP_CM, MARGIN_CM, metersPerPixel
-            PC-->>H: PixelPanel[]
-        end
-        H->>H: 더 많은 패널의 orientation 채택
+        H->>PC: installPx, excludePx, panel size,<br/>landscape, layout, GAP_X/Y_CM, MARGIN_CM,<br/>metersPerPixel, slope
+        PC->>PC: 처마 회전 + 경사 cos 보정 +<br/>x·y 위상 스캔(최대 충진) + 오목/장애물 방어
+        PC-->>H: PixelPanel[]
         H->>H: setPlacedPixelPanels()
         H->>CP: placedPanels 전달
         CP->>CP: canvas에 패널 오버레이 렌더
     else lat/lng areas 사용
-        loop portrait / landscape
-            H->>PL: installAreas, excludeAreas,<br/>panelSize, orientation, gapMm, marginMm
-            PL-->>H: PlacedPanel[]
-        end
+        H->>PL: installAreas, excludeAreas,<br/>panelSize, landscape, layout, gapXMm, gapYMm,<br/>marginMm, slope
+        PL-->>H: PlacedPanel[]
         H->>H: setPlacedPanelsList()
     end
 
