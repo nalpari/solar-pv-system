@@ -100,7 +100,7 @@ src/
 - 엔드포인트 (둘 다 `ENABLE_API_DOCS=true` 환경에서만 노출, 그 외에는 404 — 내부 API 명세 노출 차단. `NODE_ENV` 가드는 dev/prod 모두 production 빌드를 쓰는 배포 모델과 충돌하므로 사용하지 않음):
   - `GET /api/openapi` — OpenAPI 3.1 JSON (모듈 스코프 lazy memoize)
   - `GET /reference` — Scalar 기반 API Reference UI (dev: http://localhost:3000/reference)
-- 라우트 보호: `/api/qsp/*`, `/api/musbi/*` 는 `src/proxy.ts` 에서 Origin 검증 + per-IP rate limit (1분 30회, in-memory sliding window) 적용 — 단일 인스턴스 배포 전제, 스케일아웃 시 분산 저장소로 교체 필요. Next.js 16 의 proxy 컨벤션을 따른다 (구 `middleware` 컨벤션 deprecated)
+- 라우트 보호: `/api/qsp/*`, `/api/musbi/*`, `/api/detect-roof` 는 `src/proxy.ts` 에서 Origin 검증 + per-IP rate limit (in-memory sliding window) 적용 — BFF(qsp/musbi)는 1분 30회, 고비용 detect-roof(Gemini 2회 호출)는 1분 10회 별도 버킷. clientIP 는 `X-Forwarded-For` 의 오른쪽 신뢰 hop(`TRUSTED_PROXY_HOPS`, 기본 1)만 채택해 헤더 위조로 인한 한도 우회를 막는다 — 운영은 XFF 를 설정하는 리버스 프록시 뒤 배포 전제(직접 노출 시 IP 별 제한 불가). 단일 인스턴스 배포 전제, 스케일아웃 시 분산 저장소로 교체 필요. Next.js 16 의 proxy 컨벤션을 따른다 (구 `middleware` 컨벤션 deprecated)
 
 ### Key Patterns
 
@@ -130,7 +130,6 @@ src/
 | `PixelPoint` | x/y coordinate in pixel space |
 | `PixelPolygon` | Install/exclude polygon in pixel coordinates (optional `eaveEdgeIndex`) |
 | `PixelPanel` | Placed panel (`polygonId` + 4 pixel corners) |
-| `PolygonSubMode` | `"idle"` \| `"selected"` \| `"moving"` \| `"editing_vertices"` |
 
 ### Supplementary Guides
 
@@ -148,6 +147,7 @@ src/
 | `docs/graphify-setup.md` | graphify 도입·운영 세팅 가이드 |
 | `docs/codemap-playground.html` | 인터랙티브 코드맵 (브라우저 열람용) |
 | `docs/plans/` | UX 개선·기능 도입 계획 문서 |
+| `docs/security-review-2026-06-02.md` | 멀티에이전트 보안 코드리뷰 결과 (BFF/detect 공격면·심각도별 발견·완화책) |
 
 ## Coding Conventions
 

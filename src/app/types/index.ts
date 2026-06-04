@@ -60,5 +60,3 @@ export interface PixelPanel {
   polygonId: string;
   corners: [PixelPoint, PixelPoint, PixelPoint, PixelPoint];
 }
-
-export type PolygonSubMode = "idle" | "selected" | "moving" | "editing_vertices";

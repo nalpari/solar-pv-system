@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useState, useEffect, useRef } from "react";
 import { Button, SelectBox } from "@/components/common";
 import { ChevronRight, Hint, Section } from "./section";
 import { BaechiTip, TipPopover } from "./tip-popover";
@@ -72,14 +73,75 @@ export function LnbDesign({
 }: LnbDesignProps) {
   const detecting = detectStatus === "detecting";
 
-  // Match the currently-selected panelSize against the preset catalog.
+  const [moduleOptions, setModuleOptions] = useState(MODULE_PRESETS);
+  const [modulesLoading, setModulesLoading] = useState(true);
+
+  // Latest panelSize / setter for the mount-only fetch effect (avoids re-running on every panel change).
+  // Refs are synced in an effect — writing ref.current during render is disallowed.
+  const panelSizeRef = useRef(panelSize);
+  const onPanelSizeChangeRef = useRef(onPanelSizeChange);
+  useEffect(() => {
+    panelSizeRef.current = panelSize;
+    onPanelSizeChangeRef.current = onPanelSizeChange;
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/qsp/btc-items?schItemTp=M")
+      .then((res) => res.json())
+      .then((json) => {
+        if (cancelled) return;
+        if (json.success && Array.isArray(json.data)) {
+          const items = json.data as Array<{
+            matlCd: string;
+            qcastCustPrdNm: string;
+            matlGbnCd: string;
+            shortAxis: number;
+            longAxis: number;
+          }>;
+          const modules = items
+            .filter((item) => item.matlGbnCd === "M")
+            .map((item) => ({
+              value: item.matlCd,
+              label: item.qcastCustPrdNm,
+              size: {
+                label: item.qcastCustPrdNm,
+                width: item.shortAxis,
+                height: item.longAxis,
+              } as PanelSize,
+            }));
+          if (modules.length > 0) {
+            setModuleOptions(modules);
+            // Keep the parent's panelSize in sync with what the dropdown shows:
+            // if the current size isn't in the loaded catalog, the SelectBox falls
+            // back to modules[0], so adopt that size for placement calculations too.
+            const current = panelSizeRef.current;
+            const matched = modules.some(
+              (m) => m.size.width === current.width && m.size.height === current.height,
+            );
+            if (!matched) onPanelSizeChangeRef.current({ ...modules[0].size });
+          }
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to fetch btc-items:", err);
+      })
+      .finally(() => {
+        if (!cancelled) setModulesLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Match the currently-selected panelSize against the loaded catalog.
   const currentModule =
-    MODULE_PRESETS.find(
+    moduleOptions.find(
       (p) => p.size.width === panelSize.width && p.size.height === panelSize.height,
-    )?.value ?? MODULE_PRESETS[0].value;
+    )?.value ?? moduleOptions[0]?.value;
 
   function handleModuleChange(value: string) {
-    const preset = MODULE_PRESETS.find((p) => p.value === value);
+    const preset = moduleOptions.find((p) => p.value === value);
     if (preset) onPanelSizeChange({ ...preset.size });
   }
 
@@ -157,8 +219,8 @@ export function LnbDesign({
               <SelectBox
                 value={currentModule}
                 onChange={(e) => handleModuleChange(e.target.value)}
-                disabled={detecting}
-                options={MODULE_PRESETS.map((p) => ({ value: p.value, label: p.label }))}
+                disabled={detecting || modulesLoading}
+                options={moduleOptions.map((p) => ({ value: p.value, label: p.label }))}
               />
               <div className="flex items-center gap-2">
                 <Button
