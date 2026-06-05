@@ -40,6 +40,8 @@ const MARGIN_CM = 30; // 외곽 여백 300mm
 export default function Home() {
   const [lang] = useState<Lang>("ja");
   const [activeTab, setActiveTab] = useState<SidebarTab>("design");
+  // 모듈 배치 완료(편집 잠금) 상태 — true면 지붕 편집·경사·모듈/배치 비활성, 발전시뮬 버튼 활성
+  const [isPlacementDone, setIsPlacementDone] = useState(false);
   const [slope, setSlope] = useState<number | null>(DEFAULT_SLOPE);
   const [roofEditTool, setRoofEditTool] = useState<RoofTool>("select");
   const [simForm, setSimForm] = useState<SimulationFormState>({
@@ -196,6 +198,7 @@ export default function Home() {
       // 재분석 시 경사/모듈/배치 방향도 기본값으로 초기화
       setSlope(DEFAULT_SLOPE);
       setPanelSize(DEFAULT_PANEL_SIZE);
+      setIsPlacementDone(false); // 배치 완료(편집 잠금) 상태 해제
     }
 
     // 이전 진행 중 요청 정리
@@ -254,6 +257,7 @@ export default function Home() {
     setPixelAreas(null);
     setPlacedPixelPanels([]);
     setPlacedPanelsList([]);
+    setIsPlacementDone(false); // 배치 완료(편집 잠금) 상태 해제
     // AI 감지 state는 cropData가 null 되면 detect useEffect가 자동 정리함 (I-4: DRY)
   }, []);
 
@@ -375,13 +379,14 @@ export default function Home() {
             onPlacePanels: handlePlacePanels,
             onDeleteAllPanels: handleDeleteAllPanels,
             detectStatus,
-            onPlacementDone: switchToSimulation,
+            isPlacementDone,
+            onPlacementDone: () => setIsPlacementDone((v) => !v),
             onSwitchToSimulation: switchToSimulation,
           }}
           sim={{
             formState: simForm,
             onFormChange: setSimForm,
-            onGoBack: () => setActiveTab("design"),
+            onGoBack: () => { setActiveTab("design"); setIsPlacementDone(false); },
             onSubmit: () => {
               // TODO: 시뮬레이션 결과 조회 API 호출
               console.log("Simulation submit:", simForm);
@@ -530,6 +535,7 @@ export default function Home() {
                   }
                 }}
                 hasSelection={selectedRoofIds.length > 0}
+                disabled={isPlacementDone}
               />
               <CropPopup
                 cropData={cropData}
@@ -540,6 +546,7 @@ export default function Home() {
                 onClose={handleCropClose}
                 lang={lang}
                 roofEditTool={roofEditTool}
+                editLocked={isPlacementDone}
                 onEaveChange={handleEaveChange}
                 undoSignal={undoSignal}
                 clearSignal={clearSignal}

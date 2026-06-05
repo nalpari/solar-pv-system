@@ -58,8 +58,10 @@ export interface LnbDesignProps {
   // Detect state
   detectStatus: "idle" | "detecting";
   // Bottom CTAs
-  onPlacementDone?: () => void;
-  onSwitchToSimulation: () => void;
+  /** 모듈 배치 완료(편집 잠금) 상태 — true면 경사·모듈·배치·편집 비활성, 발전시뮬 버튼 활성 */
+  isPlacementDone: boolean;
+  onPlacementDone?: () => void; // ③ 버튼 토글 (배치완료 ↔ 편집으로 돌아가기)
+  onSwitchToSimulation: () => void; // ④ 발전 시뮬레이션 입력 단계로
 }
 
 export function LnbDesign({
@@ -79,6 +81,7 @@ export function LnbDesign({
   onPlacePanels,
   onDeleteAllPanels,
   detectStatus,
+  isPlacementDone,
   onPlacementDone,
   onSwitchToSimulation,
 }: LnbDesignProps) {
@@ -202,7 +205,7 @@ export function LnbDesign({
             <SelectBox
               value={slope === null ? "" : String(slope)}
               onChange={(e) => onSlopeChange(e.target.value === "" ? null : Number(e.target.value))}
-              disabled={detecting || areaCount === 0}
+              disabled={detecting || areaCount === 0 || isPlacementDone}
               options={[
                 { value: "", label: t("selectPlaceholder", lang), disabled: true, hidden: true },
                 ...SLOPE_OPTIONS.map((opt) => ({
@@ -224,7 +227,7 @@ export function LnbDesign({
               <SelectBox
                 value={currentModule}
                 onChange={(e) => handleModuleChange(e.target.value)}
-                disabled={detecting || modulesLoading || slope === null}
+                disabled={detecting || modulesLoading || slope === null || isPlacementDone}
                 options={[
                   { value: "", label: t("moduleSelectPlaceholder", lang), disabled: true, hidden: true },
                   ...moduleOptions.map((p) => ({ value: p.value, label: p.label })),
@@ -235,7 +238,7 @@ export function LnbDesign({
                   variant="outline"
                   className="flex-1"
                   onClick={() => onPlacePanels("aligned")}
-                  disabled={!canPlace || detecting}
+                  disabled={!canPlace || detecting || isPlacementDone}
                 >
                   {t("btnAlignedPlacement", lang)}
                 </Button>
@@ -243,7 +246,7 @@ export function LnbDesign({
                   variant="outline"
                   className="flex-1"
                   onClick={() => onPlacePanels("staggered")}
-                  disabled={!canPlace || detecting}
+                  disabled={!canPlace || detecting || isPlacementDone}
                 >
                   {t("btnStaggeredPlacement", lang)}
                 </Button>
@@ -255,7 +258,7 @@ export function LnbDesign({
                 variant="outline"
                 className="w-full"
                 onClick={onDeleteAllPanels}
-                disabled={panelCount === 0 || detecting}
+                disabled={panelCount === 0 || detecting || isPlacementDone}
               >
                 {t("btnDeleteModule", lang)}
               </Button>
@@ -289,22 +292,24 @@ export function LnbDesign({
       </div>
 
       {cropPopupOpen && <div className="flex flex-col gap-2 shrink-0 pb-4">
+        {/* ③ 토글: 모듈 배치 완료 ↔ 모듈 편집으로 돌아가기 (모듈 1개+ 배치 시 활성화) */}
         <Button
           variant="orange"
           iconPosition="right"
           className="w-full"
           onClick={onPlacementDone}
-          disabled={detecting}
+          disabled={detecting || panelCount === 0}
           icon={<ChevronRight />}
         >
-          {t("modulePlacementDone", lang)}
+          {t(isPlacementDone ? "moduleEditReturn" : "modulePlacementDone", lang)}
         </Button>
+        {/* ④ 발전 시뮬레이션 입력 — ③이 '편집으로 돌아가기' 상태(isPlacementDone)일 때만 활성 */}
         <Button
           variant="orange"
           iconPosition="right"
           className="w-full"
           onClick={onSwitchToSimulation}
-          disabled={detecting}
+          disabled={detecting || !isPlacementDone}
           icon={<ChevronRight />}
         >
           {t("simulationCalcInput", lang)}

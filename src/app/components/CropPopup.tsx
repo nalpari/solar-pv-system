@@ -29,6 +29,8 @@ interface CropPopupProps {
   lang: Lang;
   /** 지붕 편집 툴바 활성 도구 (현재는 flowSetting만 사용) */
   roofEditTool?: RoofTool;
+  /** 편집 잠금 — 모듈 배치 완료 상태에서 캔버스 편집(클릭/드래그/꼭짓점) 전체 차단 */
+  editLocked?: boolean;
   /** 특정 폴리곤의 처마 기준선이 변경되었을 때 해당 폴리곤 위 패널 삭제 요청 */
   onEaveChange?: (polygonId: string) => void;
   /** 외부(툴바 undo)로부터 undo 신호. 값이 바뀔 때마다 마지막 점 삭제 실행 */
@@ -178,6 +180,7 @@ export default function CropPopup({
   onClose,
   lang,
   roofEditTool,
+  editLocked = false,
   onEaveChange,
   undoSignal,
   clearSignal,
@@ -1115,6 +1118,8 @@ export default function CropPopup({
             style={{
               position: "absolute",
               touchAction: "none",
+              // 편집 잠금 시 캔버스 포인터 이벤트 전체 차단 (시각 렌더는 유지)
+              pointerEvents: editLocked ? "none" : "auto",
               cursor:
                 drawingMode === "install" || drawingMode === "exclude"
                   ? "crosshair"

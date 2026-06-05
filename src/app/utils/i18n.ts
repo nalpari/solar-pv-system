@@ -76,6 +76,7 @@ const translations = {
   // Bottom CTA
   simulationCalcInput: { ja: "発電シミュレーション計算入力", en: "Power Simulation Input" },
   modulePlacementDone: { ja: "モジュール配置完了", en: "Module Placement Done" },
+  moduleEditReturn: { ja: "モジュール編集に戻る", en: "Return to Module Editing" },
   backToModuleEdit: { ja: "モジュール編集に戻る", en: "Back to Module Edit" },
 
   // PV logo + new Lnb section titles
