@@ -220,10 +220,12 @@ export function placePanels(
     // 회전 후 처마선의 y 좌표 (수평이 되므로 두 끝점 y는 동일)
     const eaveYRot = rotate(eaveP1, negAngle).y;
 
-    // Also rotate exclude areas to same coordinate system
-    const rotatedExcludes: Point[][] = excludeAreas.map((ex) =>
-      ex.paths.map((p) => rotate(toLocal(origin, p), negAngle))
-    );
+    // 제외영역(개구)도 외주 이격(margin)만큼 바깥으로 확장한 뒤 회전 — 패널이 개구 경계에서 margin 떨어지도록
+    const rotatedExcludes: Point[][] = excludeAreas.map((ex) => {
+      const local = ex.paths.map((p) => toLocal(origin, p));
+      const expanded = insetPolygon(local, -marginM); // 음수 distance = 바깥 확장
+      return (expanded.length >= 3 ? expanded : local).map((p) => rotate(p, negAngle));
+    });
 
     // Bounding box of rotated inset polygon
     let minX = Infinity, maxX = -Infinity;
@@ -340,9 +342,14 @@ export function placePanelsOnCanvas(
   // assume math coordinates (Y up). Flip Y for all geometry, flip back for output.
   const flipY = (p: Point): Point => ({ x: p.x, y: -p.y });
 
+  // 제외영역(개구)도 외주 이격(margin)만큼 바깥으로 확장 — 패널이 개구 경계에서 margin 떨어지도록
   const excludePolys: Point[][] = excludeAreas
     .filter((ex) => ex.points.length >= 3)
-    .map((ex) => ex.points.map(flipY));
+    .map((ex) => {
+      const flipped = ex.points.map(flipY);
+      const expanded = insetPolygon(flipped, -marginPx); // 음수 distance = 바깥 확장
+      return expanded.length >= 3 ? expanded : flipped;
+    });
 
   for (const area of installAreas) {
     if (area.points.length < 3) continue;
