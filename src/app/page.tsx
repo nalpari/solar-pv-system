@@ -101,7 +101,7 @@ export default function Home() {
   const [undoSignal, setUndoSignal] = useState(0);
   const [clearSignal, setClearSignal] = useState(0);
   const [deleteSelectedSignal, setDeleteSelectedSignal] = useState(0);
-  const [hasRoofSelection, setHasRoofSelection] = useState(false);
+  const [selectedRoofIds, setSelectedRoofIds] = useState<string[]>([]);
   const [areas, setAreas] = useState<PolygonArea[]>([]);
   const [panelSize, setPanelSize] = useState<PanelSize | null>(DEFAULT_PANEL_SIZE);
   const [placedPanelsList, setPlacedPanelsList] = useState<PlacedPanel[]>([]);
@@ -269,8 +269,15 @@ export default function Home() {
   }
 
   function handleDeleteAllPanels() {
-    setPlacedPanelsList([]);
-    setPlacedPixelPanels([]);
+    if (selectedRoofIds.length > 0) {
+      // 선택된 지붕면 위 모듈만 삭제
+      setPlacedPanelsList((prev) => prev.filter((p) => !selectedRoofIds.includes(p.polygonId)));
+      setPlacedPixelPanels((prev) => prev.filter((p) => !selectedRoofIds.includes(p.polygonId)));
+    } else {
+      // 선택 없음 → 전체 모듈 삭제
+      setPlacedPanelsList([]);
+      setPlacedPixelPanels([]);
+    }
   }
 
   /** 특정 폴리곤의 처마 기준선이 변경되면 해당 폴리곤 위 패널만 삭제 */
@@ -522,7 +529,7 @@ export default function Home() {
                     setRoofEditTool("select");
                   }
                 }}
-                hasSelection={hasRoofSelection}
+                hasSelection={selectedRoofIds.length > 0}
               />
               <CropPopup
                 cropData={cropData}
@@ -537,7 +544,7 @@ export default function Home() {
                 undoSignal={undoSignal}
                 clearSignal={clearSignal}
                 deleteSelectedSignal={deleteSelectedSignal}
-                onSelectionChange={setHasRoofSelection}
+                onSelectionChange={setSelectedRoofIds}
                 initialAreas={aiSeedAreas}
                 detectStatus={detectStatus}
               />

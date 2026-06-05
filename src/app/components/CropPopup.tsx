@@ -38,7 +38,7 @@ interface CropPopupProps {
   /** 외부(툴바 선택 삭제)로부터 선택 삭제 신호. 값이 바뀔 때마다 선택된 지붕면/장애물 삭제 */
   deleteSelectedSignal?: number;
   /** 선택된 지붕면/장애물 존재 여부를 부모에 알림 (툴바 선택 삭제 버튼 활성화 판정용) */
-  onSelectionChange?: (hasSelection: boolean) => void;
+  onSelectionChange?: (selectedIds: string[]) => void;
   /** 외부 주입 폴리곤 (AI 자동 감지 결과, 정규화 [0..1] 좌표). 새 reference로 들어올 때 내부 areas에 1회 머지 */
   initialAreas?: NormalizedPolygon[];
   /** AI 감지 상태 머신 (Phase 7) — 로딩 오버레이 + Close X 버튼 가드에 사용 */
@@ -750,9 +750,9 @@ export default function CropPopup({
     }
   }, [clearSignal]);
 
-  // 선택 상태를 부모에 통지 (툴바 선택 삭제 버튼 활성화 판정)
+  // 선택된 폴리곤 id 목록을 부모에 통지 (툴바 선택 삭제 버튼 활성화 + 선택 면 모듈 삭제용)
   useEffect(() => {
-    onSelectionChange?.(selectedPolygonIds.size > 0);
+    onSelectionChange?.(Array.from(selectedPolygonIds));
   }, [selectedPolygonIds, onSelectionChange]);
 
   // 외부(툴바 선택 삭제) 신호 수신 — 선택된 지붕면/장애물 삭제
