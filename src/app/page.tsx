@@ -272,6 +272,12 @@ export default function Home() {
     setClearSignal((n) => n + 1);
   }
 
+  // 무조건 전체 모듈 삭제 (모듈 변경 시 사용 — 선택 여부 무관)
+  function clearAllPanels() {
+    setPlacedPanelsList([]);
+    setPlacedPixelPanels([]);
+  }
+
   function handleDeleteAllPanels() {
     if (selectedRoofIds.length > 0) {
       // 선택된 지붕면 위 모듈만 삭제
@@ -279,8 +285,7 @@ export default function Home() {
       setPlacedPixelPanels((prev) => prev.filter((p) => !selectedRoofIds.includes(p.polygonId)));
     } else {
       // 선택 없음 → 전체 모듈 삭제
-      setPlacedPanelsList([]);
-      setPlacedPixelPanels([]);
+      clearAllPanels();
     }
   }
 
@@ -378,6 +383,7 @@ export default function Home() {
             placementError,
             onPlacePanels: handlePlacePanels,
             onDeleteAllPanels: handleDeleteAllPanels,
+            onClearAllPanels: clearAllPanels,
             detectStatus,
             isPlacementDone,
             onPlacementDone: () => setIsPlacementDone((v) => !v),

@@ -21,11 +21,12 @@ const SLOPE_OPTIONS: { value: number; labelKey: "slopeLabel1" | "slopeLabel3" | 
 // Panel preset catalog — pv-pub style single-line module names.
 // Eventually swapped out by a module-loading API; for now the first option
 // is the pv-pub showcase label, with existing presets following.
+// QSP 로드 전/실패 시 폴백 프리셋. watt는 일반적 정격 출력 추정값 (실값은 QSP wpOut으로 대체됨)
 const MODULE_PRESETS: { value: string; label: string; size: PanelSize }[] = [
-  { value: "re-rize-g3-440", label: "Re-RIZE-G3 440", size: { label: "Re-RIZE-G3 440", width: 991, height: 1722 } },
-  { value: "preset-60", label: "Standard 60-Cell", size: { label: "Standard 60-Cell", width: 991, height: 1650 } },
-  { value: "preset-72", label: "Standard 72-Cell", size: { label: "Standard 72-Cell", width: 991, height: 1960 } },
-  { value: "preset-large", label: "Large Format", size: { label: "Large Format", width: 1134, height: 2278 } },
+  { value: "re-rize-g3-440", label: "Re-RIZE-G3 440", size: { label: "Re-RIZE-G3 440", width: 991, height: 1722, watt: 440 } },
+  { value: "preset-60", label: "Standard 60-Cell", size: { label: "Standard 60-Cell", width: 991, height: 1650, watt: 370 } },
+  { value: "preset-72", label: "Standard 72-Cell", size: { label: "Standard 72-Cell", width: 991, height: 1960, watt: 440 } },
+  { value: "preset-large", label: "Large Format", size: { label: "Large Format", width: 1134, height: 2278, watt: 550 } },
 ];
 
 export interface LnbDesignProps {
@@ -55,6 +56,8 @@ export interface LnbDesignProps {
   placementError: string | null;
   onPlacePanels: (layout: "aligned" | "staggered") => void;
   onDeleteAllPanels: () => void;
+  /** 모듈 변경 시 기존 배치 모듈 전체 삭제 (선택 여부 무관) */
+  onClearAllPanels: () => void;
   // Detect state
   detectStatus: "idle" | "detecting";
   // Bottom CTAs
@@ -80,6 +83,7 @@ export function LnbDesign({
   placementError,
   onPlacePanels,
   onDeleteAllPanels,
+  onClearAllPanels,
   detectStatus,
   isPlacementDone,
   onPlacementDone,
@@ -145,7 +149,7 @@ export function LnbDesign({
     const preset = moduleOptions.find((p) => p.value === value);
     if (preset) {
       onPanelSizeChange({ ...preset.size });
-      onDeleteAllPanels(); // 모듈 변경 시 기존 배치 모듈 전체 삭제
+      onClearAllPanels(); // 모듈 변경 시 기존 배치 모듈 전체 삭제 (선택 여부 무관)
     }
   }
 
