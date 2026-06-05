@@ -18,10 +18,8 @@ const SLOPE_OPTIONS: { value: number; labelKey: "slopeLabel1" | "slopeLabel3" | 
   { value: 8, labelKey: "slopeLabel8" },
 ];
 
-// Panel preset catalog — pv-pub style single-line module names.
-// Eventually swapped out by a module-loading API; for now the first option
-// is the pv-pub showcase label, with existing presets following.
-// QSP 로드 전/실패 시 폴백 프리셋. watt는 일반적 정격 출력 추정값 (실값은 QSP wpOut으로 대체됨)
+// 폴백 모듈 프리셋 — QSP btc-items 로드 전/실패 시에만 사용 (로드 성공 시 QSP 목록으로 교체).
+// watt는 일반적 정격 출력 추정값이며, 실값은 QSP wpOut으로 대체된다.
 const MODULE_PRESETS: { value: string; label: string; size: PanelSize }[] = [
   { value: "re-rize-g3-440", label: "Re-RIZE-G3 440", size: { label: "Re-RIZE-G3 440", width: 991, height: 1722, watt: 440 } },
   { value: "preset-60", label: "Standard 60-Cell", size: { label: "Standard 60-Cell", width: 991, height: 1650, watt: 370 } },

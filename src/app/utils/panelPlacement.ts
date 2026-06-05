@@ -380,7 +380,7 @@ export function placePanelsOnCanvas(
       }
     }
 
-    // Rotate inset polygon so longest edge is horizontal
+    // Rotate inset polygon so reference edge is horizontal
     const negAngle = -angle;
     const rotatedInset = inset.map((p) => rotate(p, negAngle));
     // 회전 후 처마선의 y 좌표 (수평이 되므로 두 끝점 y는 동일)
