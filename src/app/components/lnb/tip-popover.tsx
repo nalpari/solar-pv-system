@@ -72,7 +72,7 @@ export function TipPopover({ children }: { children?: React.ReactNode }) {
       {mounted &&
         createPortal(
           <div
-            className={`fixed z-50 pb-3 transition-opacity duration-200 ${
+            className={`fixed z-[100] pb-3 transition-opacity duration-200 ${
               open && pos ? "opacity-100" : "opacity-0 pointer-events-none"
             }`}
             style={{

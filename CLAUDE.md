@@ -107,13 +107,14 @@ src/
 - **State Management**: `page.tsx` owns all state, passes via props (Props-Down / Callbacks-Up). Sidebar tabs (`design` | `simulation`) are also held there.
 - **Styling**: CSS custom properties in `globals.css`, inline styles — NOT Tailwind utility classes
 - **i18n**: `utils/i18n.ts` with `t(key, lang)` function, `Lang` type (`"ja" | "en"`), sidebar footer toggle synced to `<html lang>` in `page.tsx`
-- **Workflow**: Address search → confirm building (drag crop on map, captured via `html2canvas`) → CropPopup polygon editor (drawRoof / drawOpening / flowSetting / editRoof) → set slope (寸 단위, 0.5–10) and module preset → place modules (auto picks portrait or landscape, whichever fits more) → results panel → optional Simulation tab input
+- **Workflow**: Address search → confirm building (drag crop on map, captured via `html2canvas`) → CropPopup polygon editor (drawRoof / drawOpening / flowSetting / editRoof) → set slope (寸: 1/3/4/6/8, 필수) and module preset (필수) → place modules (정렬/치도리, 패널 긴 변을 처마 기준선과 평행하게 landscape 고정, 경사 cos 보정·시작 위상 스캔으로 최대 충진) → 모듈 배치 완료(편집 잠금) 토글 → optional Simulation tab input
 - **Panel Placement**: Three functions in `utils/panelPlacement.ts`
   - `placePanels` — lat/lng-based (mm internal)
   - `placePanelsOnCanvas` — pixel-based (mm internal)
   - `placePanelsOnCanvasCm` — pixel-based, **cm UI-facing entry** used by `page.tsx`; internally calls the mm version
-- **Eave-parallel layout**: Each install polygon's `eaveEdgeIndex` (set via `flowSetting` tool) drives grid orientation so modules align with the chosen eave edge; without it, the longest edge is used.
-- **Constants**: `GAP_CM = 0.3`, `MARGIN_CM = 30` are hardcoded in `page.tsx` (not part of `PanelConfig` UI).
+- **Eave-anchored layout**: Each install polygon's `eaveEdgeIndex` (set via `flowSetting` tool, else longest edge) drives grid orientation·앵커 방향. 패널 긴 변이 처마와 평행(landscape 고정). 경사(寸)는 cos 투영 보정으로 처마 수직 방향 압축, x·y 시작 위상을 스캔해 최대 충진 배치 채택. 오목 폴리곤·장애물은 패널 변 교차 검사로 방어.
+- **Constants**: `GAP_X_CM = 0.3`(좌우 3mm), `GAP_Y_CM = 3`(상하 30mm), `MARGIN_CM = 30`(외주 300mm) are hardcoded in `page.tsx`.
+- **설치 용량**: 모듈 수 × `wpOut`(W, QSP) / 1000 = kW. `PanelSize.watt`에 QSP wpOut 매핑.
 
 ### Domain Types (`src/app/types/index.ts`)
 
@@ -153,7 +154,7 @@ src/
 ## Coding Conventions
 
 - Use inline styles with CSS variables (`var(--bg-primary)`, `var(--accent-blue)`, etc.)
-- Panel dimensions: mm input → meters internally. Gap/margin constants are cm in UI/code (`GAP_CM`, `MARGIN_CM` in `page.tsx`) → converted to mm → meters in `panelPlacement.ts`
+- Panel dimensions: mm input → meters internally. Gap/margin constants are cm in UI/code (`GAP_X_CM`/`GAP_Y_CM`/`MARGIN_CM` in `page.tsx`) → converted to mm → meters in `panelPlacement.ts`
 - Coordinate flow: lat/lng ↔ local meters ↔ pixels (Y-axis flipped for canvas)
 - Path alias: `@/*` → `./src/*`
 - Fonts: Figtree + Noto Sans JP + Geist Mono via `next/font/google` (`--font-figtree`, `--font-noto-sans-jp`, `--font-geist-mono` CSS vars)

@@ -7,6 +7,7 @@ export interface PanelSize {
   label: string;
   width: number; // mm
   height: number; // mm
+  watt?: number; // 모듈 출력(W) — QSP wpOut. 설치 용량 계산용
 }
 
 export type PanelOrientation = "landscape" | "portrait";

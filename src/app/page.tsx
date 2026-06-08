@@ -28,16 +28,21 @@ import type {
 const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
 
 const DEFAULT_CENTER = { lat: 35.6850697, lng: 139.7619073 }; // 〒100-0005 東京都千代田区丸の内1-1-1
+const DEFAULT_SLOPE: number | null = null; // 미선택 상태로 시작
+const DEFAULT_PANEL_SIZE: PanelSize | null = null; // 모듈 미선택 상태로 시작
 
 type SidebarTab = "design" | "simulation";
 
-const GAP_CM = 0.3; // 모듈 간격 3mm
+const GAP_X_CM = 0.3; // 모듈 간격 좌우 3mm (처마 평행)
+const GAP_Y_CM = 3; // 모듈 간격 상하 30mm (처마 수직)
 const MARGIN_CM = 30; // 외곽 여백 300mm
 
 export default function Home() {
   const [lang] = useState<Lang>("ja");
   const [activeTab, setActiveTab] = useState<SidebarTab>("design");
-  const [slope, setSlope] = useState(4); // 4寸 default
+  // 모듈 배치 완료(편집 잠금) 상태 — true면 지붕 편집·경사·모듈/배치 비활성, 발전시뮬 버튼 활성
+  const [isPlacementDone, setIsPlacementDone] = useState(false);
+  const [slope, setSlope] = useState<number | null>(DEFAULT_SLOPE);
   const [roofEditTool, setRoofEditTool] = useState<RoofTool>("select");
   const [simForm, setSimForm] = useState<SimulationFormState>({
     azimuth: "",
@@ -65,24 +70,42 @@ export default function Home() {
   }, [lang]);
 
   const [center, setCenter] = useState(DEFAULT_CENTER);
+
+  // 마운트 시 1회: 브라우저 geolocation 권한 요청 → 허용 시 현재 위치로 지도 이동,
+  // 거부/실패 시 기본값(마루노우치) 유지. 권한 결과는 어디에도 저장하지 않으며 (브라우저가 자체 관리),
+  // 매 접속(마운트)마다 getCurrentPosition을 호출한다. 사용자가 주소를 선택한 후 응답이
+  // 늦게 도착하면 무시 (race 가드)
+  const userOverrodeRef = useRef(false);
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !navigator.geolocation) return;
+    let cancelled = false;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        if (cancelled || userOverrodeRef.current) return;
+        setCenter({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+      },
+      () => {
+        // 권한 거부 / 디바이스 위치 비활성 / 타임아웃 — silent fallback (기본값 유지)
+      },
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 60_000 },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const [viewport, setViewport] = useState<google.maps.LatLngBounds | null>(null);
   const [cropMode, setCropMode] = useState(false);
+  // 좌측 사이드바 건물확정 버튼 재클릭(2차) 시 증가 — MapView/CropOverlay가 watch해서 그려진 영역으로 확정
+  const [confirmCropSignal, setConfirmCropSignal] = useState(0);
   const [cropData, setCropData] = useState<CropData | null>(null);
   const [address, setAddress] = useState("");
   // drawingMode는 roofEditTool에서 파생 (drawRoof → install, drawOpening → exclude, 그 외 → null)
   const [undoSignal, setUndoSignal] = useState(0);
   const [clearSignal, setClearSignal] = useState(0);
   const [deleteSelectedSignal, setDeleteSelectedSignal] = useState(0);
-  const [hasRoofSelection, setHasRoofSelection] = useState(false);
+  const [selectedRoofIds, setSelectedRoofIds] = useState<string[]>([]);
   const [areas, setAreas] = useState<PolygonArea[]>([]);
-  const [panelSize, setPanelSize] = useState<PanelSize>({
-    // Default matches first option in Lnb design's MODULE_PRESETS catalog
-    // (placeholder until module-loading API is wired).
-    label: "Re-RIZE-G3 440",
-    width: 991,
-    height: 1722,
-  });
-  const [orientation, setOrientation] = useState<PanelOrientation>("portrait");
+  const [panelSize, setPanelSize] = useState<PanelSize | null>(DEFAULT_PANEL_SIZE);
   const [placedPanelsList, setPlacedPanelsList] = useState<PlacedPanel[]>([]);
   const [pixelAreas, setPixelAreas] = useState<{ areas: PixelPolygon[]; metersPerPixel: number } | null>(null);
   const [placedPixelPanels, setPlacedPixelPanels] = useState<PixelPanel[]>([]);
@@ -105,6 +128,7 @@ export default function Home() {
     address: string;
     viewport?: google.maps.LatLngBounds;
   }) {
+    userOverrodeRef.current = true; // 사용자가 명시적으로 위치 선택 — 늦게 도착한 geolocation 응답 무시
     setCenter({ lat: location.lat, lng: location.lng });
     setAddress(location.address);
     setViewport(location.viewport ?? null);
@@ -171,6 +195,10 @@ export default function Home() {
       if (!ok) return;
       handleDeleteAll();
       setAiSeedAreas([]);
+      // 재분석 시 경사/모듈/배치 방향도 기본값으로 초기화
+      setSlope(DEFAULT_SLOPE);
+      setPanelSize(DEFAULT_PANEL_SIZE);
+      setIsPlacementDone(false); // 배치 완료(편집 잠금) 상태 해제
     }
 
     // 이전 진행 중 요청 정리
@@ -229,6 +257,7 @@ export default function Home() {
     setPixelAreas(null);
     setPlacedPixelPanels([]);
     setPlacedPanelsList([]);
+    setIsPlacementDone(false); // 배치 완료(편집 잠금) 상태 해제
     // AI 감지 state는 cropData가 null 되면 detect useEffect가 자동 정리함 (I-4: DRY)
   }, []);
 
@@ -243,9 +272,21 @@ export default function Home() {
     setClearSignal((n) => n + 1);
   }
 
-  function handleDeleteAllPanels() {
+  // 무조건 전체 모듈 삭제 (모듈 변경 시 사용 — 선택 여부 무관)
+  function clearAllPanels() {
     setPlacedPanelsList([]);
     setPlacedPixelPanels([]);
+  }
+
+  function handleDeleteAllPanels() {
+    if (selectedRoofIds.length > 0) {
+      // 선택된 지붕면 위 모듈만 삭제
+      setPlacedPanelsList((prev) => prev.filter((p) => !selectedRoofIds.includes(p.polygonId)));
+      setPlacedPixelPanels((prev) => prev.filter((p) => !selectedRoofIds.includes(p.polygonId)));
+    } else {
+      // 선택 없음 → 전체 모듈 삭제
+      clearAllPanels();
+    }
   }
 
   /** 특정 폴리곤의 처마 기준선이 변경되면 해당 폴리곤 위 패널만 삭제 */
@@ -260,9 +301,12 @@ export default function Home() {
     setActiveTab("simulation");
   }
 
-  function handlePlacePanels() {
+  function handlePlacePanels(layout: "aligned" | "staggered" = "aligned") {
     setPlacementError(null);
-    const orientations: PanelOrientation[] = ["portrait", "landscape"];
+    // 경사·모듈 미선택 시 배치 불가 (UI 비활성화에 더해 함수 레벨 방어)
+    if (slope === null || !panelSize) return;
+    // 패널 긴 변을 처마 기준선과 평행하게 — landscape 고정 (명세)
+    const ori: PanelOrientation = "landscape";
 
     if (pixelAreas) {
       try {
@@ -270,46 +314,26 @@ export default function Home() {
         const installPx = pxAreas.filter((a) => a.type === "install");
         const excludePx = pxAreas.filter((a) => a.type === "exclude");
 
-        let bestPanels: PixelPanel[] = [];
-        let bestOrientation: PanelOrientation = orientation;
+        const panels = placePanelsOnCanvasCm(
+          installPx, excludePx,
+          panelSize.width, panelSize.height,
+          ori, layout, GAP_X_CM, GAP_Y_CM, MARGIN_CM, metersPerPixel, slope ?? 0,
+        );
 
-        for (const ori of orientations) {
-          const panels = placePanelsOnCanvasCm(
-            installPx, excludePx,
-            panelSize.width, panelSize.height,
-            ori, GAP_CM, MARGIN_CM, metersPerPixel,
-          );
-          if (panels.length > bestPanels.length) {
-            bestPanels = panels;
-            bestOrientation = ori;
-          }
-        }
-
-        setOrientation(bestOrientation);
-        setPlacedPixelPanels(bestPanels);
+        setPlacedPixelPanels(panels);
       } catch (e) {
         console.error("Panel placement failed:", e);
         setPlacementError(t("panelPlacementFailed", lang));
       }
     } else {
       try {
-        let bestPanels: PlacedPanel[] = [];
-        let bestOrientation: PanelOrientation = orientation;
+        const panels = placePanels(
+          installAreas, excludeAreas,
+          panelSize, ori, layout,
+          GAP_X_CM * 10, GAP_Y_CM * 10, MARGIN_CM * 10, slope ?? 0,
+        );
 
-        for (const ori of orientations) {
-          const panels = placePanels(
-            installAreas, excludeAreas,
-            panelSize, ori,
-            GAP_CM * 10, MARGIN_CM * 10,
-          );
-          if (panels.length > bestPanels.length) {
-            bestPanels = panels;
-            bestOrientation = ori;
-          }
-        }
-
-        setOrientation(bestOrientation);
-        setPlacedPanelsList(bestPanels);
+        setPlacedPanelsList(panels);
       } catch (e) {
         console.error("Panel placement failed:", e);
         setPlacementError(t("panelPlacementFailed", lang));
@@ -317,9 +341,9 @@ export default function Home() {
     }
   }
 
-  const canPlace = cropData !== null
+  const canPlace = slope !== null && panelSize !== null && (cropData !== null
     ? pixelAreas !== null && pixelAreas.areas.some((a) => a.type === "install")
-    : installAreas.length > 0;
+    : installAreas.length > 0);
 
   const panelCount = placedPixelPanels.length || placedPanelsList.length;
 
@@ -339,30 +363,36 @@ export default function Home() {
         {/* Left Sidebar — pv-pub design */}
         <Lnb
           tab={activeTab}
-          onTabChange={setActiveTab}
           lang={lang}
           design={{
             onPlaceSelect: handlePlaceSelect,
             cropMode,
-            onCropModeToggle: () => setCropMode(!cropMode),
+            cropPopupOpen: cropData !== null,
+            // 1차 클릭: 크롭모드 활성화 / 2차 클릭(이미 활성): 확정 signal 증가 (MapView가 영역 있으면 확정 처리)
+            onCropModeToggle: () => {
+              if (cropMode) setConfirmCropSignal((n) => n + 1);
+              else setCropMode(true);
+            },
             slope,
             onSlopeChange: setSlope,
+            areaCount: areas.length,
             panelSize,
             onPanelSizeChange: setPanelSize,
-            orientation,
             panelCount,
             canPlace,
             placementError,
             onPlacePanels: handlePlacePanels,
             onDeleteAllPanels: handleDeleteAllPanels,
+            onClearAllPanels: clearAllPanels,
             detectStatus,
-            onPlacementDone: switchToSimulation,
+            isPlacementDone,
+            onPlacementDone: () => setIsPlacementDone((v) => !v),
             onSwitchToSimulation: switchToSimulation,
           }}
           sim={{
             formState: simForm,
             onFormChange: setSimForm,
-            onGoBack: () => setActiveTab("design"),
+            onGoBack: () => { setActiveTab("design"); setIsPlacementDone(false); },
             onSubmit: () => {
               // TODO: 시뮬레이션 결과 조회 API 호출
               console.log("Simulation submit:", simForm);
@@ -379,6 +409,8 @@ export default function Home() {
               cropMode={cropMode}
               locked={cropData !== null}
               onCropComplete={handleCropComplete}
+              onCropCancel={() => setCropMode(false)}
+              confirmCropSignal={confirmCropSignal}
               address={address}
               lang={lang}
             />
@@ -508,7 +540,8 @@ export default function Home() {
                     setRoofEditTool("select");
                   }
                 }}
-                hasSelection={hasRoofSelection}
+                hasSelection={selectedRoofIds.length > 0}
+                disabled={isPlacementDone}
               />
               <CropPopup
                 cropData={cropData}
@@ -519,11 +552,12 @@ export default function Home() {
                 onClose={handleCropClose}
                 lang={lang}
                 roofEditTool={roofEditTool}
+                editLocked={isPlacementDone}
                 onEaveChange={handleEaveChange}
                 undoSignal={undoSignal}
                 clearSignal={clearSignal}
                 deleteSelectedSignal={deleteSelectedSignal}
-                onSelectionChange={setHasRoofSelection}
+                onSelectionChange={setSelectedRoofIds}
                 initialAreas={aiSeedAreas}
                 detectStatus={detectStatus}
               />

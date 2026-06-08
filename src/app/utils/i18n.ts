@@ -25,13 +25,18 @@ const translations = {
   // Slope Settings
   slopeSettings: { ja: "傾斜設定", en: "Slope Settings" },
   slopeUnit: { ja: "寸", en: " sun" },
+  slopeLabel1: { ja: "緩やかな屋根（約1寸）", en: "Gentle roof (~1寸)" },
+  slopeLabel3: { ja: "やや緩やかな屋根（約3寸）", en: "Slightly gentle roof (~3寸)" },
+  slopeLabel4: { ja: "標準屋根（約4寸）", en: "Standard roof (~4寸)" },
+  slopeLabel6: { ja: "やや急な屋根（約6寸）", en: "Slightly steep roof (~6寸)" },
+  slopeLabel8: { ja: "急な屋根（約8寸）", en: "Steep roof (~8寸)" },
   slopePlaceholder: { ja: "傾斜を選択", en: "Select slope" },
 
   // PanelConfig
   panelConfig: { ja: "パネル設定", en: "Panel Configuration" },
   panelType: { ja: "パネルタイプ", en: "Panel Type" },
   moduleSelect: { ja: "モジュール選択", en: "Module Selection" },
-  moduleSelectPlaceholder: { ja: "選択", en: "Select" },
+  moduleSelectPlaceholder: { ja: "太陽電池モジュール選択", en: "Select solar module" },
   widthMm: { ja: "幅 (mm)", en: "Width (mm)" },
   heightMm: { ja: "高さ (mm)", en: "Height (mm)" },
   orientation: { ja: "向き", en: "Orientation" },
@@ -71,11 +76,13 @@ const translations = {
   // Bottom CTA
   simulationCalcInput: { ja: "発電シミュレーション計算入力", en: "Power Simulation Input" },
   modulePlacementDone: { ja: "モジュール配置完了", en: "Module Placement Done" },
+  moduleEditReturn: { ja: "モジュール編集に戻る", en: "Return to Module Editing" },
   backToModuleEdit: { ja: "モジュール編集に戻る", en: "Back to Module Edit" },
 
   // PV logo + new Lnb section titles
   pvLogoAlt: { ja: "Hanwha Japan PV Simulation", en: "Hanwha Japan PV Simulation" },
   sectionRoofSlope: { ja: "屋根面傾斜", en: "Roof Slope" },
+  selectPlaceholder: { ja: "選択", en: "Select" },
   tabSolarDesignShort: { ja: "ソーラーデザイン", en: "Solar Design" },
   tabSimulationShort: { ja: "発電シミュレーション", en: "Simulation" },
   buildingConfirmHint: {
@@ -86,7 +93,6 @@ const translations = {
   // Lnb design tab — module placement actions
   btnAlignedPlacement: { ja: "整列配置", en: "Aligned Layout" },
   btnStaggeredPlacement: { ja: "千鳥配置", en: "Staggered Layout" },
-  btnStaggeredUnsupported: { ja: "未対応", en: "Not supported" },
   btnDeleteModule: { ja: "モジュールの削除", en: "Delete Modules" },
   hintNorthRoofNotRecommended: {
     ja: "※北面への設置は日射量が少なく、発電量や経済効果が低下しやすいです. また、反射光により近隣とのトラブルにつながる可能性があるため、原則として推奨しておりません.",
@@ -195,6 +201,8 @@ const translations = {
   cropMode: { ja: "範囲選択", en: "Select Area" },
   cropModeActive: { ja: "地図上でドラッグして範囲を選択", en: "Drag on map to select area" },
   cropConfirmArea: { ja: "確定", en: "Confirm" },
+  cropAreaSelectGuide: { ja: "確定する屋根の範囲を指定してください", en: "Specify the area of the roof to confirm" },
+  cropAreaCancel: { ja: "キャンセル", en: "Cancel" },
 
   // CropPopup
   cropEditor: { ja: "屋根エディタ", en: "Roof Editor" },

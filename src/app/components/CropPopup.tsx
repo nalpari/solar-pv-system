@@ -29,6 +29,8 @@ interface CropPopupProps {
   lang: Lang;
   /** 지붕 편집 툴바 활성 도구 (현재는 flowSetting만 사용) */
   roofEditTool?: RoofTool;
+  /** 편집 잠금 — 모듈 배치 완료 상태에서 캔버스 편집(클릭/드래그/꼭짓점) 전체 차단 */
+  editLocked?: boolean;
   /** 특정 폴리곤의 처마 기준선이 변경되었을 때 해당 폴리곤 위 패널 삭제 요청 */
   onEaveChange?: (polygonId: string) => void;
   /** 외부(툴바 undo)로부터 undo 신호. 값이 바뀔 때마다 마지막 점 삭제 실행 */
@@ -38,7 +40,7 @@ interface CropPopupProps {
   /** 외부(툴바 선택 삭제)로부터 선택 삭제 신호. 값이 바뀔 때마다 선택된 지붕면/장애물 삭제 */
   deleteSelectedSignal?: number;
   /** 선택된 지붕면/장애물 존재 여부를 부모에 알림 (툴바 선택 삭제 버튼 활성화 판정용) */
-  onSelectionChange?: (hasSelection: boolean) => void;
+  onSelectionChange?: (selectedIds: string[]) => void;
   /** 외부 주입 폴리곤 (AI 자동 감지 결과, 정규화 [0..1] 좌표). 새 reference로 들어올 때 내부 areas에 1회 머지 */
   initialAreas?: NormalizedPolygon[];
   /** AI 감지 상태 머신 (Phase 7) — 로딩 오버레이 + Close X 버튼 가드에 사용 */
@@ -84,6 +86,38 @@ function findNearestSnapVertex(
 /** inner 폴리곤이 outer 폴리곤 안에 완전히 포함되는지 — inner의 모든 꼭짓점이 outer 내부 */
 function polygonFullyInside(inner: PixelPoint[], outer: PixelPoint[]): boolean {
   return inner.every((p) => isPointInPolygon(p, outer));
+}
+
+/** 점 q가 공선인 선분 p-r 의 범위(바운딩 박스) 안에 있는지 */
+function onSegment(p: PixelPoint, q: PixelPoint, r: PixelPoint): boolean {
+  return Math.min(p.x, r.x) <= q.x && q.x <= Math.max(p.x, r.x) &&
+         Math.min(p.y, r.y) <= q.y && q.y <= Math.max(p.y, r.y);
+}
+
+/** 두 선분(a-b, c-d) 교차 판정 — 점 접촉·공선(경계 닿음)까지 포함 (장애물 걸침·접촉 감지용) */
+function segmentsIntersectInclusive(a: PixelPoint, b: PixelPoint, c: PixelPoint, d: PixelPoint): boolean {
+  const o = (p: PixelPoint, q: PixelPoint, r: PixelPoint) =>
+    Math.sign((q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x));
+  const d1 = o(a, b, c), d2 = o(a, b, d), d3 = o(c, d, a), d4 = o(c, d, b);
+  if (d1 !== d2 && d3 !== d4) return true;            // 정상 가로지름
+  if (d1 === 0 && onSegment(a, c, b)) return true;    // c 가 선분 a-b 위
+  if (d2 === 0 && onSegment(a, d, b)) return true;    // d 가 선분 a-b 위
+  if (d3 === 0 && onSegment(c, a, d)) return true;    // a 가 선분 c-d 위
+  if (d4 === 0 && onSegment(c, b, d)) return true;    // b 가 선분 c-d 위
+  return false;
+}
+
+/** 두 폴리곤이 겹치거나 맞닿는지 — 정점 포함 + 변 교차(점 접촉 포함). 장애물 이동 시 영향받는 지붕면 판별용 */
+function polygonsOverlap(a: PixelPoint[], b: PixelPoint[]): boolean {
+  if (a.some((p) => isPointInPolygon(p, b)) || b.some((p) => isPointInPolygon(p, a))) return true;
+  for (let i = 0; i < a.length; i++) {
+    const a1 = a[i], a2 = a[(i + 1) % a.length];
+    for (let j = 0; j < b.length; j++) {
+      const b1 = b[j], b2 = b[(j + 1) % b.length];
+      if (segmentsIntersectInclusive(a1, a2, b1, b2)) return true;
+    }
+  }
+  return false;
 }
 
 /** 가장 긴 변의 인덱스를 반환 (i → i+1 기준) */
@@ -178,6 +212,7 @@ export default function CropPopup({
   onClose,
   lang,
   roofEditTool,
+  editLocked = false,
   onEaveChange,
   undoSignal,
   clearSignal,
@@ -410,7 +445,7 @@ export default function CropPopup({
     }
 
     // Draw vertex/midpoint handles for ALL polygons in editRoof mode
-    // (Spec Slide 18: 그려진 모든 지붕면과 모든 장애물에 점 표시)
+    // (editRoof 모드: 그려진 모든 지붕면과 모든 장애물에 점 표시)
     if (roofEditTool === "editRoof") {
       for (const area of areas) {
         if (area.points.length < 3) continue;
@@ -750,9 +785,9 @@ export default function CropPopup({
     }
   }, [clearSignal]);
 
-  // 선택 상태를 부모에 통지 (툴바 선택 삭제 버튼 활성화 판정)
+  // 선택된 폴리곤 id 목록을 부모에 통지 (툴바 선택 삭제 버튼 활성화 + 선택 면 모듈 삭제용)
   useEffect(() => {
-    onSelectionChange?.(selectedPolygonIds.size > 0);
+    onSelectionChange?.(Array.from(selectedPolygonIds));
   }, [selectedPolygonIds, onSelectionChange]);
 
   // 외부(툴바 선택 삭제) 신호 수신 — 선택된 지붕면/장애물 삭제
@@ -867,8 +902,19 @@ export default function CropPopup({
         // 실제로 이동한 경우: 부모 동기화 + 해당 지붕면 위 모듈 자동 삭제. 이동한 폴리곤은 선택 유지(추가).
         notifyParent(areasRef.current);
         if (candidateId) {
-          // onEaveChange는 본체(install)에만 호출 — 동반 이동된 exclude(장애물)엔 패널이 없어 모듈 정리 불필요
-          onEaveChange?.(candidateId);
+          const movedArea = areasRef.current.find((a) => a.id === candidateId);
+          if (movedArea?.type === "exclude") {
+            // 장애물 단독 이동: 새 위치에 겹친 install 지붕면들의 패널을 정리 (장애물 아래 패널 잔존 방지).
+            // 본체(install)는 placedPanel.polygonId === install.id 이므로 install id로 onEaveChange를 호출해야 삭제된다.
+            for (const a of areasRef.current) {
+              if (a.type === "install" && a.points.length >= 3 && polygonsOverlap(movedArea.points, a.points)) {
+                onEaveChange?.(a.id);
+              }
+            }
+          } else {
+            // install 본체 이동: 해당 지붕면 위 패널 삭제
+            onEaveChange?.(candidateId);
+          }
           setSelectedPolygonIds((prev) => {
             if (prev.has(candidateId)) return prev;
             const next = new Set(prev);
@@ -1115,6 +1161,8 @@ export default function CropPopup({
             style={{
               position: "absolute",
               touchAction: "none",
+              // 편집 잠금 시 캔버스 포인터 이벤트 전체 차단 (시각 렌더는 유지)
+              pointerEvents: editLocked ? "none" : "auto",
               cursor:
                 drawingMode === "install" || drawingMode === "exclude"
                   ? "crosshair"

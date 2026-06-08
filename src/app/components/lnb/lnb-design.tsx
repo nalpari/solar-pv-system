@@ -1,24 +1,30 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Button, SelectBox } from "@/components/common";
 import { ChevronRight, Hint, Section } from "./section";
 import { BaechiTip, TipPopover } from "./tip-popover";
 import { AddressInputLnb } from "./address-input-lnb";
 import { t, type Lang } from "../../utils/i18n";
-import type { PanelSize, PanelOrientation } from "../../types";
+import type { PanelSize } from "../../types";
 
-const SLOPE_OPTIONS = Array.from({ length: 20 }, (_, i) => (i + 1) * 0.5);
+// 5단계 경사 옵션 — value는 寸 숫자, label은 풍부 텍스트(명세)
+const SLOPE_OPTIONS: { value: number; labelKey: "slopeLabel1" | "slopeLabel3" | "slopeLabel4" | "slopeLabel6" | "slopeLabel8" }[] = [
+  { value: 1, labelKey: "slopeLabel1" },
+  { value: 3, labelKey: "slopeLabel3" },
+  { value: 4, labelKey: "slopeLabel4" },
+  { value: 6, labelKey: "slopeLabel6" },
+  { value: 8, labelKey: "slopeLabel8" },
+];
 
-// Panel preset catalog — pv-pub style single-line module names.
-// Eventually swapped out by a module-loading API; for now the first option
-// is the pv-pub showcase label, with existing presets following.
+// 폴백 모듈 프리셋 — QSP btc-items 로드 전/실패 시에만 사용 (로드 성공 시 QSP 목록으로 교체).
+// watt는 일반적 정격 출력 추정값이며, 실값은 QSP wpOut으로 대체된다.
 const MODULE_PRESETS: { value: string; label: string; size: PanelSize }[] = [
-  { value: "re-rize-g3-440", label: "Re-RIZE-G3 440", size: { label: "Re-RIZE-G3 440", width: 991, height: 1722 } },
-  { value: "preset-60", label: "Standard 60-Cell", size: { label: "Standard 60-Cell", width: 991, height: 1650 } },
-  { value: "preset-72", label: "Standard 72-Cell", size: { label: "Standard 72-Cell", width: 991, height: 1960 } },
-  { value: "preset-large", label: "Large Format", size: { label: "Large Format", width: 1134, height: 2278 } },
+  { value: "re-rize-g3-440", label: "Re-RIZE-G3 440", size: { label: "Re-RIZE-G3 440", width: 991, height: 1722, watt: 440 } },
+  { value: "preset-60", label: "Standard 60-Cell", size: { label: "Standard 60-Cell", width: 991, height: 1650, watt: 370 } },
+  { value: "preset-72", label: "Standard 72-Cell", size: { label: "Standard 72-Cell", width: 991, height: 1960, watt: 440 } },
+  { value: "preset-large", label: "Large Format", size: { label: "Large Format", width: 1134, height: 2278, watt: 550 } },
 ];
 
 export interface LnbDesignProps {
@@ -31,43 +37,53 @@ export interface LnbDesignProps {
     viewport?: google.maps.LatLngBounds;
   }) => void;
   cropMode: boolean;
+  /** 크롭 팝업(CropPopup)이 열려있는 상태 — 명세상 건물 확정 완료 후에만 노출되는 섹션 토글에 사용 */
+  cropPopupOpen: boolean;
   onCropModeToggle: () => void;
   // Slope
-  slope: number;
-  onSlopeChange: (slope: number) => void;
-  // Panel config
-  panelSize: PanelSize;
+  slope: number | null;
+  onSlopeChange: (slope: number | null) => void;
+  /** 지붕면 개수 — 1개 이상일 때만 경사 셀렉트 활성화 */
+  areaCount: number;
+  // Panel config — null이면 모듈 미선택 상태
+  panelSize: PanelSize | null;
   onPanelSizeChange: (size: PanelSize) => void;
   // Results
-  orientation: PanelOrientation;
   panelCount: number;
   canPlace: boolean;
   placementError: string | null;
-  onPlacePanels: () => void;
+  onPlacePanels: (layout: "aligned" | "staggered") => void;
   onDeleteAllPanels: () => void;
+  /** 모듈 변경 시 기존 배치 모듈 전체 삭제 (선택 여부 무관) */
+  onClearAllPanels: () => void;
   // Detect state
   detectStatus: "idle" | "detecting";
   // Bottom CTAs
-  onPlacementDone?: () => void;
-  onSwitchToSimulation: () => void;
+  /** 모듈 배치 완료(편집 잠금) 상태 — true면 경사·모듈·배치·편집 비활성, 발전시뮬 버튼 활성 */
+  isPlacementDone: boolean;
+  onPlacementDone?: () => void; // ③ 버튼 토글 (배치완료 ↔ 편집으로 돌아가기)
+  onSwitchToSimulation: () => void; // ④ 발전 시뮬레이션 입력 단계로
 }
 
 export function LnbDesign({
   lang = "ja",
   onPlaceSelect,
   cropMode,
+  cropPopupOpen,
   onCropModeToggle,
   slope,
   onSlopeChange,
+  areaCount,
   panelSize,
   onPanelSizeChange,
-  orientation,
   panelCount,
   canPlace,
   placementError,
   onPlacePanels,
   onDeleteAllPanels,
+  onClearAllPanels,
   detectStatus,
+  isPlacementDone,
   onPlacementDone,
   onSwitchToSimulation,
 }: LnbDesignProps) {
@@ -75,15 +91,6 @@ export function LnbDesign({
 
   const [moduleOptions, setModuleOptions] = useState(MODULE_PRESETS);
   const [modulesLoading, setModulesLoading] = useState(true);
-
-  // Latest panelSize / setter for the mount-only fetch effect (avoids re-running on every panel change).
-  // Refs are synced in an effect — writing ref.current during render is disallowed.
-  const panelSizeRef = useRef(panelSize);
-  const onPanelSizeChangeRef = useRef(onPanelSizeChange);
-  useEffect(() => {
-    panelSizeRef.current = panelSize;
-    onPanelSizeChangeRef.current = onPanelSizeChange;
-  });
 
   useEffect(() => {
     let cancelled = false;
@@ -96,11 +103,13 @@ export function LnbDesign({
             matlCd: string;
             qcastCustPrdNm: string;
             matlGbnCd: string;
+            wpOut: string;
             shortAxis: number;
             longAxis: number;
           }>;
           const modules = items
-            .filter((item) => item.matlGbnCd === "M")
+            // 출력(wpOut) 없는/0 모듈은 제외 — 용량이 0kW로 잘못 표시되는 것 방지
+            .filter((item) => item.matlGbnCd === "M" && Number(item.wpOut) > 0)
             .map((item) => ({
               value: item.matlCd,
               label: item.qcastCustPrdNm,
@@ -108,18 +117,12 @@ export function LnbDesign({
                 label: item.qcastCustPrdNm,
                 width: item.shortAxis,
                 height: item.longAxis,
+                watt: Number(item.wpOut) || 0,
               } as PanelSize,
             }));
           if (modules.length > 0) {
+            // 명세: 모듈은 기본 미선택 — 카탈로그만 채우고 자동 선택하지 않음
             setModuleOptions(modules);
-            // Keep the parent's panelSize in sync with what the dropdown shows:
-            // if the current size isn't in the loaded catalog, the SelectBox falls
-            // back to modules[0], so adopt that size for placement calculations too.
-            const current = panelSizeRef.current;
-            const matched = modules.some(
-              (m) => m.size.width === current.width && m.size.height === current.height,
-            );
-            if (!matched) onPanelSizeChangeRef.current({ ...modules[0].size });
           }
         }
       })
@@ -134,21 +137,23 @@ export function LnbDesign({
     };
   }, []);
 
-  // Match the currently-selected panelSize against the loaded catalog.
-  const currentModule =
-    moduleOptions.find(
-      (p) => p.size.width === panelSize.width && p.size.height === panelSize.height,
-    )?.value ?? moduleOptions[0]?.value;
+  // 선택된 panelSize를 카탈로그와 매칭 — 미선택(null)이면 placeholder("") 노출
+  const currentModule = panelSize
+    ? moduleOptions.find(
+        (p) => p.size.width === panelSize.width && p.size.height === panelSize.height,
+      )?.value ?? ""
+    : "";
 
   function handleModuleChange(value: string) {
     const preset = moduleOptions.find((p) => p.value === value);
-    if (preset) onPanelSizeChange({ ...preset.size });
+    if (preset) {
+      onPanelSizeChange({ ...preset.size });
+      onClearAllPanels(); // 모듈 변경 시 기존 배치 모듈 전체 삭제 (선택 여부 무관)
+    }
   }
 
-  const panelW = orientation === "landscape" ? panelSize.height : panelSize.width;
-  const panelH = orientation === "landscape" ? panelSize.width : panelSize.height;
-  const panelKw = (panelW * panelH) / 1_000_000 * 0.2; // rough estimate ~200W/m²
-  const totalKw = panelCount * panelKw;
+  // 설치 용량 = Σ(모듈 수 × wpOut[W]) → kW. 부동소수 꼬리만 정리
+  const totalKw = parseFloat(((panelCount * (panelSize?.watt ?? 0)) / 1000).toFixed(3));
 
   return (
     <>
@@ -166,12 +171,13 @@ export function LnbDesign({
             iconHeight={16}
           >
             <div className="flex flex-col gap-2">
-              <AddressInputLnb lang={lang} onPlaceSelect={onPlaceSelect} />
+              <AddressInputLnb lang={lang} onPlaceSelect={onPlaceSelect} disabled={cropMode} />
               <Button
                 variant="primary"
                 className="w-full"
                 onClick={onCropModeToggle}
                 aria-pressed={cropMode}
+                disabled={cropPopupOpen}
                 icon={
                   <Image
                     src="/assets/images/common/btn_icon01.svg"
@@ -189,6 +195,8 @@ export function LnbDesign({
             </Hint>
           </Section>
 
+          {/* Sections 2~4: 명세상 "건물 확정 완료 후"에만 노출 (CropPopup 열림 = cropData 존재) */}
+          {cropPopupOpen && <>
           {/* Section 2: 屋根面傾斜 */}
           <Section
             title={t("sectionRoofSlope", lang)}
@@ -198,13 +206,16 @@ export function LnbDesign({
             tip
           >
             <SelectBox
-              value={String(slope)}
-              onChange={(e) => onSlopeChange(Number(e.target.value))}
-              disabled={detecting}
-              options={SLOPE_OPTIONS.map((val) => ({
-                value: String(val),
-                label: `${val}${t("slopeUnit", lang)}`,
-              }))}
+              value={slope === null ? "" : String(slope)}
+              onChange={(e) => onSlopeChange(e.target.value === "" ? null : Number(e.target.value))}
+              disabled={detecting || areaCount === 0 || isPlacementDone}
+              options={[
+                { value: "", label: t("selectPlaceholder", lang), disabled: true, hidden: true },
+                ...SLOPE_OPTIONS.map((opt) => ({
+                  value: String(opt.value),
+                  label: t(opt.labelKey, lang),
+                })),
+              ]}
             />
           </Section>
 
@@ -219,23 +230,26 @@ export function LnbDesign({
               <SelectBox
                 value={currentModule}
                 onChange={(e) => handleModuleChange(e.target.value)}
-                disabled={detecting || modulesLoading}
-                options={moduleOptions.map((p) => ({ value: p.value, label: p.label }))}
+                disabled={detecting || modulesLoading || slope === null || isPlacementDone}
+                options={[
+                  { value: "", label: t("moduleSelectPlaceholder", lang), disabled: true, hidden: true },
+                  ...moduleOptions.map((p) => ({ value: p.value, label: p.label })),
+                ]}
               />
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
                   className="flex-1"
-                  onClick={onPlacePanels}
-                  disabled={!canPlace || detecting}
+                  onClick={() => onPlacePanels("aligned")}
+                  disabled={!canPlace || detecting || isPlacementDone}
                 >
                   {t("btnAlignedPlacement", lang)}
                 </Button>
                 <Button
                   variant="outline"
                   className="flex-1"
-                  disabled
-                  title={t("btnStaggeredUnsupported", lang)}
+                  onClick={() => onPlacePanels("staggered")}
+                  disabled={!canPlace || detecting || isPlacementDone}
                 >
                   {t("btnStaggeredPlacement", lang)}
                 </Button>
@@ -247,7 +261,7 @@ export function LnbDesign({
                 variant="outline"
                 className="w-full"
                 onClick={onDeleteAllPanels}
-                disabled={panelCount === 0 || detecting}
+                disabled={panelCount === 0 || detecting || isPlacementDone}
               >
                 {t("btnDeleteModule", lang)}
               </Button>
@@ -272,35 +286,38 @@ export function LnbDesign({
           >
             <div className="flex items-center justify-center h-[72px] px-4 bg-[#f5f5f5] border border-[#f2f2f2] rounded-[14px]">
               <p className="text-[18px] font-medium leading-[1.5] text-[#101010]">
-                {panelCount}{t("capacityUnit", lang)} · {totalKw.toFixed(1).replace(/\.0$/, "")}kW
+                {panelCount}{t("capacityUnit", lang)} · {totalKw}kW
               </p>
             </div>
           </Section>
+          </>}
         </div>
       </div>
 
-      <div className="flex flex-col gap-2 shrink-0 pb-4">
+      {cropPopupOpen && <div className="flex flex-col gap-2 shrink-0 pb-4">
+        {/* ③ 토글: 모듈 배치 완료 ↔ 모듈 편집으로 돌아가기 (모듈 1개+ 배치 시 활성화) */}
         <Button
           variant="orange"
           iconPosition="right"
           className="w-full"
           onClick={onPlacementDone}
-          disabled={detecting}
+          disabled={detecting || panelCount === 0}
           icon={<ChevronRight />}
         >
-          {t("modulePlacementDone", lang)}
+          {t(isPlacementDone ? "moduleEditReturn" : "modulePlacementDone", lang)}
         </Button>
+        {/* ④ 발전 시뮬레이션 입력 — ③이 '편집으로 돌아가기' 상태(isPlacementDone)일 때만 활성 */}
         <Button
           variant="orange"
           iconPosition="right"
           className="w-full"
           onClick={onSwitchToSimulation}
-          disabled={detecting}
+          disabled={detecting || !isPlacementDone}
           icon={<ChevronRight />}
         >
           {t("simulationCalcInput", lang)}
         </Button>
-      </div>
+      </div>}
     </>
   );
 }

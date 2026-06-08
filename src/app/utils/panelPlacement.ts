@@ -50,7 +50,8 @@ function ensureCCW(pts: Point[]): Point[] {
   return signedArea(pts) < 0 ? [...pts].reverse() : pts;
 }
 
-// Insets a polygon inward by `distance`. Assumes math coordinate system (Y up).
+// Insets a polygon inward by positive `distance`; negative `distance` expands outward
+// (used for exclude/opening margins). Assumes math coordinate system (Y up).
 // For canvas coordinates (Y down), flip Y before calling and flip back after.
 function insetPolygon(pts: Point[], distance: number): Point[] {
   const n = pts.length;
@@ -113,26 +114,67 @@ function rotate(pt: Point, angle: number): Point {
   return { x: pt.x * cos - pt.y * sin, y: pt.x * sin + pt.y * cos };
 }
 
+/** 두 선분 (a-b)와 (c-d)가 교차하는지 (CCW orientation 방식) */
+function segmentsIntersect(a: Point, b: Point, c: Point, d: Point): boolean {
+  const ccw = (p: Point, q: Point, r: Point) =>
+    (q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x);
+  const d1 = ccw(a, b, c);
+  const d2 = ccw(a, b, d);
+  const d3 = ccw(c, d, a);
+  const d4 = ccw(c, d, b);
+  // 양 끝이 서로 반대편에 있으면 교차 (경계 접촉은 교차로 보지 않음 — 부동소수 여유)
+  return ((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) &&
+         ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0));
+}
+
+/** 패널(사각형 corners)의 변이 폴리곤 변과 하나라도 교차하는지 — 오목부를 가로지르는 패널 검출용 */
+function panelCrossesPolygon(corners: Point[], poly: Point[]): boolean {
+  for (let i = 0; i < corners.length; i++) {
+    const a = corners[i];
+    const b = corners[(i + 1) % corners.length];
+    for (let j = 0; j < poly.length; j++) {
+      const c = poly[j];
+      const d = poly[(j + 1) % poly.length];
+      if (segmentsIntersect(a, b, c, d)) return true;
+    }
+  }
+  return false;
+}
+
+// 시작 위상 스캔 해상도 — x·y 시작점을 각 축 이만큼 분할해 가장 많이 채워지는 배치를 채택.
+// (최대 배치 시뮬레이션이므로 처마선 정렬보다 최다 장수를 우선)
+const X_PHASE_STEPS = 10;
+const Y_PHASE_STEPS = 10;
+
 export function placePanels(
   installAreas: PolygonArea[],
   excludeAreas: PolygonArea[],
   panelSize: PanelSize,
   orientation: PanelOrientation,
-  gap: number,
+  layout: "aligned" | "staggered",
+  gapX: number,
+  gapY: number,
   margin: number,
+  slopeSun: number,
 ): PlacedPanel[] {
   if (panelSize.width <= 0 || panelSize.height <= 0) return [];
 
   const allPanels: PlacedPanel[] = [];
 
+  // 경사(寸) 투영 보정 — 위성 평면뷰에서 처마 수직 방향은 cos(경사각)만큼 압축돼 보인다.
+  // θ = atan(촌/10) → cosθ = 10/√(100+촌²). slopeSun=0이면 1 (보정 없음).
+  const cosSlope = 10 / Math.sqrt(100 + slopeSun * slopeSun);
+
   // Convert panel dimensions from mm to meters; swap width/height for landscape orientation
   const pw = (orientation === "landscape" ? panelSize.height : panelSize.width) / 1000;
-  const ph = (orientation === "landscape" ? panelSize.width : panelSize.height) / 1000;
-  const gapM = gap / 1000;
+  const ph = (orientation === "landscape" ? panelSize.width : panelSize.height) / 1000 * cosSlope;
+  // 간격은 그리드 축 기준 — x축(처마 평행, 좌우) gapX / y축(처마 수직, 상하) gapY (경사 압축)
+  const gapXM = gapX / 1000;
+  const gapYM = gapY / 1000 * cosSlope;
   const marginM = margin / 1000;
 
-  const stepX = pw + gapM;
-  const stepY = ph + gapM;
+  const stepX = pw + gapXM;
+  const stepY = ph + gapYM;
   if (stepX <= 0 || stepY <= 0) return [];
 
   // Convert exclude areas to local coords for point-in-polygon checks
@@ -146,14 +188,17 @@ export function placePanels(
     const inset = insetPolygon(localPoly, marginM);
     if (inset.length < 3) continue;
 
-    // Determine reference edge angle: use eaveEdgeIndex if provided, else longest edge
+    // Determine reference edge angle: use eaveEdgeIndex if provided, else longest edge.
+    // 처마(흐름) 기준변의 두 끝점도 함께 기록 — 배치 y앵커(처마선)로 사용한다.
     let angle = 0;
+    let eaveP1 = localPoly[0];
+    let eaveP2 = localPoly[1 % localPoly.length];
     if (typeof area.eaveEdgeIndex === "number" && area.eaveEdgeIndex >= 0 && area.eaveEdgeIndex < localPoly.length) {
       const i = area.eaveEdgeIndex;
       const j = (i + 1) % localPoly.length;
-      const dx = localPoly[j].x - localPoly[i].x;
-      const dy = localPoly[j].y - localPoly[i].y;
-      angle = Math.atan2(dy, dx);
+      eaveP1 = localPoly[i];
+      eaveP2 = localPoly[j];
+      angle = Math.atan2(eaveP2.y - eaveP1.y, eaveP2.x - eaveP1.x);
     } else {
       let maxLen = 0;
       for (let i = 0; i < localPoly.length; i++) {
@@ -164,6 +209,8 @@ export function placePanels(
         if (len > maxLen) {
           maxLen = len;
           angle = Math.atan2(dy, dx);
+          eaveP1 = localPoly[i];
+          eaveP2 = localPoly[j];
         }
       }
     }
@@ -171,11 +218,15 @@ export function placePanels(
     // Rotate inset polygon so reference edge is horizontal
     const negAngle = -angle;
     const rotatedInset = inset.map((p) => rotate(p, negAngle));
+    // 회전 후 처마선의 y 좌표 (수평이 되므로 두 끝점 y는 동일)
+    const eaveYRot = rotate(eaveP1, negAngle).y;
 
-    // Also rotate exclude areas to same coordinate system
-    const rotatedExcludes: Point[][] = excludeAreas.map((ex) =>
-      ex.paths.map((p) => rotate(toLocal(origin, p), negAngle))
-    );
+    // 제외영역(개구)도 외주 이격(margin)만큼 바깥으로 확장한 뒤 회전 — 패널이 개구 경계에서 margin 떨어지도록
+    const rotatedExcludes: Point[][] = excludeAreas.map((ex) => {
+      const local = ex.paths.map((p) => toLocal(origin, p));
+      const expanded = insetPolygon(local, -marginM); // 음수 distance = 바깥 확장
+      return (expanded.length >= 3 ? expanded : local).map((p) => rotate(p, negAngle));
+    });
 
     // Bounding box of rotated inset polygon
     let minX = Infinity, maxX = -Infinity;
@@ -187,45 +238,73 @@ export function placePanels(
       maxY = Math.max(maxY, p.y);
     }
 
-    // Place panels in a grid aligned to the longest edge
-    for (let x = minX + pw / 2; x <= maxX - pw / 2; x += stepX) {
-      for (let y = minY + ph / 2; y <= maxY - ph / 2; y += stepY) {
-        const corners: Point[] = [
-          { x: x - pw / 2, y: y - ph / 2 },
-          { x: x + pw / 2, y: y - ph / 2 },
-          { x: x + pw / 2, y: y + ph / 2 },
-          { x: x - pw / 2, y: y + ph / 2 },
-        ];
+    // 처마선이 회전 후 bbox의 위(minY)/아래(maxY) 어느 쪽에 있는지 — 그 쪽에서 배치를 시작한다.
+    const eaveAtTop = Math.abs(eaveYRot - minY) <= Math.abs(eaveYRot - maxY);
 
-        // All corners must be inside the inset polygon
-        const allInside = corners.every((c) => isPointInPolygon(c, rotatedInset));
-        if (!allInside) continue;
-
-        // Check overlap with exclude areas (bidirectional: panel corners in exclude, and exclude vertices in panel)
-        const inExclude = rotatedExcludes.some((exPoly) =>
-          exPoly.length >= 3 && (
-            corners.some((c) => isPointInPolygon(c, exPoly)) ||
-            exPoly.some((ep) => isPointInPolygon(ep, corners))
-          )
-        );
-        if (inExclude) continue;
-
-        // Rotate corners back and convert to lat/lng
-        const latLngCorners = corners.map((c) => toLatLng(origin, rotate(c, angle))) as [LatLng, LatLng, LatLng, LatLng];
-
-        allPanels.push({
-          id: crypto.randomUUID(),
-          polygonId: area.id,
-          corners: latLngCorners,
-        });
+    // x·y 시작 위상을 모두 스캔해 가장 많이 채워지는 배치를 채택 (최대 배치 시뮬레이션).
+    // eaveAtTop은 행 진행 방향(처마선 쪽→안쪽) 결정에만 사용. 치도리(staggered): 행마다 stepX/2 offset.
+    let bestCorners: Point[][] = [];
+    for (let qi = 0; qi < Y_PHASE_STEPS; qi++) {
+      const yPhase = (stepY / Y_PHASE_STEPS) * qi;
+      const ys: number[] = [];
+      if (eaveAtTop) {
+        for (let y = minY + ph / 2 + yPhase; y <= maxY - ph / 2; y += stepY) ys.push(y);
+      } else {
+        for (let y = maxY - ph / 2 - yPhase; y >= minY + ph / 2; y -= stepY) ys.push(y);
       }
+
+      for (let pi = 0; pi < X_PHASE_STEPS; pi++) {
+        const xPhase = (stepX / X_PHASE_STEPS) * pi;
+        const collected: Point[][] = [];
+        let row = 0;
+        for (const y of ys) {
+          const xOffset = layout === "staggered" ? (row % 2) * (stepX / 2) : 0;
+          row++;
+          for (let x = minX + pw / 2 + xPhase + xOffset; x <= maxX - pw / 2; x += stepX) {
+            const corners: Point[] = [
+              { x: x - pw / 2, y: y - ph / 2 },
+              { x: x + pw / 2, y: y - ph / 2 },
+              { x: x + pw / 2, y: y + ph / 2 },
+              { x: x - pw / 2, y: y + ph / 2 },
+            ];
+
+            // 4꼭짓점이 모두 inset 폴리곤 안 + 패널 변이 폴리곤 경계를 가로지르지 않음(오목부 방어)
+            const allInside = corners.every((c) => isPointInPolygon(c, rotatedInset));
+            if (!allInside) continue;
+            if (panelCrossesPolygon(corners, rotatedInset)) continue;
+
+            // Check overlap with exclude areas (corner-in / vertex-in / 변 교차 모두 검사)
+            const inExclude = rotatedExcludes.some((exPoly) =>
+              exPoly.length >= 3 && (
+                corners.some((c) => isPointInPolygon(c, exPoly)) ||
+                exPoly.some((ep) => isPointInPolygon(ep, corners)) ||
+                panelCrossesPolygon(corners, exPoly)
+              )
+            );
+            if (inExclude) continue;
+
+            collected.push(corners);
+          }
+        }
+        if (collected.length > bestCorners.length) bestCorners = collected;
+      }
+    }
+
+    // 최다 위상의 패널만 좌표 변환 (rotate back → lat/lng)
+    for (const corners of bestCorners) {
+      const latLngCorners = corners.map((c) => toLatLng(origin, rotate(c, angle))) as [LatLng, LatLng, LatLng, LatLng];
+      allPanels.push({
+        id: crypto.randomUUID(),
+        polygonId: area.id,
+        corners: latLngCorners,
+      });
     }
   }
 
   return allPanels;
 }
 
-// mm 단위 버전 — 패널 크기(mm), 간격(mm), 마진(mm) 입력
+// mm 단위 버전 — 패널 크기(mm), 좌우/상하 간격(gapXMm/gapYMm), 마진(mm), 배치방식(layout), 경사(slopeSun) 입력
 // 현재 UI는 cm 단위로 전환했지만, mm 버전도 향후 단위 선택 기능 등을 위해 유지한다.
 // (2026-03-20 논의: 단위를 cm로 바꿔줘 → cm 버전 추가, mm 버전 유지)
 export function placePanelsOnCanvas(
@@ -234,20 +313,28 @@ export function placePanelsOnCanvas(
   panelWidthMm: number,
   panelHeightMm: number,
   orientation: "portrait" | "landscape",
-  gapMm: number,
+  layout: "aligned" | "staggered",
+  gapXMm: number,
+  gapYMm: number,
   marginMm: number,
   metersPerPixel: number,
+  slopeSun: number,
 ): PixelPanel[] {
   if (panelWidthMm <= 0 || panelHeightMm <= 0 || metersPerPixel <= 0) return [];
 
+  // 경사(寸) 투영 보정 — 처마 수직 방향은 cos(경사각)만큼 압축. slopeSun=0이면 1.
+  const cosSlope = 10 / Math.sqrt(100 + slopeSun * slopeSun);
+
   // Convert mm → meters → pixels
   const pw = (orientation === "landscape" ? panelHeightMm : panelWidthMm) / 1000 / metersPerPixel;
-  const ph = (orientation === "landscape" ? panelWidthMm : panelHeightMm) / 1000 / metersPerPixel;
-  const gapPx = gapMm / 1000 / metersPerPixel;
+  const ph = (orientation === "landscape" ? panelWidthMm : panelHeightMm) / 1000 / metersPerPixel * cosSlope;
+  // 간격은 그리드 축 기준 — x축(처마 평행, 좌우) gapX / y축(처마 수직, 상하) gapY (경사 압축)
+  const gapXPx = gapXMm / 1000 / metersPerPixel;
+  const gapYPx = gapYMm / 1000 / metersPerPixel * cosSlope;
   const marginPx = marginMm / 1000 / metersPerPixel;
 
-  const stepX = pw + gapPx;
-  const stepY = ph + gapPx;
+  const stepX = pw + gapXPx;
+  const stepY = ph + gapYPx;
   if (stepX <= 0 || stepY <= 0) return [];
 
   const allPanels: PixelPanel[] = [];
@@ -256,9 +343,14 @@ export function placePanelsOnCanvas(
   // assume math coordinates (Y up). Flip Y for all geometry, flip back for output.
   const flipY = (p: Point): Point => ({ x: p.x, y: -p.y });
 
+  // 제외영역(개구)도 외주 이격(margin)만큼 바깥으로 확장 — 패널이 개구 경계에서 margin 떨어지도록
   const excludePolys: Point[][] = excludeAreas
     .filter((ex) => ex.points.length >= 3)
-    .map((ex) => ex.points.map(flipY));
+    .map((ex) => {
+      const flipped = ex.points.map(flipY);
+      const expanded = insetPolygon(flipped, -marginPx); // 음수 distance = 바깥 확장
+      return expanded.length >= 3 ? expanded : flipped;
+    });
 
   for (const area of installAreas) {
     if (area.points.length < 3) continue;
@@ -269,14 +361,17 @@ export function placePanelsOnCanvas(
     const inset = insetPolygon(localPoly, marginPx);
     if (inset.length < 3) continue;
 
-    // Determine reference edge angle: use eaveEdgeIndex if provided, else longest edge
+    // Determine reference edge angle: use eaveEdgeIndex if provided, else longest edge.
+    // 처마(흐름) 기준변의 두 끝점도 함께 기록 — 배치 y앵커(처마선)로 사용한다.
     let angle = 0;
+    let eaveP1 = localPoly[0];
+    let eaveP2 = localPoly[1 % localPoly.length];
     if (typeof area.eaveEdgeIndex === "number" && area.eaveEdgeIndex >= 0 && area.eaveEdgeIndex < localPoly.length) {
       const i = area.eaveEdgeIndex;
       const j = (i + 1) % localPoly.length;
-      const dx = localPoly[j].x - localPoly[i].x;
-      const dy = localPoly[j].y - localPoly[i].y;
-      angle = Math.atan2(dy, dx);
+      eaveP1 = localPoly[i];
+      eaveP2 = localPoly[j];
+      angle = Math.atan2(eaveP2.y - eaveP1.y, eaveP2.x - eaveP1.x);
     } else {
       let maxLen = 0;
       for (let i = 0; i < localPoly.length; i++) {
@@ -287,13 +382,17 @@ export function placePanelsOnCanvas(
         if (len > maxLen) {
           maxLen = len;
           angle = Math.atan2(dy, dx);
+          eaveP1 = localPoly[i];
+          eaveP2 = localPoly[j];
         }
       }
     }
 
-    // Rotate inset polygon so longest edge is horizontal
+    // Rotate inset polygon so reference edge is horizontal
     const negAngle = -angle;
     const rotatedInset = inset.map((p) => rotate(p, negAngle));
+    // 회전 후 처마선의 y 좌표 (수평이 되므로 두 끝점 y는 동일)
+    const eaveYRot = rotate(eaveP1, negAngle).y;
 
     // Rotate exclude areas to same coordinate system
     // Both install inset and excludes rotate around (0,0), preserving relative positions
@@ -311,38 +410,67 @@ export function placePanelsOnCanvas(
       maxY = Math.max(maxY, p.y);
     }
 
-    // Place panels in a grid aligned to the longest edge
-    for (let x = minX + pw / 2; x <= maxX - pw / 2; x += stepX) {
-      for (let y = minY + ph / 2; y <= maxY - ph / 2; y += stepY) {
-        const corners: Point[] = [
-          { x: x - pw / 2, y: y - ph / 2 },
-          { x: x + pw / 2, y: y - ph / 2 },
-          { x: x + pw / 2, y: y + ph / 2 },
-          { x: x - pw / 2, y: y + ph / 2 },
-        ];
+    // 처마선이 회전 후 bbox의 위(minY)/아래(maxY) 어느 쪽에 있는지 — 그 쪽에서 배치를 시작한다.
+    const eaveAtTop = Math.abs(eaveYRot - minY) <= Math.abs(eaveYRot - maxY);
 
-        // All corners must be inside the inset polygon
-        const allInside = corners.every((c) => isPointInPolygon(c, rotatedInset));
-        if (!allInside) continue;
-
-        // Check overlap with exclude areas
-        const inExclude = rotatedExcludes.some((exPoly) =>
-          exPoly.length >= 3 && (
-            corners.some((c) => isPointInPolygon(c, exPoly)) ||
-            exPoly.some((ep) => isPointInPolygon(ep, corners))
-          ),
-        );
-        if (inExclude) continue;
-
-        // Rotate back to math coords, then flip Y to canvas coords
-        const pixelCorners = corners.map((c) => flipY(rotate(c, angle))) as [Point, Point, Point, Point];
-
-        allPanels.push({
-          id: crypto.randomUUID(),
-          polygonId: area.id,
-          corners: pixelCorners,
-        });
+    // x·y 시작 위상을 모두 스캔해 가장 많이 채워지는 배치를 채택 (최대 배치 시뮬레이션).
+    // eaveAtTop은 행 진행 방향(처마선 쪽→안쪽) 결정에만 사용. 치도리(staggered): 행마다 stepX/2 offset.
+    let bestCorners: Point[][] = [];
+    for (let qi = 0; qi < Y_PHASE_STEPS; qi++) {
+      const yPhase = (stepY / Y_PHASE_STEPS) * qi;
+      // 처마선 쪽에서 안쪽으로 진행하는 행 중심 y 목록
+      const ys: number[] = [];
+      if (eaveAtTop) {
+        for (let y = minY + ph / 2 + yPhase; y <= maxY - ph / 2; y += stepY) ys.push(y);
+      } else {
+        for (let y = maxY - ph / 2 - yPhase; y >= minY + ph / 2; y -= stepY) ys.push(y);
       }
+
+      for (let pi = 0; pi < X_PHASE_STEPS; pi++) {
+        const xPhase = (stepX / X_PHASE_STEPS) * pi;
+        const collected: Point[][] = [];
+        let row = 0;
+        for (const y of ys) {
+          const xOffset = layout === "staggered" ? (row % 2) * (stepX / 2) : 0;
+          row++;
+          for (let x = minX + pw / 2 + xPhase + xOffset; x <= maxX - pw / 2; x += stepX) {
+            const corners: Point[] = [
+              { x: x - pw / 2, y: y - ph / 2 },
+              { x: x + pw / 2, y: y - ph / 2 },
+              { x: x + pw / 2, y: y + ph / 2 },
+              { x: x - pw / 2, y: y + ph / 2 },
+            ];
+
+            // 4꼭짓점이 모두 inset 폴리곤 안 + 패널 변이 폴리곤 경계를 가로지르지 않음(오목부 방어)
+            const allInside = corners.every((c) => isPointInPolygon(c, rotatedInset));
+            if (!allInside) continue;
+            if (panelCrossesPolygon(corners, rotatedInset)) continue;
+
+            // Check overlap with exclude areas (corner-in / vertex-in / 변 교차 모두 검사)
+            const inExclude = rotatedExcludes.some((exPoly) =>
+              exPoly.length >= 3 && (
+                corners.some((c) => isPointInPolygon(c, exPoly)) ||
+                exPoly.some((ep) => isPointInPolygon(ep, corners)) ||
+                panelCrossesPolygon(corners, exPoly)
+              ),
+            );
+            if (inExclude) continue;
+
+            collected.push(corners);
+          }
+        }
+        if (collected.length > bestCorners.length) bestCorners = collected;
+      }
+    }
+
+    // 최다 위상의 패널만 좌표 변환 (rotate back → flip Y → canvas)
+    for (const corners of bestCorners) {
+      const pixelCorners = corners.map((c) => flipY(rotate(c, angle))) as [Point, Point, Point, Point];
+      allPanels.push({
+        id: crypto.randomUUID(),
+        polygonId: area.id,
+        corners: pixelCorners,
+      });
     }
   }
 
@@ -358,9 +486,12 @@ export function placePanelsOnCanvasCm(
   panelWidthMm: number,
   panelHeightMm: number,
   orientation: "portrait" | "landscape",
-  gapCm: number,
+  layout: "aligned" | "staggered",
+  gapXCm: number,
+  gapYCm: number,
   marginCm: number,
   metersPerPixel: number,
+  slopeSun: number,
 ): PixelPanel[] {
   // cm → mm 변환 후 mm 버전 호출
   return placePanelsOnCanvas(
@@ -369,8 +500,11 @@ export function placePanelsOnCanvasCm(
     panelWidthMm,
     panelHeightMm,
     orientation,
-    gapCm * 10,
+    layout,
+    gapXCm * 10,
+    gapYCm * 10,
     marginCm * 10,
     metersPerPixel,
+    slopeSun,
   );
 }

@@ -33,9 +33,11 @@ interface RoofEditToolbarProps {
   onAction: (action: RoofAction) => void;
   /** 선택된 지붕면/장애물 존재 여부 — 선택 삭제 버튼 활성화 판정에 사용 */
   hasSelection?: boolean;
+  /** 전체 비활성화 — 모듈 배치 완료(편집 잠금) 상태에서 지붕 편집을 막는다 */
+  disabled?: boolean;
 }
 
-export default function RoofEditToolbar({ lang, activeTool, onToolChange, onAction, hasSelection = false }: RoofEditToolbarProps) {
+export default function RoofEditToolbar({ lang, activeTool, onToolChange, onAction, hasSelection = false, disabled = false }: RoofEditToolbarProps) {
   const currentTool = TOOLS.find((tool) => tool.id === activeTool);
 
   function handleToolClick(tool: ToolDef) {
@@ -64,8 +66,8 @@ export default function RoofEditToolbar({ lang, activeTool, onToolChange, onActi
       >
         {TOOLS.map((tool, i) => {
           const isActive = !tool.isAction && activeTool === tool.id;
-          // 선택 삭제 버튼은 선택된 지붕면/장애물이 없으면 비활성화
-          const isDisabled = tool.id === "deleteSelected" && !hasSelection;
+          // 전체 비활성(편집 잠금) 또는 선택 삭제 버튼인데 선택이 없으면 비활성화
+          const isDisabled = disabled || (tool.id === "deleteSelected" && !hasSelection);
           return (
             <div key={tool.id} style={{ display: "flex", alignItems: "center" }}>
               {/* 구분선: select 뒤, editRoof 뒤, undo 뒤(작성 완료 앞) */}
