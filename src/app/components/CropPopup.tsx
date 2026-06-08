@@ -88,9 +88,36 @@ function polygonFullyInside(inner: PixelPoint[], outer: PixelPoint[]): boolean {
   return inner.every((p) => isPointInPolygon(p, outer));
 }
 
-/** 두 폴리곤이 겹치는지(한쪽 정점이 다른 쪽 내부에 있으면 겹침) — 장애물 이동 시 영향받는 지붕면 판별용 */
+/** 점 q가 공선인 선분 p-r 의 범위(바운딩 박스) 안에 있는지 */
+function onSegment(p: PixelPoint, q: PixelPoint, r: PixelPoint): boolean {
+  return Math.min(p.x, r.x) <= q.x && q.x <= Math.max(p.x, r.x) &&
+         Math.min(p.y, r.y) <= q.y && q.y <= Math.max(p.y, r.y);
+}
+
+/** 두 선분(a-b, c-d) 교차 판정 — 점 접촉·공선(경계 닿음)까지 포함 (장애물 걸침·접촉 감지용) */
+function segmentsIntersectInclusive(a: PixelPoint, b: PixelPoint, c: PixelPoint, d: PixelPoint): boolean {
+  const o = (p: PixelPoint, q: PixelPoint, r: PixelPoint) =>
+    Math.sign((q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x));
+  const d1 = o(a, b, c), d2 = o(a, b, d), d3 = o(c, d, a), d4 = o(c, d, b);
+  if (d1 !== d2 && d3 !== d4) return true;            // 정상 가로지름
+  if (d1 === 0 && onSegment(a, c, b)) return true;    // c 가 선분 a-b 위
+  if (d2 === 0 && onSegment(a, d, b)) return true;    // d 가 선분 a-b 위
+  if (d3 === 0 && onSegment(c, a, d)) return true;    // a 가 선분 c-d 위
+  if (d4 === 0 && onSegment(c, b, d)) return true;    // b 가 선분 c-d 위
+  return false;
+}
+
+/** 두 폴리곤이 겹치거나 맞닿는지 — 정점 포함 + 변 교차(점 접촉 포함). 장애물 이동 시 영향받는 지붕면 판별용 */
 function polygonsOverlap(a: PixelPoint[], b: PixelPoint[]): boolean {
-  return a.some((p) => isPointInPolygon(p, b)) || b.some((p) => isPointInPolygon(p, a));
+  if (a.some((p) => isPointInPolygon(p, b)) || b.some((p) => isPointInPolygon(p, a))) return true;
+  for (let i = 0; i < a.length; i++) {
+    const a1 = a[i], a2 = a[(i + 1) % a.length];
+    for (let j = 0; j < b.length; j++) {
+      const b1 = b[j], b2 = b[(j + 1) % b.length];
+      if (segmentsIntersectInclusive(a1, a2, b1, b2)) return true;
+    }
+  }
+  return false;
 }
 
 /** 가장 긴 변의 인덱스를 반환 (i → i+1 기준) */
