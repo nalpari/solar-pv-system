@@ -50,7 +50,8 @@ function ensureCCW(pts: Point[]): Point[] {
   return signedArea(pts) < 0 ? [...pts].reverse() : pts;
 }
 
-// Insets a polygon inward by `distance`. Assumes math coordinate system (Y up).
+// Insets a polygon inward by positive `distance`; negative `distance` expands outward
+// (used for exclude/opening margins). Assumes math coordinate system (Y up).
 // For canvas coordinates (Y down), flip Y before calling and flip back after.
 function insetPolygon(pts: Point[], distance: number): Point[] {
   const n = pts.length;
@@ -303,7 +304,7 @@ export function placePanels(
   return allPanels;
 }
 
-// mm 단위 버전 — 패널 크기(mm), 간격(mm), 마진(mm) 입력
+// mm 단위 버전 — 패널 크기(mm), 좌우/상하 간격(gapXMm/gapYMm), 마진(mm), 배치방식(layout), 경사(slopeSun) 입력
 // 현재 UI는 cm 단위로 전환했지만, mm 버전도 향후 단위 선택 기능 등을 위해 유지한다.
 // (2026-03-20 논의: 단위를 cm로 바꿔줘 → cm 버전 추가, mm 버전 유지)
 export function placePanelsOnCanvas(
