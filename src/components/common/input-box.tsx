@@ -3,11 +3,13 @@ import Image from "next/image";
 type InputBoxProps = React.InputHTMLAttributes<HTMLInputElement> & {
   withSearchIcon?: boolean;
   onSearchClick?: () => void;
+  suffix?: React.ReactNode;
 };
 
 export function InputBox({
   withSearchIcon = false,
   onSearchClick,
+  suffix,
   className,
   ...inputProps
 }: InputBoxProps) {
@@ -21,6 +23,11 @@ export function InputBox({
         {...inputProps}
         className="flex-1 min-w-0 h-full bg-transparent border-0 rounded-none px-0 py-0 text-[13px] leading-[1.5] text-[#333] text-ellipsis placeholder:text-[#333]/40 outline-none shadow-none focus:shadow-none focus:outline-none focus:border-0"
       />
+      {suffix != null && (
+        <span className="shrink-0 pl-2 text-[13px] leading-[1.5] text-[#333] select-none">
+          {suffix}
+        </span>
+      )}
       {withSearchIcon && (
         <button
           type="button"

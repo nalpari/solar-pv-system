@@ -47,7 +47,7 @@ export default function Home() {
   const [simForm, setSimForm] = useState<SimulationFormState>({
     azimuth: "",
     hasBattery: true,
-    batteryModel: "q-ready-7.7",
+    batteryModel: "",
     monthlyElecCost: "",
   });
 
