@@ -88,6 +88,11 @@ function polygonFullyInside(inner: PixelPoint[], outer: PixelPoint[]): boolean {
   return inner.every((p) => isPointInPolygon(p, outer));
 }
 
+/** 두 폴리곤이 겹치는지(한쪽 정점이 다른 쪽 내부에 있으면 겹침) — 장애물 이동 시 영향받는 지붕면 판별용 */
+function polygonsOverlap(a: PixelPoint[], b: PixelPoint[]): boolean {
+  return a.some((p) => isPointInPolygon(p, b)) || b.some((p) => isPointInPolygon(p, a));
+}
+
 /** 가장 긴 변의 인덱스를 반환 (i → i+1 기준) */
 function findLongestEdgeIndex(points: PixelPoint[]): number {
   let maxLen = 0;
@@ -870,8 +875,19 @@ export default function CropPopup({
         // 실제로 이동한 경우: 부모 동기화 + 해당 지붕면 위 모듈 자동 삭제. 이동한 폴리곤은 선택 유지(추가).
         notifyParent(areasRef.current);
         if (candidateId) {
-          // onEaveChange는 본체(install)에만 호출 — 동반 이동된 exclude(장애물)엔 패널이 없어 모듈 정리 불필요
-          onEaveChange?.(candidateId);
+          const movedArea = areasRef.current.find((a) => a.id === candidateId);
+          if (movedArea?.type === "exclude") {
+            // 장애물 단독 이동: 새 위치에 겹친 install 지붕면들의 패널을 정리 (장애물 아래 패널 잔존 방지).
+            // 본체(install)는 placedPanel.polygonId === install.id 이므로 install id로 onEaveChange를 호출해야 삭제된다.
+            for (const a of areasRef.current) {
+              if (a.type === "install" && a.points.length >= 3 && polygonsOverlap(movedArea.points, a.points)) {
+                onEaveChange?.(a.id);
+              }
+            }
+          } else {
+            // install 본체 이동: 해당 지붕면 위 패널 삭제
+            onEaveChange?.(candidateId);
+          }
           setSelectedPolygonIds((prev) => {
             if (prev.has(candidateId)) return prev;
             const next = new Set(prev);
