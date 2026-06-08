@@ -108,7 +108,8 @@ export function LnbDesign({
             longAxis: number;
           }>;
           const modules = items
-            .filter((item) => item.matlGbnCd === "M")
+            // 출력(wpOut) 없는/0 모듈은 제외 — 용량이 0kW로 잘못 표시되는 것 방지
+            .filter((item) => item.matlGbnCd === "M" && Number(item.wpOut) > 0)
             .map((item) => ({
               value: item.matlCd,
               label: item.qcastCustPrdNm,
