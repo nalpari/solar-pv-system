@@ -204,7 +204,7 @@ export function LnbSim({
 function Compass({ selected }: { selected: string }) {
   const idx = COMPASS_DIRECTIONS.findIndex((d) => d.value === selected);
   // Position a small red dot around the compass for the selected direction.
-  // 8-direction wheel: idx0=南(아래)부터 45° step. +90° 보정으로 北을 top(angle=-90°)에 정렬.
+  // 8-direction wheel: idx0=南(아래)부터 45° step. +90° 보정으로 北(idx4)이 270°(≡-90°)=top에 정렬.
   // Compass image is 98×98; place the dot on a circle of radius 38 around its center.
   const indicator = (() => {
     if (idx < 0) return null;

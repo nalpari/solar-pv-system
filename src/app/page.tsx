@@ -397,11 +397,10 @@ export default function Home() {
             onFormChange: setSimForm,
             onGoBack: () => {
               // 입력값이 기본값에서 변경된 경우 초기화 컨펌, 기본값이면 즉시 이동
-              const pristine =
-                simForm.azimuth === "" &&
-                simForm.hasBattery &&
-                simForm.batteryModel === "" &&
-                simForm.monthlyElecCost === "";
+              // DEFAULT_SIM_FORM 과 shallow-equal — 기본값이 바뀌어도 판정이 자동 추종
+              const pristine = (
+                Object.keys(DEFAULT_SIM_FORM) as (keyof SimulationFormState)[]
+              ).every((key) => simForm[key] === DEFAULT_SIM_FORM[key]);
               if (!pristine && !window.confirm(t("simBackToDesignConfirm", lang)))
                 return;
               setSimForm(DEFAULT_SIM_FORM);
