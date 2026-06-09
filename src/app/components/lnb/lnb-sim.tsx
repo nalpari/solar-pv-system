@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Button, Radio, SelectBox, InputBox } from "@/components/common";
 import { ChevronRight, Section } from "./section";
-import type { SimulationFormState } from "../SimulationPanel";
+import type { SimulationFormState } from "../../types";
 import { t, type Lang } from "../../utils/i18n";
 
 // 8方位 — 화면설계서 명세(남·남서·서·북서·북·북동·동·남동). 45° 간격.
