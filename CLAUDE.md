@@ -67,7 +67,7 @@ src/
 │   ├── api/
 │   │   ├── detect-roof/      # /api/detect-roof — Gemini Vision 호출 라우트 (서버)
 │   │   ├── openapi/          # /api/openapi — buildOpenApiDocument() JSON 제공
-│   │   ├── qsp/              # /api/qsp/* — QSP BFF (btc-items)
+│   │   ├── qsp/              # /api/qsp/* — QSP BFF (btc-items: 모듈 schItemTp=M / 축전지 schItemTp=B)
 │   │   └── musbi/            # /api/musbi/* — MUSBI BFF (sim-check / sim-calc)
 │   ├── reference/           # /reference — Scalar API Reference UI
 │   ├── components/          # UI components (all "use client")
@@ -207,7 +207,7 @@ Currently no test framework configured. Verify changes via:
 - `AGENTS.md` 는 본 파일(`CLAUDE.md`)을 그대로 import 하는 shim 입니다 — 모든 가이드는 여기에서 관리합니다
 - See `README.md` for the user-facing feature list, screenshots, and step-by-step usage
 - The app defaults to Japanese UI (`<html lang="ja">`) with English toggle available in the sidebar footer
-- Generation simulation backend is not wired up yet — `SimulationPanel` only collects input
+- 발전 시뮬레이션 입력값(방위·축전지·월평균 전기요금)을 수집한다. 축전지 목록은 QSP btc-items(`schItemTp=B`)로 조회하며, 결과 계산(musbi sim-calc) 연동은 미완 — 결과 조회 버튼은 입력 검증까지만 동작
 
 ## graphify
 
