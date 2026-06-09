@@ -187,7 +187,11 @@ export function LnbSim({
           iconPosition="right"
           className="w-full"
           onClick={onSubmit}
-          disabled={azimuth === "" || monthlyElecCost === ""}
+          disabled={
+            azimuth === "" ||
+            monthlyElecCost === "" ||
+            (hasBattery && batteryModel === "")
+          }
           icon={<ChevronRight />}
         >
           {t("simViewResults", lang)}

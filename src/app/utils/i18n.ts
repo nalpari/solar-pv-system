@@ -78,6 +78,10 @@ const translations = {
   modulePlacementDone: { ja: "モジュール配置完了", en: "Module Placement Done" },
   moduleEditReturn: { ja: "モジュール編集に戻る", en: "Return to Module Editing" },
   backToModuleEdit: { ja: "モジュール編集に戻る", en: "Back to Module Edit" },
+  simBackToDesignConfirm: {
+    ja: "太陽光設計画面に移動しますか？入力された情報はすべて初期化されます。",
+    en: "Move to the solar design screen? All entered information will be reset.",
+  },
 
   // PV logo + new Lnb section titles
   pvLogoAlt: { ja: "Hanwha Japan PV Simulation", en: "Hanwha Japan PV Simulation" },
