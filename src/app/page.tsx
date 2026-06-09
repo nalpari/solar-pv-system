@@ -31,6 +31,14 @@ const DEFAULT_CENTER = { lat: 35.6850697, lng: 139.7619073 }; // 〒100-0005 東
 const DEFAULT_SLOPE: number | null = null; // 미선택 상태로 시작
 const DEFAULT_PANEL_SIZE: PanelSize | null = null; // 모듈 미선택 상태로 시작
 
+// 발전시뮬 입력 폼 기본값 — 초기 상태이자 "모듈 편집으로 돌아가기" 시 초기화 기준
+const DEFAULT_SIM_FORM: SimulationFormState = {
+  azimuth: "",
+  hasBattery: true,
+  batteryModel: "",
+  monthlyElecCost: "",
+};
+
 type SidebarTab = "design" | "simulation";
 
 const GAP_X_CM = 0.3; // 모듈 간격 좌우 3mm (처마 평행)
@@ -44,12 +52,7 @@ export default function Home() {
   const [isPlacementDone, setIsPlacementDone] = useState(false);
   const [slope, setSlope] = useState<number | null>(DEFAULT_SLOPE);
   const [roofEditTool, setRoofEditTool] = useState<RoofTool>("select");
-  const [simForm, setSimForm] = useState<SimulationFormState>({
-    azimuth: "",
-    hasBattery: true,
-    batteryModel: "q-ready-7.7",
-    monthlyElecCost: "",
-  });
+  const [simForm, setSimForm] = useState<SimulationFormState>(DEFAULT_SIM_FORM);
 
   useEffect(() => {
     document.documentElement.lang = lang;
@@ -392,7 +395,18 @@ export default function Home() {
           sim={{
             formState: simForm,
             onFormChange: setSimForm,
-            onGoBack: () => { setActiveTab("design"); setIsPlacementDone(false); },
+            onGoBack: () => {
+              // 입력값이 기본값에서 변경된 경우 초기화 컨펌, 기본값이면 즉시 이동
+              // DEFAULT_SIM_FORM 과 shallow-equal — 기본값이 바뀌어도 판정이 자동 추종
+              const pristine = (
+                Object.keys(DEFAULT_SIM_FORM) as (keyof SimulationFormState)[]
+              ).every((key) => simForm[key] === DEFAULT_SIM_FORM[key]);
+              if (!pristine && !window.confirm(t("simBackToDesignConfirm", lang)))
+                return;
+              setSimForm(DEFAULT_SIM_FORM);
+              setActiveTab("design");
+              setIsPlacementDone(false);
+            },
             onSubmit: () => {
               // TODO: 시뮬레이션 결과 조회 API 호출
               console.log("Simulation submit:", simForm);
