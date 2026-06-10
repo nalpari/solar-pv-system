@@ -167,9 +167,9 @@ src/
 
 | 파일 | 역할 | Jenkins credential |
 |------|------|---------------------|
-| `.env` | 공통 키 (dev/prod 모두 동일) | `pv-simulation-env-common` (file) |
-| `.env.dev` | dev 배포 전용 오버라이드 | `pv-simulation-env-dev` (file) |
-| `.env.prod` | prod 배포 전용 오버라이드 | `pv-simulation-env-prod` (file) |
+| `.env` | 공통 키 (dev/prod 모두 동일) | `pv-common-env` (file) |
+| `.env.dev` | dev 배포 전용 오버라이드 | `pv-dev-env` (file) |
+| `.env.prod` | prod 배포 전용 오버라이드 | `pv-prod-env` (file) |
 
 Jenkinsfile 의 `Load Env Credential` 스테이지에서 `cat common + 선택된 profile > .env` 로 병합되며, 같은 키가 양쪽에 있으면 **profile 파일이 공통을 오버라이드** 합니다. docker-compose 는 `env_file: .env` 로 통째 마운트해 컨테이너에 주입합니다.
 
@@ -190,8 +190,8 @@ Jenkinsfile 의 `Load Env Credential` 스테이지에서 `cat common + 선택된
 | `ENABLE_API_DOCS` | `.env.dev` / `.env.prod` | 런타임 | `"true"` 일 때만 `/api/openapi` 와 `/reference` 노출. dev=true / prod=false 권장 |
 
 새 키 추가 워크플로:
-- **공통 키**: Jenkins UI 의 `pv-simulation-env-common` credential 파일에 추가
-- **환경별 키**: `pv-simulation-env-dev` / `pv-simulation-env-prod` credential 파일에 추가
+- **공통 키**: Jenkins UI 의 `pv-common-env` credential 파일에 추가
+- **환경별 키**: `pv-dev-env` / `pv-prod-env` credential 파일에 추가
 - **`NEXT_PUBLIC_*` 키**: 위 + Dockerfile 에 `ARG`/`ENV` 2줄 + docker-compose.yml 각 서비스 `build.args` 에 1줄 추가
 - **모든 키**: Jenkinsfile `Validate Environment` 스테이지의 `: "${VAR:?...}"` 검증 라인 추가 (전수 검증 정책)
 
