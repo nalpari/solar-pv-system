@@ -91,6 +91,9 @@ pipeline {
 
           export IMAGE_TAG="${BUILD_NUMBER}"
           KEEP_VERSIONS=5
+          # Jenkins 에이전트가 컨테이너(DooD)에서 돌면 localhost 는 에이전트 자신의
+          # loopback 이라 호스트에 publish 된 포트에 닿지 않는다 — 호스트 IP 로 확인한다.
+          DEPLOY_HOST="203.137.179.237"
 
           wait_for_url() {
             url="$1"
@@ -127,14 +130,14 @@ pipeline {
             docker compose --profile dev build app-dev
             retag_latest dev
             docker compose --profile dev up -d app-dev
-            wait_for_url http://localhost:4010
+            wait_for_url "http://${DEPLOY_HOST}:4010"
             prune_old_images dev "$KEEP_VERSIONS"
           else
             docker compose --profile prod build app-prod-4000
             retag_latest prod
             docker compose --profile prod up -d app-prod-4000 app-prod-4001
-            wait_for_url http://localhost:4000
-            wait_for_url http://localhost:4001
+            wait_for_url "http://${DEPLOY_HOST}:4000"
+            wait_for_url "http://${DEPLOY_HOST}:4001"
             prune_old_images prod "$KEEP_VERSIONS"
           fi
         '''
