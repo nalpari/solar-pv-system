@@ -90,7 +90,7 @@ pipeline {
           set -a; . ./.env; set +a
 
           export IMAGE_TAG="${BUILD_NUMBER}"
-          KEEP_VERSIONS=5
+          KEEP_VERSIONS=2
 
           retag_latest() {
             profile="$1"
