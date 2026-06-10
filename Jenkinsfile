@@ -91,22 +91,6 @@ pipeline {
 
           export IMAGE_TAG="${BUILD_NUMBER}"
           KEEP_VERSIONS=5
-          # Jenkins 에이전트가 컨테이너(DooD)에서 돌면 localhost 는 에이전트 자신의
-          # loopback 이라 호스트에 publish 된 포트에 닿지 않는다 — 호스트 IP 로 확인한다.
-          DEPLOY_HOST="203.137.179.237"
-
-          wait_for_url() {
-            url="$1"
-            for attempt in $(seq 1 30); do
-              if curl -fsS "$url" >/dev/null; then
-                return 0
-              fi
-              sleep 2
-            done
-
-            echo "Timed out waiting for $url"
-            return 1
-          }
 
           retag_latest() {
             profile="$1"
@@ -126,18 +110,17 @@ pipeline {
               | xargs -r docker rmi 2>/dev/null || true
           }
 
+          # --wait: 컨테이너 healthcheck(docker-compose.yml)가 healthy 가 될 때까지
+          # 블로킹하고, unhealthy 로 끝나면 비0 종료해 스테이지를 실패시킨다.
           if [ "$PROFILE" = "dev" ]; then
             docker compose --profile dev build app-dev
             retag_latest dev
-            docker compose --profile dev up -d app-dev
-            wait_for_url "http://${DEPLOY_HOST}:4010"
+            docker compose --profile dev up -d --wait app-dev
             prune_old_images dev "$KEEP_VERSIONS"
           else
             docker compose --profile prod build app-prod-4000
             retag_latest prod
-            docker compose --profile prod up -d app-prod-4000 app-prod-4001
-            wait_for_url "http://${DEPLOY_HOST}:4000"
-            wait_for_url "http://${DEPLOY_HOST}:4001"
+            docker compose --profile prod up -d --wait app-prod-4000 app-prod-4001
             prune_old_images prod "$KEEP_VERSIONS"
           fi
         '''
