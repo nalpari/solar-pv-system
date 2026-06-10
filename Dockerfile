@@ -20,6 +20,9 @@ ARG NEXT_PUBLIC_AWS_S3_BASE_URL
 ENV NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=$NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
 ENV NEXT_PUBLIC_AWS_S3_BASE_URL=$NEXT_PUBLIC_AWS_S3_BASE_URL
 
+# 빌드 전 검증 (lint·타입체크) — Jenkins 호스트에 Node 없이 컨테이너 안에서 일원화 수행
+RUN pnpm lint
+RUN pnpm exec tsc --noEmit
 RUN pnpm build
 
 # --- 프로덕션 ---

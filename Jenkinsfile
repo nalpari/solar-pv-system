@@ -60,19 +60,6 @@ pipeline {
           : "${MUSBI_API_HOST:?credential pv-${PROFILE}-env에 MUSBI_API_HOST가 정의되어 있어야 합니다.}"
           : "${ENABLE_API_DOCS:?credential pv-${PROFILE}-env에 ENABLE_API_DOCS(true/false)가 정의되어 있어야 합니다. (API 문서 노출 플래그)}"
           docker compose version
-          node --version
-          pnpm --version || corepack prepare pnpm@10 --activate
-        '''
-      }
-    }
-
-    stage('Install') {
-      steps {
-        sh '''
-          set -eu
-          corepack enable
-          corepack prepare pnpm@10 --activate
-          pnpm install --frozen-lockfile
         '''
       }
     }
@@ -82,9 +69,16 @@ pipeline {
         sh '''
           set -eu
           set -a; . ./.env; set +a
-          pnpm lint
-          pnpm exec tsc --noEmit
-          pnpm build
+
+          # 호스트 Node 불필요 — Dockerfile builder 스테이지에서 lint·tsc·build 를 모두 수행한다.
+          # builder 타깃 빌드가 성공하면 검증 통과. 레이어는 Deploy 의 compose build 와 캐시 공유된다.
+          docker build \\
+            --target builder \\
+            --build-arg NEXT_PUBLIC_GOOGLE_MAPS_API_KEY="$NEXT_PUBLIC_GOOGLE_MAPS_API_KEY" \\
+            --build-arg NEXT_PUBLIC_AWS_S3_BASE_URL="$NEXT_PUBLIC_AWS_S3_BASE_URL" \\
+            -t "solar-pv-system:verify-${BUILD_NUMBER}" \\
+            .
+          docker rmi "solar-pv-system:verify-${BUILD_NUMBER}" 2>/dev/null || true
         '''
       }
     }
