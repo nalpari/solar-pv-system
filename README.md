@@ -108,14 +108,11 @@ docker run -p 3000:3000 -e GEMINI_API_KEY=your_gemini_api_key_here solar-pv-syst
 ```
 src/app/
 ├── components/
-│   ├── AddressSearch.tsx      # Places Autocomplete 주소 검색
+│   ├── AiDetectControls.tsx   # AI 지붕 분석 트리거 (분석 시작/취소)
 │   ├── CropPopup.tsx          # 크롭 이미지 위 캔버스 폴리곤 에디터 + 패널 렌더링
-│   ├── Header.tsx             # 사이드바 상단 헤더
 │   ├── MapView.tsx            # Google Maps + 크롭 영역 선택 오버레이 (html2canvas 캡처)
-│   ├── PanelConfig.tsx        # 모듈 프리셋 / 폭·높이(mm) 입력
-│   ├── ResultsPanel.tsx       # 배치 결과 통계 + 모듈 배치/삭제 액션
 │   ├── RoofEditToolbar.tsx    # 지붕 편집 툴바 (지도 위 플로팅)
-│   └── SimulationPanel.tsx    # 발전 시뮬레이션 입력 폼
+│   └── lnb/                   # 좌측 사이드바 (Lnb / LnbDesign / LnbSim / address-input-lnb)
 ├── utils/
 │   ├── i18n.ts                # 일/영 번역 사전 + `t(key, lang)` 함수
 │   └── panelPlacement.ts      # 좌표 변환 및 패널 배치 계산 엔진

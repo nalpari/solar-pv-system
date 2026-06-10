@@ -8,13 +8,10 @@ Google Maps 위성 이미지에서 대상 건물 영역을 크롭하고, 크롭 
 ```
 Browser (Client)
 ├─ Left Sidebar
-│  ├─ Header (Hanwha Japan logo)
+│  ├─ Logo (Hanwha Japan)
 │  ├─ Design / Simulation tabs
-│  ├─ AddressSearch
-│  ├─ Roof edit controls
-│  ├─ PanelConfig
-│  ├─ ResultsPanel
-│  ├─ SimulationPanel
+│  ├─ LnbDesign (주소검색·경사·모듈·배치)
+│  ├─ LnbSim (방위·축전지·요금)
 │  └─ Footer language toggle
 └─ Main Map Area
    ├─ Google Maps satellite/roadmap view
@@ -40,14 +37,12 @@ Google Maps APIs
 RootLayout (Server Component)
 └─ Home (Client Component, state owner)
    └─ APIProvider (@vis.gl/react-google-maps, libraries: places + geometry)
-      ├─ Header
-      ├─ Sidebar
-      │  ├─ AddressSearch
-      │  ├─ PanelConfig
-      │  ├─ ResultsPanel
-      │  ├─ SimulationPanel
+      ├─ Lnb (Sidebar)
+      │  ├─ LnbDesign
+      │  ├─ LnbSim
       │  └─ Language toggle
       ├─ RoofEditToolbar
+      ├─ AiDetectControls
       ├─ MapView
       │  ├─ Map (@vis.gl/react-google-maps)
       │  ├─ ViewUpdater
@@ -73,12 +68,12 @@ RootLayout (Server Component)
 | `roofEditing` | `boolean` | Home | RoofEditToolbar, CropPopup |
 | `roofEditTool` | `RoofTool` | Home | RoofEditToolbar, CropPopup |
 | `drawingMode` | `DrawingMode` | Home derived value | CropPopup |
-| `areas` | `PolygonArea[]` | Home | CropPopup, ResultsPanel |
+| `areas` | `PolygonArea[]` | Home | CropPopup, LnbDesign |
 | `pixelAreas` | `{ areas, metersPerPixel } \| null` | Home | panel placement |
-| `panelSize` | `PanelSize` | Home | PanelConfig, ResultsPanel |
-| `orientation` | `PanelOrientation` | Home | ResultsPanel |
-| `placedPixelPanels` | `PixelPanel[]` | Home | CropPopup, ResultsPanel |
-| `simForm` | `SimulationFormState` | Home | SimulationPanel |
+| `panelSize` | `PanelSize` | Home | LnbDesign |
+| `orientation` | `PanelOrientation` | Home | panel placement |
+| `placedPixelPanels` | `PixelPanel[]` | Home | CropPopup, LnbDesign |
+| `simForm` | `SimulationFormState` | Home | LnbSim |
 
 ## 3. 데이터 흐름
 
@@ -86,7 +81,7 @@ RootLayout (Server Component)
 
 ```
 User input
-→ AddressSearch debounce
+→ address-input-lnb debounce
 → AutocompleteService.getPlacePredictions()
 → Prediction 선택
 → PlacesService.getDetails()
@@ -196,7 +191,7 @@ next/font/google
 └─ Figtree, Noto Sans JP, Geist Mono
 
 next/image
-└─ Header logo optimization
+└─ Lnb 로고 · CropPopup 캡처 이미지
 ```
 
 ## 6. 배포 아키텍처

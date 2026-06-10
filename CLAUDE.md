@@ -71,14 +71,11 @@ src/
 │   │   └── musbi/            # /api/musbi/* — MUSBI BFF (sim-check / sim-calc)
 │   ├── reference/           # /reference — Scalar API Reference UI
 │   ├── components/          # UI components (all "use client")
-│   │   ├── AddressSearch    # Google Places autocomplete
+│   │   ├── AiDetectControls # AI 지붕 분석 트리거 (분석 시작/취소)
 │   │   ├── CropPopup        # Crop image popup with Canvas polygon editor, panel rendering
-│   │   ├── Header           # App header with Hanwha Japan logo
 │   │   ├── MapView          # Google Maps satellite view + crop overlay + zoom/recenter controls
-│   │   ├── PanelConfig      # Panel size preset (60-cell / 72-cell / Large / Custom, mm)
-│   │   ├── ResultsPanel     # Panel count, capacity, area, coverage ratio
 │   │   ├── RoofEditToolbar  # Floating toolbar over map (select / drawRoof / drawOpening / flowSetting / editRoof / undo / delete)
-│   │   └── SimulationPanel  # Generation simulation inputs (azimuth, battery, monthly electric cost)
+│   │   └── lnb/             # 좌측 사이드바: Lnb(탭 컨테이너) / LnbDesign / LnbSim / address-input-lnb
 │   ├── utils/
 │   │   ├── aiDetect         # Gemini detect fetch 래퍼 + 정규화→픽셀 변환 어댑터
 │   │   ├── panelPlacement   # Computational geometry (lat/lng + pixel-based panel layout)
