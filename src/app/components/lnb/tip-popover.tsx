@@ -63,7 +63,7 @@ export function TipPopover({ children }: { children?: React.ReactNode }) {
       <Image
         src={
           open
-            ? "/assets/images/contents/tooltip_on.svg"
+            ? asset("/assets/images/contents/tooltip_on.svg")
             : asset("/assets/images/contents/tooltip.svg")
         }
         alt="tip"
