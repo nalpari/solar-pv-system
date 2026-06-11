@@ -61,3 +61,10 @@ export interface PixelPanel {
   polygonId: string;
   corners: [PixelPoint, PixelPoint, PixelPoint, PixelPoint];
 }
+
+export interface SimulationFormState {
+  azimuth: string;
+  hasBattery: boolean;
+  batteryModel: string;
+  monthlyElecCost: string;
+}

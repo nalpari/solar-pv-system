@@ -19,7 +19,7 @@ sequenceDiagram
     API->>GM: Google Maps JS API 로드
     GM-->>API: 라이브러리 로드 완료
     API-->>H: Maps API 사용 가능
-    H->>H: Header, Sidebar, MapView 렌더
+    H->>H: Lnb, MapView 렌더
 ```
 
 ## 2. 주소 검색 시퀀스
@@ -27,7 +27,7 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant U as User
-    participant AS as AddressSearch
+    participant AS as address-input-lnb
     participant AC as AutocompleteService
     participant PS as PlacesService
     participant H as Home
@@ -132,7 +132,7 @@ sequenceDiagram
     participant PC as placePanelsOnCanvasCm()
     participant PL as placePanels()
     participant CP as CropPopup
-    participant RP as ResultsPanel
+    participant RP as LnbDesign
 
     U->>H: Place Modules 클릭 (정렬/치도리)
     H->>H: placementError 초기화

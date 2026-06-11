@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { APIProvider } from "@vis.gl/react-google-maps";
 import { Lnb } from "./components/lnb/lnb";
-import type { SimulationFormState } from "./components/SimulationPanel";
+import type { SimulationFormState } from "./types";
 import RoofEditToolbar from "./components/RoofEditToolbar";
 import type { RoofTool } from "./components/RoofEditToolbar";
 import MapView from "./components/MapView";

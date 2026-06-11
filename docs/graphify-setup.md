@@ -127,7 +127,7 @@ graphify-out/
 ### 쿼리 명령
 
 ```bash
-graphify query "PanelConfig가 panelPlacement와 어떻게 연결되어 있나?"
+graphify query "LnbDesign이 panelPlacement와 어떻게 연결되어 있나?"
 graphify path "MapView" "CropPopup"
 graphify explain "placePanelsOnCanvasCm"
 graphify ./graphify-out/graph.json --update    # 변경 파일만 재추출

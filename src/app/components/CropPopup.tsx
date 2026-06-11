@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { CropData, CropBounds, DrawingMode, LatLng, PolygonArea, PixelPanel, PixelPolygon, PixelPoint } from "../types";
@@ -1077,7 +1078,7 @@ export default function CropPopup({
       }}
     >
         {/* AI 감지 로딩 오버레이 (Phase 7: 사용자가 "AI 분석 시작" 클릭 시)
-            기존 AddressSearch의 spin 패턴(globals.css @keyframes spin)을 재사용해 일관화 (U1) */}
+            globals.css @keyframes spin 패턴을 재사용해 일관화 (U1) */}
         {detectStatus === "detecting" && (
           <div
             style={{
@@ -1144,17 +1145,13 @@ export default function CropPopup({
             justifyContent: "center",
           }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element -- data URL from canvas capture */}
-          <img
+          <Image
             ref={imgRef}
             src={cropData.imageDataUrl}
             alt=""
-            style={{
-              display: "block",
-              width: "100%",
-              height: "100%",
-              objectFit: "contain",
-            }}
+            fill
+            unoptimized
+            style={{ objectFit: "contain" }}
           />
           <canvas
             ref={canvasRef}
