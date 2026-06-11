@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { asset } from "@/app/utils/asset";
 
 type InputBoxProps = React.InputHTMLAttributes<HTMLInputElement> & {
   withSearchIcon?: boolean;
@@ -36,7 +37,7 @@ export function InputBox({
           className="flex items-center justify-center w-12 h-full shrink-0 cursor-pointer"
         >
           <Image
-            src="/assets/images/common/search_icon.svg"
+            src={asset("/assets/images/common/search_icon.svg")}
             alt=""
             width={17}
             height={17}

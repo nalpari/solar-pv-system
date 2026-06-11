@@ -55,7 +55,7 @@ export async function detectRoofs(
   cropData: CropData,
   signal?: AbortSignal,
 ): Promise<DetectApiResponse> {
-  const res = await fetch("/api/detect-roof", {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/detect-roof`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
