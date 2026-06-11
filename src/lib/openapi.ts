@@ -14,6 +14,7 @@ import {
   DetectResponseSchema,
   PolygonSchema,
 } from "./detect/schema";
+import { ALLOWED_IMAGE_TYPES, UploadImageResultSchema } from "./image/schema";
 
 // ============================================================================
 // 공통 envelope (BFF 응답 포맷)
@@ -105,6 +106,30 @@ const SimCheckSuccessSchema = successEnvelope(z.null())
 const SimCalcSuccessSchema = successEnvelope(RegisteredSimCalcResponseSchema)
   .meta({ id: "SimCalcSuccessResponse", description: "시뮬레이션 계산 성공" });
 
+// ============================================================================
+// image upload (multipart) — route.ts 의 검증 규칙을 문서로 표현
+// ============================================================================
+
+const UploadImageRequestSchema = z
+  .object({
+    file: z.string().meta({
+      format: "binary",
+      description: `업로드할 이미지 파일 (${ALLOWED_IMAGE_TYPES.join(", ")}, 최대 10MB)`,
+    }),
+  })
+  .meta({ id: "UploadImageRequest", description: "이미지 업로드 multipart 본문" });
+
+const RegisteredUploadImageResultSchema = UploadImageResultSchema.meta({
+  id: "UploadImageResult",
+  description: "S3 업로드 결과 (공개 URL + 오브젝트 키)",
+});
+
+const UploadImageSuccessSchema = successEnvelope(RegisteredUploadImageResultSchema)
+  .meta({ id: "UploadImageResponse", description: "이미지 업로드 성공" });
+
+const DeleteImageSuccessSchema = successEnvelope(z.null())
+  .meta({ id: "DeleteImageResponse", description: "이미지 삭제 성공 (data=null)" });
+
 // reused:"ref" 옵션과 함께 paths 에서 직접 참조하지 않아도 components 에 포함되도록 보장.
 // DetectPolygon / BboxResponse 는 DetectResponse 내부에서만 사용되지만 독립 컴포넌트로 노출.
 const COMPONENT_SCHEMAS = {
@@ -145,6 +170,7 @@ export function buildOpenApiDocument() {
       { name: "detect", description: "지붕 자동 감지" },
       { name: "qsp", description: "QSP.Connector BFF — 마스터" },
       { name: "musbi", description: "MUSBI BFF — 시뮬레이션" },
+      { name: "image", description: "참조 이미지 S3 업로드/삭제" },
     ],
     // DetectPolygon / BboxResponse 는 paths 에서 직접 참조되지 않으므로
     // 여기서 명시 등록해 노출. 그 외 .meta({id}) 부여 스키마는 paths 안
@@ -242,6 +268,55 @@ export function buildOpenApiDocument() {
             "500": { description: "서버 설정 오류", content: errorContent },
             "502": { description: "Upstream 오류", content: errorContent },
             "504": { description: "Upstream 타임아웃", content: errorContent },
+          },
+        },
+      },
+      "/api/image/upload": {
+        post: {
+          tags: ["image"],
+          summary: "참조 이미지 S3 업로드",
+          description:
+            "multipart/form-data 의 file 필드를 S3 `upload/{uuid}.{ext}` 키로 업로드하고 공개 URL 을 반환한다.",
+          requestBody: {
+            required: true,
+            content: {
+              "multipart/form-data": { schema: UploadImageRequestSchema },
+            },
+          },
+          responses: {
+            "200": {
+              description: "업로드 성공",
+              content: jsonContent(UploadImageSuccessSchema),
+            },
+            "400": { description: "file 누락 / 미지원 타입 / 빈 파일", content: errorContent },
+            "413": { description: "파일 크기 초과 (10MB)", content: errorContent },
+            "429": { description: "Rate limit", content: errorContent },
+            "500": { description: "서버 설정 오류 (S3 env 미설정)", content: errorContent },
+            "502": { description: "S3 업로드 실패", content: errorContent },
+          },
+        },
+        delete: {
+          tags: ["image"],
+          summary: "업로드 이미지 삭제",
+          description:
+            "업로드 시 반환된 fileName(S3 키)을 받아 해당 오브젝트를 삭제한다. `upload/{uuid}.{ext}` 형식 외의 키는 거부한다.",
+          requestParams: {
+            query: z.object({
+              fileName: z.string().meta({
+                description: "업로드 시 반환된 S3 오브젝트 키",
+                example: "upload/3fa85f64-5717-4562-b3fc-2c963f66afa6.png",
+              }),
+            }),
+          },
+          responses: {
+            "200": {
+              description: "삭제 성공",
+              content: jsonContent(DeleteImageSuccessSchema),
+            },
+            "400": { description: "fileName 누락 / 형식 불일치", content: errorContent },
+            "429": { description: "Rate limit", content: errorContent },
+            "500": { description: "서버 설정 오류 (S3 env 미설정)", content: errorContent },
+            "502": { description: "S3 삭제 실패", content: errorContent },
           },
         },
       },

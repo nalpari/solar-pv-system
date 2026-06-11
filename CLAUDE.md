@@ -53,6 +53,7 @@ pnpm dev                     # http://localhost:3000
 - **Docker** — Multi-stage standalone build (see `Dockerfile`, `docker-compose.yml`)
 - **Gemini API** — `@google/genai` ^1.0.0 (AI 지붕 자동 감지)
 - **sharp** ^0.34.5 — 서버 측 이미지 처리 (북방 마커 오버레이)
+- **@aws-sdk/client-s3** ^3.1065 — 참조 이미지 S3 업로드/삭제 (`/api/image/upload`)
 - **zod** ^4.3.6 — API 응답 스키마 검증
 - **zod-openapi** ^5.4 — 기존 zod 스키마 → OpenAPI 3.1 문서 생성
 - **@scalar/nextjs-api-reference** ^0.10 — `/reference` 페이지에서 Scalar UI 렌더
@@ -66,6 +67,7 @@ src/
 ├── app/
 │   ├── api/
 │   │   ├── detect-roof/      # /api/detect-roof — Gemini Vision 호출 라우트 (서버)
+│   │   ├── image/upload/     # /api/image/upload — 참조 이미지 S3 업로드(POST)/삭제(DELETE)
 │   │   ├── openapi/          # /api/openapi — buildOpenApiDocument() JSON 제공
 │   │   ├── qsp/              # /api/qsp/* — QSP BFF (btc-items: 모듈 schItemTp=M / 축전지 schItemTp=B)
 │   │   └── musbi/            # /api/musbi/* — MUSBI BFF (sim-check / sim-calc)
@@ -86,18 +88,19 @@ src/
 │   └── page.tsx             # Main page (Client Component, owns all state, hosts design/simulation tabs)
 └── lib/
     ├── detect/              # Gemini Vision 백엔드 모듈 (schema.ts / prompt.ts / overlay.ts)
+    ├── image/               # 이미지 업로드 모듈 (schema.ts — 허용 타입/키 패턴/응답 스키마)
     ├── qsp/                 # QSP BFF 모듈 (schema.ts / client.ts)
     └── openapi.ts           # 기존 zod 스키마 → OpenAPI 3.1 문서 빌더 (SSOT)
 ```
 
 ### API Documentation
 
-- 사양 SSOT: `src/lib/qsp/schema.ts`, `src/lib/detect/schema.ts` 의 zod 스키마
-- 빌더: `src/lib/openapi.ts` — `createDocument({ reused: "ref" })` 로 OpenAPI 3.1 생성. `.meta({ id })` 부여된 스키마는 `components.schemas` 에 자동 등록되며 paths 에서 `$ref` 로 참조된다 (8개 컴포넌트: `DetectRequest`, `DetectResponse`, `DetectPolygon`, `BboxResponse`, `ErrorEnvelope`, `BtcItem`, `SimulationInput`, `SimCalcResponse` + 3개 응답 envelope `BtcItemsResponse` / `SimCheckResponse` / `SimCalcSuccessResponse`)
+- 사양 SSOT: `src/lib/qsp/schema.ts`, `src/lib/detect/schema.ts`, `src/lib/image/schema.ts` 의 zod 스키마
+- 빌더: `src/lib/openapi.ts` — `createDocument({ reused: "ref" })` 로 OpenAPI 3.1 생성. `.meta({ id })` 부여된 스키마는 `components.schemas` 에 자동 등록되며 paths 에서 `$ref` 로 참조된다 (10개 컴포넌트: `DetectRequest`, `DetectResponse`, `DetectPolygon`, `BboxResponse`, `ErrorEnvelope`, `BtcItem`, `SimulationInput`, `SimCalcResponse`, `UploadImageRequest`, `UploadImageResult` + 5개 응답 envelope `BtcItemsResponse` / `SimCheckResponse` / `SimCalcSuccessResponse` / `UploadImageResponse` / `DeleteImageResponse`)
 - 엔드포인트 (둘 다 `ENABLE_API_DOCS=true` 환경에서만 노출, 그 외에는 404 — 내부 API 명세 노출 차단. `NODE_ENV` 가드는 dev/prod 모두 production 빌드를 쓰는 배포 모델과 충돌하므로 사용하지 않음):
   - `GET /api/openapi` — OpenAPI 3.1 JSON (모듈 스코프 lazy memoize)
   - `GET /reference` — Scalar 기반 API Reference UI (dev: http://localhost:3000/reference)
-- 라우트 보호: `/api/qsp/*`, `/api/musbi/*`, `/api/detect-roof` 는 `src/proxy.ts` 에서 Origin 검증 + per-IP rate limit (in-memory sliding window) 적용 — BFF(qsp/musbi)는 1분 30회, 고비용 detect-roof(Gemini 2회 호출)는 1분 10회 별도 버킷. clientIP 는 `X-Forwarded-For` 의 오른쪽 신뢰 hop(`TRUSTED_PROXY_HOPS`, 기본 1)만 채택해 헤더 위조로 인한 한도 우회를 막는다 — 운영은 XFF 를 설정하는 리버스 프록시 뒤 배포 전제(직접 노출 시 IP 별 제한 불가). 단일 인스턴스 배포 전제, 스케일아웃 시 분산 저장소로 교체 필요. Next.js 16 의 proxy 컨벤션을 따른다 (구 `middleware` 컨벤션 deprecated)
+- 라우트 보호: `/api/qsp/*`, `/api/musbi/*`, `/api/detect-roof`, `/api/image/*` 는 `src/proxy.ts` 에서 Origin 검증 + per-IP rate limit (in-memory sliding window) 적용 — BFF(qsp/musbi)·image 는 1분 30회, 고비용 detect-roof(Gemini 2회 호출)는 1분 10회 별도 버킷. clientIP 는 `X-Forwarded-For` 의 오른쪽 신뢰 hop(`TRUSTED_PROXY_HOPS`, 기본 1)만 채택해 헤더 위조로 인한 한도 우회를 막는다 — 운영은 XFF 를 설정하는 리버스 프록시 뒤 배포 전제(직접 노출 시 IP 별 제한 불가). 단일 인스턴스 배포 전제, 스케일아웃 시 분산 저장소로 교체 필요. Next.js 16 의 proxy 컨벤션을 따른다 (구 `middleware` 컨벤션 deprecated)
 
 ### Key Patterns
 
@@ -179,7 +182,7 @@ Jenkinsfile 의 `Load Env Credential` 스테이지에서 `cat common + 선택된
 | `GEMINI_API_KEY` | `.env` (공통) | 런타임 | Gemini API key. Server route only |
 | `GEMINI_MODEL` | `.env` (공통) | 런타임 | Gemini model identifier (예: `"gemini-3.1-pro-preview"`). 미설정 시 `/api/detect-roof`는 500 응답 |
 | `AWS_REGION` | `.env` (공통) | 런타임 | S3 리전 (예: `ap-northeast-1`) |
-| `AMPLIFY_BUCKET` | `.env` (공통) | 런타임 | S3 버킷명 (지붕 형상 추론 기준 이미지 업로드용) |
+| `AMPLIFY_BUCKET` | `.env` (공통) | 런타임 | S3 버킷명 (참조 이미지 업로드용 — `/api/image/upload` 가 `upload/` 프리픽스에 기록) |
 | `AWS_ACCESS_KEY_ID` | `.env` (공통) | 런타임 | S3 업로드 IAM 자격 |
 | `AWS_SECRET_ACCESS_KEY` | `.env` (공통) | 런타임 | S3 업로드 IAM 자격 |
 | `QSP_API_HOST` | `.env.dev` / `.env.prod` | 런타임 | QSalesPlatform 마스터 데이터 API 호스트. 환경별로 다름 |

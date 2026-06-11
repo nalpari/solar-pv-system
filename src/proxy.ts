@@ -1,12 +1,17 @@
 // src/proxy.ts
-// /api/qsp/*, /api/musbi/*, /api/detect-roof 보호 — Origin 검증 + per-IP sliding-window rate limit (in-memory).
+// /api/qsp/*, /api/musbi/*, /api/detect-roof, /api/image/* 보호 — Origin 검증 + per-IP sliding-window rate limit (in-memory).
 // detect-roof 는 Gemini 과금이 큰 고비용 경로라 더 낮은 전용 한도를 적용한다.
 // 단일 인스턴스 배포(docker-compose) 전제. 스케일아웃 시 분산 저장소로 교체 필요.
 // Next.js 16 의 proxy 컨벤션: 함수명은 `proxy`, runtime 은 nodejs 고정.
 import { NextResponse, type NextRequest } from "next/server";
 
 export const config = {
-  matcher: ["/api/qsp/:path*", "/api/musbi/:path*", "/api/detect-roof"],
+  matcher: [
+    "/api/qsp/:path*",
+    "/api/musbi/:path*",
+    "/api/detect-roof",
+    "/api/image/:path*",
+  ],
 };
 
 const RATE_LIMIT_WINDOW_MS = 60_000;
