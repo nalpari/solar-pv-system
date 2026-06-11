@@ -157,7 +157,8 @@ src/
 - Panel dimensions: mm input → meters internally. Gap/margin constants are cm in UI/code (`GAP_X_CM`/`GAP_Y_CM`/`MARGIN_CM` in `page.tsx`) → converted to mm → meters in `panelPlacement.ts`
 - Coordinate flow: lat/lng ↔ local meters ↔ pixels (Y-axis flipped for canvas)
 - Path alias: `@/*` → `./src/*`
-- Fonts: Figtree + Noto Sans JP + Geist Mono via `next/font/google` (`--font-figtree`, `--font-noto-sans-jp`, `--font-geist-mono` CSS vars)
+- Fonts: Figtree + Geist Mono via `next/font/google`, Noto Sans JP via `next/font/local` (`public/assets/fonts` woff2, 5 weight) — `--font-figtree`, `--font-noto-sans-jp`, `--font-geist-mono` CSS vars. basePath 환경에서 폰트 경로 자동 처리 위해 local 채택
+
 - Prefer React 19.2 patterns and latest API usage
 - TypeScript strict mode — no `any` types
 
@@ -179,6 +180,7 @@ Jenkinsfile 의 `Load Env Credential` 스테이지에서 `cat common + 선택된
 |----------|------|-------------|------|
 | `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | `.env` (공통) | **빌드타임 ARG** (클라이언트 번들 인라인) | Google Maps API key (Maps JS, Places, Geometry APIs) |
 | `NEXT_PUBLIC_AWS_S3_BASE_URL` | `.env` (공통) | **빌드타임 ARG** (클라이언트 번들 인라인) | S3 기준 이미지 베이스 URL |
+| `NEXT_PUBLIC_BASE_PATH` | `.env` (공통) | **빌드타임 ARG** (클라이언트 번들 인라인) | 서브패스 배포 경로 (예: `/pvmap`). 리버스 프록시가 `/pvmap`을 떼지 않고 넘기는 전제. 미설정 시 루트(`/`) — `next.config.ts` `basePath` + `fetch` prefix 에 사용 |
 | `GEMINI_API_KEY` | `.env` (공통) | 런타임 | Gemini API key. Server route only |
 | `GEMINI_MODEL` | `.env` (공통) | 런타임 | Gemini model identifier (예: `"gemini-3.1-pro-preview"`). 미설정 시 `/api/detect-roof`는 500 응답 |
 | `AWS_REGION` | `.env` (공통) | 런타임 | S3 리전 (예: `ap-northeast-1`) |
