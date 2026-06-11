@@ -80,6 +80,7 @@ src/
 │   │   └── lnb/             # 좌측 사이드바: Lnb(탭 컨테이너) / LnbDesign / LnbSim / address-input-lnb
 │   ├── utils/
 │   │   ├── aiDetect         # Gemini detect fetch 래퍼 + 정규화→픽셀 변환 어댑터
+│   │   ├── asset            # public 자산 경로에 basePath prefix (next/image string src 자동 미적용 보완)
 │   │   ├── panelPlacement   # Computational geometry (lat/lng + pixel-based panel layout)
 │   │   └── i18n             # Japanese/English translation system
 │   ├── types/               # Domain types (LatLng, CropData, PixelPanel, NormalizedPolygon, etc.)
