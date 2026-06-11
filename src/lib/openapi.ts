@@ -276,7 +276,7 @@ export function buildOpenApiDocument() {
           tags: ["image"],
           summary: "참조 이미지 S3 업로드",
           description:
-            "multipart/form-data 의 file 필드를 S3 `upload/{uuid}.{ext}` 키로 업로드하고 공개 URL 을 반환한다.",
+            "multipart/form-data 의 file 필드를 S3 `pvmap/{uuid}.{ext}` 키로 업로드하고 공개 URL 을 반환한다.",
           requestBody: {
             required: true,
             content: {
@@ -299,12 +299,12 @@ export function buildOpenApiDocument() {
           tags: ["image"],
           summary: "업로드 이미지 삭제",
           description:
-            "업로드 시 반환된 fileName(S3 키)을 받아 해당 오브젝트를 삭제한다. `upload/{uuid}.{ext}` 형식 외의 키는 거부한다.",
+            "업로드 시 반환된 fileName(S3 키)을 받아 해당 오브젝트를 삭제한다. `pvmap/{uuid}.{ext}` 형식 외의 키는 거부한다.",
           requestParams: {
             query: z.object({
               fileName: z.string().meta({
                 description: "업로드 시 반환된 S3 오브젝트 키",
-                example: "upload/3fa85f64-5717-4562-b3fc-2c963f66afa6.png",
+                example: "pvmap/3fa85f64-5717-4562-b3fc-2c963f66afa6.png",
               }),
             }),
           },

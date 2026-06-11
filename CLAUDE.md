@@ -182,7 +182,7 @@ Jenkinsfile 의 `Load Env Credential` 스테이지에서 `cat common + 선택된
 | `GEMINI_API_KEY` | `.env` (공통) | 런타임 | Gemini API key. Server route only |
 | `GEMINI_MODEL` | `.env` (공통) | 런타임 | Gemini model identifier (예: `"gemini-3.1-pro-preview"`). 미설정 시 `/api/detect-roof`는 500 응답 |
 | `AWS_REGION` | `.env` (공통) | 런타임 | S3 리전 (예: `ap-northeast-1`) |
-| `AMPLIFY_BUCKET` | `.env` (공통) | 런타임 | S3 버킷명 (참조 이미지 업로드용 — `/api/image/upload` 가 `upload/` 프리픽스에 기록) |
+| `AMPLIFY_BUCKET` | `.env` (공통) | 런타임 | S3 버킷명 (참조 이미지 업로드용 — `/api/image/upload` 가 `pvmap/` 프리픽스에 기록) |
 | `AWS_ACCESS_KEY_ID` | `.env` (공통) | 런타임 | S3 업로드 IAM 자격 |
 | `AWS_SECRET_ACCESS_KEY` | `.env` (공통) | 런타임 | S3 업로드 IAM 자격 |
 | `QSP_API_HOST` | `.env.dev` / `.env.prod` | 런타임 | QSalesPlatform 마스터 데이터 API 호스트. 환경별로 다름 |

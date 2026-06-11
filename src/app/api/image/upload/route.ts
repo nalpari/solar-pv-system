@@ -1,6 +1,6 @@
 // src/app/api/image/upload/route.ts
 // 참조 이미지 S3 업로드/삭제 라우트 (qcast-front /api/image/upload 패턴 이식).
-// - 키는 `upload/{uuid}.{ext}` 로 생성해 파일명 충돌·덮어쓰기를 방지한다.
+// - 키는 `pvmap/{uuid}.{ext}` 로 생성해 파일명 충돌·덮어쓰기를 방지한다.
 // - DELETE 는 UPLOAD_KEY_PATTERN 에 맞는 키만 허용해 다른 프리픽스 오브젝트 삭제를 차단한다.
 // - Origin 검증 + rate limit 은 src/proxy.ts (/api/image/*) 에서 적용된다.
 import { NextResponse, type NextRequest } from "next/server";
@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
     return envelopeError(413, 413, "File too large (max 10MB)");
   }
 
-  const Key = `upload/${crypto.randomUUID()}.${EXT_BY_TYPE[file.type]}`;
+  const Key = `pvmap/${crypto.randomUUID()}.${EXT_BY_TYPE[file.type]}`;
 
   try {
     await getS3Client().send(
