@@ -10,7 +10,7 @@ import MapView from "./components/MapView";
 import { placePanels, placePanelsOnCanvasCm } from "./utils/panelPlacement";
 import { t } from "./utils/i18n";
 import type { Lang } from "./utils/i18n";
-import CropPopup from "./components/CropPopup";
+import CropPopup, { type CropPopupHandle } from "./components/CropPopup";
 import AiDetectControls from "./components/AiDetectControls";
 import { detectRoofs } from "./utils/aiDetect";
 import type { NormalizedPolygon } from "./utils/aiDetect";
@@ -50,6 +50,8 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<SidebarTab>("design");
   // 모듈 배치 완료(편집 잠금) 상태 — true면 지붕 편집·경사·모듈/배치 비활성, 발전시뮬 버튼 활성
   const [isPlacementDone, setIsPlacementDone] = useState(false);
+  // 결과조회 처리(정합성 확인 → 이미지 저장 → 조회/리다이렉트) 진행 중 — 중복 클릭 방지 + 로딩 오버레이
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [slope, setSlope] = useState<number | null>(DEFAULT_SLOPE);
   const [roofEditTool, setRoofEditTool] = useState<RoofTool>("select");
   const [simForm, setSimForm] = useState<SimulationFormState>(DEFAULT_SIM_FORM);
@@ -68,6 +70,7 @@ export default function Home() {
   // detect useEffect 의존성에서 lang 제거 (I-5: 사용자 토글 시 재호출 방지)
   // 단 catch 시점의 메시지는 latest lang으로 보여야 하므로 ref로 read
   const langRef = useRef(lang);
+  const cropPopupRef = useRef<CropPopupHandle>(null);
   useEffect(() => {
     langRef.current = lang;
   }, [lang]);
@@ -304,6 +307,21 @@ export default function Home() {
     setActiveTab("simulation");
   }
 
+  // 합성 레이아웃 이미지(배경+패널)를 S3(/api/image/upload)에 업로드 → fileName 반환 (실패 시 null)
+  async function uploadLayoutImage(): Promise<string | null> {
+    const blob = await cropPopupRef.current?.getLayoutBlob();
+    if (!blob) return null;
+    const fd = new FormData();
+    fd.append("file", blob, "layout.png");
+    try {
+      const res = await fetch("/api/image/upload", { method: "POST", body: fd });
+      const json = await res.json();
+      return json.success ? (json.data.fileName as string) : null;
+    } catch {
+      return null;
+    }
+  }
+
   function handlePlacePanels(layout: "aligned" | "staggered" = "aligned") {
     setPlacementError(null);
     // 경사·모듈 미선택 시 배치 불가 (UI 비활성화에 더해 함수 레벨 방어)
@@ -407,9 +425,17 @@ export default function Home() {
               setActiveTab("design");
               setIsPlacementDone(false);
             },
-            onSubmit: () => {
-              // TODO: 시뮬레이션 결과 조회 API 호출
-              console.log("Simulation submit:", simForm);
+            onSubmit: async () => {
+              if (isSubmitting) return; // 중복 클릭 방지
+              setIsSubmitting(true);
+              try {
+                // C단계: 합성 이미지 S3 업로드 (D에서 sim-check → 업로드 → sim-calc → 리다이렉트로 확장)
+                const fileName = await uploadLayoutImage();
+                console.log("Uploaded layout image:", fileName, simForm);
+              } finally {
+                // D에서 리다이렉트 성공 시엔 페이지를 떠나므로 불필요, 그 외/실패엔 로딩 해제
+                setIsSubmitting(false);
+              }
             },
           }}
         />
@@ -558,6 +584,7 @@ export default function Home() {
                 disabled={isPlacementDone}
               />
               <CropPopup
+                ref={cropPopupRef}
                 cropData={cropData}
                 drawingMode={drawingMode}
                 onAreasChange={handleAreasChange}
@@ -586,6 +613,33 @@ export default function Home() {
           )}
         </main>
       </div>
+      {/* 결과조회 처리 중(정합성 확인 → 이미지 저장 → 조회/리다이렉트) 전체 화면 로딩 — 중복 클릭 차단 */}
+      {isSubmitting && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.4)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+          }}
+        >
+          <span
+            style={{
+              width: 48,
+              height: 48,
+              border: "4px solid rgba(255,255,255,0.3)",
+              borderTopColor: "var(--accent-blue)",
+              borderRadius: "50%",
+              animation: "spin 1s linear infinite",
+              display: "inline-block",
+            }}
+            aria-hidden="true"
+          />
+        </div>
+      )}
     </APIProvider>
   );
 }
