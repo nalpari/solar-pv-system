@@ -1,7 +1,8 @@
 # 컨테이너 내부에서 실행되는 헬스체크 — Jenkins 에이전트(DooD 컨테이너)에서는
 # 호스트 publish 포트로 직접 닿을 수 없어, 배포 게이트는 `up -d --wait` + 본 체크로 수행한다.
+# 배포는 항상 /pvmap 서브패스(NEXT_PUBLIC_BASE_PATH=/pvmap) 전제 — 루트(/)는 404 라 /pvmap 을 검사한다.
 x-app-healthcheck: &app-healthcheck
-  test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000"]
+  test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000/pvmap"]
   interval: 5s
   timeout: 3s
   retries: 12
@@ -16,6 +17,7 @@ services:
       args:
         NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:?NEXT_PUBLIC_GOOGLE_MAPS_API_KEY 환경변수가 필요합니다.}
         NEXT_PUBLIC_AWS_S3_BASE_URL: ${NEXT_PUBLIC_AWS_S3_BASE_URL:?NEXT_PUBLIC_AWS_S3_BASE_URL 환경변수가 필요합니다.}
+        NEXT_PUBLIC_BASE_PATH: ${NEXT_PUBLIC_BASE_PATH:-}
     image: solar-pv-system:dev-${IMAGE_TAG:-latest}
     ports:
       - "4010:3000"
@@ -34,6 +36,7 @@ services:
       args:
         NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:?NEXT_PUBLIC_GOOGLE_MAPS_API_KEY 환경변수가 필요합니다.}
         NEXT_PUBLIC_AWS_S3_BASE_URL: ${NEXT_PUBLIC_AWS_S3_BASE_URL:?NEXT_PUBLIC_AWS_S3_BASE_URL 환경변수가 필요합니다.}
+        NEXT_PUBLIC_BASE_PATH: ${NEXT_PUBLIC_BASE_PATH:-}
     image: solar-pv-system:prod-${IMAGE_TAG:-latest}
     ports:
       - "4000:3000"

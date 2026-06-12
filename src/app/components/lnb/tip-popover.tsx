@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { asset } from "../../utils/asset";
 import {
   useEffect,
   useRef,
@@ -62,8 +63,8 @@ export function TipPopover({ children }: { children?: React.ReactNode }) {
       <Image
         src={
           open
-            ? "/assets/images/contents/tooltip_on.svg"
-            : "/assets/images/contents/tooltip.svg"
+            ? asset("/assets/images/contents/tooltip_on.svg")
+            : asset("/assets/images/contents/tooltip.svg")
         }
         alt="tip"
         width={16}
@@ -97,19 +98,19 @@ function HouseTip() {
       <span className="absolute -bottom-[5px] left-1/2 -translate-x-1/2 block size-2 bg-white border-b border-l border-[#36a] rotate-[-45deg]" />
       <div className="flex gap-3 items-end justify-center">
         <RoofItem
-          src="/assets/images/contents/tooltip_cont01.svg"
+          src={asset("/assets/images/contents/tooltip_cont01.svg")}
           width={76}
           height={48}
           label="緩やかな屋根(約3寸)"
         />
         <RoofItem
-          src="/assets/images/contents/tooltip_cont02.svg"
+          src={asset("/assets/images/contents/tooltip_cont02.svg")}
           width={75}
           height={48}
           label="標準屋根(約4寸)"
         />
         <RoofItem
-          src="/assets/images/contents/tooltip_cont03.svg"
+          src={asset("/assets/images/contents/tooltip_cont03.svg")}
           width={77}
           height={48}
           label="やや急な屋根(約6寸)"
@@ -151,7 +152,7 @@ export function BaechiTip() {
           <p>一列ずつずらして並べる方法</p>
         </div>
         <Image
-          src="/assets/images/contents/baechi_tip.svg"
+          src={asset("/assets/images/contents/baechi_tip.svg")}
           alt=""
           width={174}
           height={80}

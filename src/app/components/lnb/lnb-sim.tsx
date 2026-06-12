@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import { asset } from "../../utils/asset";
 import { Button, Radio, SelectBox, InputBox } from "@/components/common";
 import { ChevronRight, Section } from "./section";
 import type { SimulationFormState } from "../../types";
@@ -47,7 +48,7 @@ export function LnbSim({
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/qsp/btc-items?schItemTp=B")
+    fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/qsp/btc-items?schItemTp=B`)
       .then((res) => res.json())
       .then((json) => {
         if (cancelled) return;
@@ -96,7 +97,7 @@ export function LnbSim({
           {/* Section 1: 方位設定 */}
           <Section
             title={t("azimuthSetting", lang)}
-            iconSrc="/assets/images/contents/tab02_cont_icon01.svg"
+            iconSrc={asset("/assets/images/contents/tab02_cont_icon01.svg")}
             iconWidth={17}
             iconHeight={17}
           >
@@ -123,7 +124,7 @@ export function LnbSim({
           {/* Section 2: 蓄電池 */}
           <Section
             title={t("batteryShort", lang)}
-            iconSrc="/assets/images/contents/tab02_cont_icon02.svg"
+            iconSrc={asset("/assets/images/contents/tab02_cont_icon02.svg")}
             iconWidth={18}
             iconHeight={12}
           >
@@ -159,7 +160,7 @@ export function LnbSim({
           {/* Section 3: 月平均電気料金 */}
           <Section
             title={t("monthlyElecCost", lang)}
-            iconSrc="/assets/images/contents/tab02_cont_icon03.svg"
+            iconSrc={asset("/assets/images/contents/tab02_cont_icon03.svg")}
             iconWidth={13}
             iconHeight={16}
           >
@@ -218,7 +219,7 @@ function Compass({ selected }: { selected: string }) {
   return (
     <div className="relative shrink-0">
       <Image
-        src="/assets/images/contents/compass_img.svg"
+        src={asset("/assets/images/contents/compass_img.svg")}
         alt=""
         width={98}
         height={98}
