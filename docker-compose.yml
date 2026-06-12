@@ -1,8 +1,7 @@
 # 컨테이너 내부에서 실행되는 헬스체크 — Jenkins 에이전트(DooD 컨테이너)에서는
 # 호스트 publish 포트로 직접 닿을 수 없어, 배포 게이트는 `up -d --wait` + 본 체크로 수행한다.
-# 배포는 항상 /pvmap 서브패스(NEXT_PUBLIC_BASE_PATH=/pvmap) 전제 — 루트(/)는 404 라 /pvmap 을 검사한다.
 x-app-healthcheck: &app-healthcheck
-  test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000/pvmap"]
+  test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000/"]
   interval: 5s
   timeout: 3s
   retries: 12
