@@ -21,9 +21,3 @@ globs:
 - x·y 시작 위상 스캔으로 최대 충진 배치 채택, 오목부/장애물은 변 교차 검사로 방어
 - 외주 이격(margin): 설치 폴리곤은 내부 인셋, 제외(개구) 폴리곤은 바깥 확장 — 개구 주변에도 동일 이격
 - 간격: 좌우(gapX) / 상하(gapY) 분리, 배치 방식 `layout` = aligned / staggered(치도리)
-
-## asset.ts — 정적 자산 basePath prefix
-
-- `asset(path)` — public 자산 절대경로(`/assets/...`)에 `NEXT_PUBLIC_BASE_PATH` 를 prefix
-- 배경: 서브패스 배포(`/pvmap`)에서 `next/image` 등은 **string src 에 basePath 를 자동 적용하지 않음**(정적 import 만 자동). public 자산을 string 으로 참조할 때는 `asset("/assets/...")` 로 감싼다
-- 같은 이유로 클라이언트 `fetch("/api/...")` 도 `` `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/...` `` 형태로 basePath 를 수동 prefix 한다

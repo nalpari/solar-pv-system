@@ -1,5 +1,4 @@
 import Image from "next/image";
-import { asset } from "@/app/utils/asset";
 
 export type SelectBoxOption = {
   value: string;
@@ -38,7 +37,7 @@ export function SelectBox({
       </select>
       <span className="absolute right-0 top-0 bottom-0 flex items-center justify-center w-12 pointer-events-none">
         <Image
-          src={asset("/assets/images/common/select_arr.svg")}
+          src="/assets/images/common/select_arr.svg"
           alt=""
           width={12}
           height={7}

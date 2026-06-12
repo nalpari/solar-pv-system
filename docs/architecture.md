@@ -187,15 +187,11 @@ html2canvas
 lucide-react
 └─ UI icons
 
-next/font
-├─ google: Figtree, Geist Mono
-└─ local: Noto Sans JP (public/assets/fonts woff2, 5 weight — basePath 자산 경로 자동 처리)
+next/font/google
+└─ Figtree, Noto Sans JP, Geist Mono
 
 next/image
-└─ Lnb 로고 · CropPopup 캡처 이미지 (string src 는 utils/asset 으로 basePath prefix)
-
-basePath (서브패스 배포 /pvmap)
-└─ NEXT_PUBLIC_BASE_PATH 한 값으로 페이지·자산·API 경로 일괄 관리 (fetch·정적 src 는 수동 prefix)
+└─ Lnb 로고 · CropPopup 캡처 이미지
 ```
 
 ## 6. 배포 아키텍처

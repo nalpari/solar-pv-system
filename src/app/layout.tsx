@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { Figtree, Geist_Mono } from "next/font/google";
-import localFont from "next/font/local";
+import { Figtree, Noto_Sans_JP, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
 const figtree = Figtree({
@@ -8,16 +7,9 @@ const figtree = Figtree({
   subsets: ["latin"],
 });
 
-// 로컬 woff2 기반 Noto Sans JP — basePath 자동 적용(자산 경로를 Next 가 관리)
-const notoSansJP = localFont({
+const notoSansJP = Noto_Sans_JP({
   variable: "--font-noto-sans-jp",
-  src: [
-    { path: "../../public/assets/fonts/NotoSansJP-Light.woff2", weight: "300", style: "normal" },
-    { path: "../../public/assets/fonts/NotoSansJP-Regular.woff2", weight: "400", style: "normal" },
-    { path: "../../public/assets/fonts/NotoSansJP-Medium.woff2", weight: "500", style: "normal" },
-    { path: "../../public/assets/fonts/NotoSansJP-SemiBold.woff2", weight: "600", style: "normal" },
-    { path: "../../public/assets/fonts/NotoSansJP-Bold.woff2", weight: "700", style: "normal" },
-  ],
+  subsets: ["latin"],
 });
 
 const geistMono = Geist_Mono({

@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { asset } from "../../utils/asset";
 import { LnbDesign, type LnbDesignProps } from "./lnb-design";
 import { LnbSim, type LnbSimProps } from "./lnb-sim";
 import { t, type Lang } from "../../utils/i18n";
@@ -19,11 +18,11 @@ export function Lnb({ tab, lang, design, sim }: LnbProps) {
   return (
     <aside
       className="w-[360px] h-screen flex flex-col px-6 pt-6 bg-[#ededed] shrink-0"
-      style={{ fontFamily: 'var(--font-noto-sans-jp), system-ui, sans-serif' }}
+      style={{ fontFamily: '"Noto Sans JP", var(--font-noto-sans-jp), system-ui, sans-serif' }}
     >
       <header className="flex items-center justify-center pt-[10px] pb-[20px] shrink-0">
         <Image
-          src={asset("/assets/images/common/pv_logo.svg")}
+          src="/assets/images/common/pv_logo.svg"
           alt={t("pvLogoAlt", lang)}
           width={254}
           height={30}
@@ -36,14 +35,14 @@ export function Lnb({ tab, lang, design, sim }: LnbProps) {
           <TabItem
             active={tab === "design"}
             label={t("tabSolarDesignShort", lang)}
-            iconSrc={asset("/assets/images/contents/tab_icon01.svg")}
+            iconSrc="/assets/images/contents/tab_icon01.svg"
             iconWidth={18}
             iconHeight={18}
           />
           <TabItem
             active={tab === "simulation"}
             label={t("tabSimulationShort", lang)}
-            iconSrc={asset("/assets/images/contents/tab_icon02.svg")}
+            iconSrc="/assets/images/contents/tab_icon02.svg"
             iconWidth={16}
             iconHeight={16}
           />

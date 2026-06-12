@@ -1,5 +1,50 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "Noto Sans JP";
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url("/assets/fonts/NotoSansJP-Light.woff2") format("woff2"),
+       url("/assets/fonts/NotoSansJP-Light.woff") format("woff");
+}
+
+@font-face {
+  font-family: "Noto Sans JP";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/assets/fonts/NotoSansJP-Regular.woff2") format("woff2"),
+       url("/assets/fonts/NotoSansJP-Regular.woff") format("woff");
+}
+
+@font-face {
+  font-family: "Noto Sans JP";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/assets/fonts/NotoSansJP-Medium.woff2") format("woff2"),
+       url("/assets/fonts/NotoSansJP-Medium.woff") format("woff");
+}
+
+@font-face {
+  font-family: "Noto Sans JP";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/assets/fonts/NotoSansJP-SemiBold.woff2") format("woff2"),
+       url("/assets/fonts/NotoSansJP-SemiBold.woff") format("woff");
+}
+
+@font-face {
+  font-family: "Noto Sans JP";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/assets/fonts/NotoSansJP-Bold.woff2") format("woff2"),
+       url("/assets/fonts/NotoSansJP-Bold.woff") format("woff");
+}
+
 :root {
   /* Background — Hanwha Japan corporate */
   --bg-primary: #FFFFFF;

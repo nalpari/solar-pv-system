@@ -16,7 +16,6 @@ services:
       args:
         NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:?NEXT_PUBLIC_GOOGLE_MAPS_API_KEY 환경변수가 필요합니다.}
         NEXT_PUBLIC_AWS_S3_BASE_URL: ${NEXT_PUBLIC_AWS_S3_BASE_URL:?NEXT_PUBLIC_AWS_S3_BASE_URL 환경변수가 필요합니다.}
-        NEXT_PUBLIC_BASE_PATH: ${NEXT_PUBLIC_BASE_PATH:-}
     image: solar-pv-system:dev-${IMAGE_TAG:-latest}
     ports:
       - "4010:3000"
@@ -35,7 +34,6 @@ services:
       args:
         NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:?NEXT_PUBLIC_GOOGLE_MAPS_API_KEY 환경변수가 필요합니다.}
         NEXT_PUBLIC_AWS_S3_BASE_URL: ${NEXT_PUBLIC_AWS_S3_BASE_URL:?NEXT_PUBLIC_AWS_S3_BASE_URL 환경변수가 필요합니다.}
-        NEXT_PUBLIC_BASE_PATH: ${NEXT_PUBLIC_BASE_PATH:-}
     image: solar-pv-system:prod-${IMAGE_TAG:-latest}
     ports:
       - "4000:3000"

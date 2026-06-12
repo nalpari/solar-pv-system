@@ -4,8 +4,7 @@
 import { ApiReference } from "@scalar/nextjs-api-reference";
 
 const scalarHandler = ApiReference({
-  // Scalar 가 브라우저에서 fetch 하므로 basePath 를 수동 prefix (서브패스 배포 /pvmap 대응)
-  url: `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/openapi`,
+  url: "/api/openapi",
   theme: "default",
   pageTitle: "Solar PV System API",
 });

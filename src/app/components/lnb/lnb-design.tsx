@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { asset } from "../../utils/asset";
 import { useState, useEffect } from "react";
 import { Button, SelectBox } from "@/components/common";
 import { ChevronRight, Hint, Section } from "./section";
@@ -95,7 +94,7 @@ export function LnbDesign({
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/qsp/btc-items?schItemTp=M`)
+    fetch("/api/qsp/btc-items?schItemTp=M")
       .then((res) => res.json())
       .then((json) => {
         if (cancelled) return;
@@ -167,7 +166,7 @@ export function LnbDesign({
           {/* Section 1: モジュール配置 (address + building confirm) */}
           <Section
             title={t("sectionModulePlacement", lang)}
-            iconSrc={asset("/assets/images/contents/tab01_cont_icon01.svg")}
+            iconSrc="/assets/images/contents/tab01_cont_icon01.svg"
             iconWidth={14}
             iconHeight={16}
           >
@@ -181,7 +180,7 @@ export function LnbDesign({
                 disabled={cropPopupOpen}
                 icon={
                   <Image
-                    src={asset("/assets/images/common/btn_icon01.svg")}
+                    src="/assets/images/common/btn_icon01.svg"
                     alt=""
                     width={16}
                     height={16}
@@ -201,7 +200,7 @@ export function LnbDesign({
           {/* Section 2: 屋根面傾斜 */}
           <Section
             title={t("sectionRoofSlope", lang)}
-            iconSrc={asset("/assets/images/contents/tab01_cont_icon02.svg")}
+            iconSrc="/assets/images/contents/tab01_cont_icon02.svg"
             iconWidth={16}
             iconHeight={16}
             tip
@@ -223,7 +222,7 @@ export function LnbDesign({
           {/* Section 3: モジュール配置 (module type + placement actions) */}
           <Section
             title={t("sectionModulePlacement", lang)}
-            iconSrc={asset("/assets/images/contents/tab01_cont_icon03.svg")}
+            iconSrc="/assets/images/contents/tab01_cont_icon03.svg"
             iconWidth={14}
             iconHeight={16}
           >
@@ -281,7 +280,7 @@ export function LnbDesign({
           {/* Section 4: ソーラーモジュール設置容量 */}
           <Section
             title={t("installCapacity", lang)}
-            iconSrc={asset("/assets/images/contents/tab01_cont_icon04.svg")}
+            iconSrc="/assets/images/contents/tab01_cont_icon04.svg"
             iconWidth={16}
             iconHeight={18}
           >
