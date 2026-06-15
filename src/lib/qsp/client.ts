@@ -199,7 +199,7 @@ export async function fetchBtcItems(
 
 export async function postSimCheck(
   input: SimulationInput,
-): Promise<QspCallResult<null>> {
+): Promise<QspCallResult<{ redirectUrl: string }>> {
   const result = await callQsp(
     "sim-check",
     "/qm/pwrgnSimulationM/checkCalcResults",
@@ -208,7 +208,14 @@ export async function postSimCheck(
     MUSBI_UPSTREAM,
   );
   if (!result.success) return result;
-  return { success: true, data: null };
+  // 검증 통과 → host·params 동일, 엔드포인트만 calcResults 로 교체한 조회 URL 구성
+  // (imgSrc 는 sim-check 시점에 아직 없으므로 클라이언트가 업로드 후 부착)
+  const redirectUrl = buildUrl(
+    MUSBI_API_HOST,
+    "/qm/pwrgnSimulationM/calcResults",
+    input,
+  );
+  return { success: true, data: { redirectUrl } };
 }
 
 export async function postSimCalc(

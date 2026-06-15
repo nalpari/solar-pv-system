@@ -13,6 +13,7 @@ interface AddressInputLnbProps {
     lat: number;
     lng: number;
     address: string;
+    postalCode?: string;
     viewport?: google.maps.LatLngBounds;
   }) => void;
 }
@@ -86,16 +87,20 @@ export function AddressInputLnb({ lang, disabled = false, onPlaceSelect }: Addre
   function handleSelect(prediction: google.maps.places.AutocompletePrediction) {
     if (!placesService.current) return;
     placesService.current.getDetails(
-      { placeId: prediction.place_id, fields: ["geometry", "formatted_address"] },
+      { placeId: prediction.place_id, fields: ["geometry", "formatted_address", "address_components"] },
       (place, status) => {
         if (status === google.maps.places.PlacesServiceStatus.OK && place?.geometry?.location) {
           setQuery(place.formatted_address || prediction.description);
           setPredictions([]);
           setIsOpen(false);
+          const postalCode = place.address_components?.find((c) =>
+            c.types.includes("postal_code"),
+          )?.long_name;
           onPlaceSelect({
             lat: place.geometry.location.lat(),
             lng: place.geometry.location.lng(),
             address: place.formatted_address || prediction.description,
+            postalCode,
             viewport: place.geometry.viewport,
           });
         } else {

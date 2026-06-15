@@ -48,6 +48,8 @@ export interface LnbDesignProps {
   // Panel config — null이면 모듈 미선택 상태
   panelSize: PanelSize | null;
   onPanelSizeChange: (size: PanelSize) => void;
+  /** 모듈 선택 시 matlCd(SimulationInput.moduleItemId) 전달 — 시뮬 API 입력용 */
+  onModuleSelect?: (moduleId: string) => void;
   // Results
   panelCount: number;
   canPlace: boolean;
@@ -76,6 +78,7 @@ export function LnbDesign({
   areaCount,
   panelSize,
   onPanelSizeChange,
+  onModuleSelect,
   panelCount,
   canPlace,
   placementError,
@@ -148,6 +151,7 @@ export function LnbDesign({
     const preset = moduleOptions.find((p) => p.value === value);
     if (preset) {
       onPanelSizeChange({ ...preset.size });
+      onModuleSelect?.(value); // matlCd(moduleItemId) — 시뮬 API 입력용
       onClearAllPanels(); // 모듈 변경 시 기존 배치 모듈 전체 삭제 (선택 여부 무관)
     }
   }

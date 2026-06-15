@@ -136,6 +136,15 @@ const translations = {
     en: "Module placement failed. Please check the installation area and settings.",
   },
 
+  imageUploadFailed: {
+    ja: "画像のアップロードに失敗しました。もう一度お試しください。",
+    en: "Image upload failed. Please try again.",
+  },
+  simCheckFailed: {
+    ja: "入力値の検証に失敗しました。",
+    en: "Input validation failed.",
+  },
+
   requiredApis: {
     ja: "必要なAPI: Maps JavaScript, Places, Geometry",
     en: "Required APIs: Maps JavaScript, Places, Geometry",

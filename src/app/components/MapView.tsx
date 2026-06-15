@@ -20,6 +20,8 @@ interface MapViewProps {
   confirmCropSignal: number;
   address: string;
   lang: Lang;
+  /** 사용자가 지도를 드래그로 이동 — panTo/crop 이동은 미발생(프로그래밍·잠금) */
+  onUserDrag?: () => void;
 }
 
 const MAP_ID = "solar-pv-map";
@@ -526,6 +528,7 @@ export default function MapView({
   confirmCropSignal,
   address,
   lang,
+  onUserDrag,
 }: MapViewProps) {
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
@@ -538,6 +541,7 @@ export default function MapView({
         disableDefaultUI
         gestureHandling={locked || cropMode ? "none" : "greedy"}
         scrollwheel={false}
+        onDragend={onUserDrag}
         style={{ width: "100%", height: "100%" }}
       >
         <ViewUpdater center={center} viewport={viewport} />

@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { APIProvider } from "@vis.gl/react-google-maps";
 import { Lnb } from "./components/lnb/lnb";
 import type { SimulationFormState } from "./types";
+import type { SimulationInput } from "@/lib/qsp/schema";
 import RoofEditToolbar from "./components/RoofEditToolbar";
 import type { RoofTool } from "./components/RoofEditToolbar";
 import MapView from "./components/MapView";
@@ -45,6 +46,15 @@ const GAP_X_CM = 0.3; // 모듈 간격 좌우 3mm (처마 평행)
 const GAP_Y_CM = 3; // 모듈 간격 상하 30mm (처마 수직)
 const MARGIN_CM = 30; // 외곽 여백 300mm
 
+// 발전시뮬 결과조회 입력 매핑 (docs/qsp-api/05)
+const ROOF_LOC_CD: Record<string, number> = {
+  N: 1, NE: 3, E: 5, SE: 7, S: 9, SW: 11, W: 13, NW: 15, // 16방위 중 앱 8방위(홀수 코드)
+};
+// 지붕경사 寸 → 度 (예: 4寸 → 21.8°)
+function sunToDegree(sun: number): number {
+  return Math.round((Math.atan(sun / 10) * 180 / Math.PI) * 10) / 10;
+}
+
 export default function Home() {
   const [lang] = useState<Lang>("ja");
   const [activeTab, setActiveTab] = useState<SidebarTab>("design");
@@ -52,6 +62,9 @@ export default function Home() {
   const [isPlacementDone, setIsPlacementDone] = useState(false);
   // 결과조회 처리(정합성 확인 → 이미지 저장 → 조회/리다이렉트) 진행 중 — 중복 클릭 방지 + 로딩 오버레이
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // 주소검색 선택 후 사용자가 지도를 드래그로 이동했는지 — 우편번호 출처 결정용
+  // (이동 O → 크롭중심 reverse geocode / 이동 X → 검색결과 우편번호 재사용으로 호출 절감)
+  const [mapMoved, setMapMoved] = useState(false);
   const [slope, setSlope] = useState<number | null>(DEFAULT_SLOPE);
   const [roofEditTool, setRoofEditTool] = useState<RoofTool>("select");
   const [simForm, setSimForm] = useState<SimulationFormState>(DEFAULT_SIM_FORM);
@@ -105,6 +118,8 @@ export default function Home() {
   const [confirmCropSignal, setConfirmCropSignal] = useState(0);
   const [cropData, setCropData] = useState<CropData | null>(null);
   const [address, setAddress] = useState("");
+  // 주소검색 결과 우편번호 — 지도 미이동 시 postCd 로 재사용(geocoding 비용 절감)
+  const [searchedPostalCode, setSearchedPostalCode] = useState("");
   // drawingMode는 roofEditTool에서 파생 (drawRoof → install, drawOpening → exclude, 그 외 → null)
   const [undoSignal, setUndoSignal] = useState(0);
   const [clearSignal, setClearSignal] = useState(0);
@@ -112,6 +127,8 @@ export default function Home() {
   const [selectedRoofIds, setSelectedRoofIds] = useState<string[]>([]);
   const [areas, setAreas] = useState<PolygonArea[]>([]);
   const [panelSize, setPanelSize] = useState<PanelSize | null>(DEFAULT_PANEL_SIZE);
+  // 선택 모듈 matlCd (SimulationInput.moduleItemId) — 시뮬 API 입력용
+  const [moduleId, setModuleId] = useState<string>("");
   const [placedPanelsList, setPlacedPanelsList] = useState<PlacedPanel[]>([]);
   const [pixelAreas, setPixelAreas] = useState<{ areas: PixelPolygon[]; metersPerPixel: number } | null>(null);
   const [placedPixelPanels, setPlacedPixelPanels] = useState<PixelPanel[]>([]);
@@ -132,11 +149,14 @@ export default function Home() {
     lat: number;
     lng: number;
     address: string;
+    postalCode?: string;
     viewport?: google.maps.LatLngBounds;
   }) {
     userOverrodeRef.current = true; // 사용자가 명시적으로 위치 선택 — 늦게 도착한 geolocation 응답 무시
     setCenter({ lat: location.lat, lng: location.lng });
     setAddress(location.address);
+    setSearchedPostalCode(location.postalCode ?? "");
+    setMapMoved(false); // 새 주소 선택 → 이동 플래그 리셋
     setViewport(location.viewport ?? null);
   }
 
@@ -307,19 +327,37 @@ export default function Home() {
     setActiveTab("simulation");
   }
 
+  // 지도 센터좌표 → 우편번호 (reverse geocoding) — 지도 이동 시에만 호출
+  async function geocodePostalCode(loc: { lat: number; lng: number }): Promise<string> {
+    try {
+      const { results } = await new google.maps.Geocoder().geocode({ location: loc });
+      return (
+        results?.[0]?.address_components?.find((c) =>
+          c.types.includes("postal_code"),
+        )?.long_name ?? ""
+      );
+    } catch {
+      return "";
+    }
+  }
+
   // 합성 레이아웃 이미지(배경+패널)를 S3(/api/image/upload)에 업로드 → fileName 반환 (실패 시 null)
   async function uploadLayoutImage(): Promise<string | null> {
     const blob = await cropPopupRef.current?.getLayoutBlob();
-    if (!blob) return null;
+    if (!blob) return null; // 캔버스 없음 — 재시도 무의미
     const fd = new FormData();
     fd.append("file", blob, "layout.png");
-    try {
-      const res = await fetch("/api/image/upload", { method: "POST", body: fd });
-      const json = await res.json();
-      return json.success ? (json.data.fileName as string) : null;
-    } catch {
-      return null;
+    // fetch만 최대 3회 재시도 (A-2: 다 실패하면 호출부에서 중단)
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const res = await fetch("/api/image/upload", { method: "POST", body: fd });
+        const json = await res.json();
+        if (json.success) return json.data.fileName as string;
+      } catch {
+        // 재시도
+      }
     }
+    return null;
   }
 
   function handlePlacePanels(layout: "aligned" | "staggered" = "aligned") {
@@ -399,6 +437,7 @@ export default function Home() {
             areaCount: areas.length,
             panelSize,
             onPanelSizeChange: setPanelSize,
+            onModuleSelect: setModuleId,
             panelCount,
             canPlace,
             placementError,
@@ -429,11 +468,45 @@ export default function Home() {
               if (isSubmitting) return; // 중복 클릭 방지
               setIsSubmitting(true);
               try {
-                // C단계: 합성 이미지 S3 업로드 (D에서 sim-check → 업로드 → sim-calc → 리다이렉트로 확장)
+                // 우편번호: 지도 이동 O → 크롭중심 reverse geocode / 이동 X → 검색결과 재사용
+                const postCd = mapMoved
+                  ? await geocodePostalCode(center)
+                  : searchedPostalCode;
+                const input: SimulationInput = {
+                  pvSimulationYn: "Y",
+                  postCd,
+                  moduleItemId: moduleId,
+                  moduleCnt: panelCount,
+                  roofCnt: installAreas.length,
+                  roofLocCd: ROOF_LOC_CD[simForm.azimuth] ?? 0,
+                  roofSlopeCd: sunToDegree(slope ?? 0),
+                  avrgMnthElctBill: Number(simForm.monthlyElecCost) || 0,
+                  batteryItemId: simForm.hasBattery ? simForm.batteryModel : "",
+                  storageBatteryYn: simForm.hasBattery ? "Y" : "N",
+                  storageBatterySelectYn: simForm.hasBattery ? "Y" : "N",
+                };
+                // ① 정합성 검증 + 조회 URL 취득 (실패 시 B-1: alert 후 중단)
+                const res = await fetch("/api/musbi/sim-check", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(input),
+                });
+                const json = await res.json();
+                if (!json.success) {
+                  alert(json.error?.message ?? t("simCheckFailed", lang));
+                  setIsSubmitting(false);
+                  return;
+                }
+                // ② 합성 이미지 S3 업로드 (A-2: 3회 재시도 후 실패면 중단)
                 const fileName = await uploadLayoutImage();
-                console.log("Uploaded layout image:", fileName, simForm);
-              } finally {
-                // D에서 리다이렉트 성공 시엔 페이지를 떠나므로 불필요, 그 외/실패엔 로딩 해제
+                if (!fileName) {
+                  alert(t("imageUploadFailed", lang));
+                  setIsSubmitting(false);
+                  return;
+                }
+                // ③ calcResults 페이지로 리다이렉트 (imgSrc 부착) — 성공 시 페이지를 떠남
+                window.location.href = `${json.data.redirectUrl}&imgSrc=${encodeURIComponent(fileName)}`;
+              } catch {
                 setIsSubmitting(false);
               }
             },
@@ -453,6 +526,7 @@ export default function Home() {
               confirmCropSignal={confirmCropSignal}
               address={address}
               lang={lang}
+              onUserDrag={() => setMapMoved(true)}
             />
           ) : (
             <div
