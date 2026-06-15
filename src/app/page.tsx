@@ -507,6 +507,8 @@ export default function Home() {
                 // ③ calcResults 페이지로 리다이렉트 (imgSrc 부착) — 성공 시 페이지를 떠남
                 window.location.href = `${json.data.redirectUrl}&imgSrc=${encodeURIComponent(fileName)}`;
               } catch {
+                // 네트워크 단절 등 예외 — 사용자 피드백 후 로딩 해제
+                alert(t("submitFailed", lang));
                 setIsSubmitting(false);
               }
             },

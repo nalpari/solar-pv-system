@@ -144,6 +144,10 @@ const translations = {
     ja: "入力値の検証に失敗しました。",
     en: "Input validation failed.",
   },
+  submitFailed: {
+    ja: "処理に失敗しました。通信状態を確認して、もう一度お試しください。",
+    en: "Request failed. Please check your connection and try again.",
+  },
 
   requiredApis: {
     ja: "必要なAPI: Maps JavaScript, Places, Geometry",
