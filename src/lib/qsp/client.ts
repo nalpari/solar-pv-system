@@ -5,11 +5,9 @@ import { NextResponse } from "next/server";
 import type { z } from "zod";
 import {
   BtcResponseSchema,
-  SimCalcResponseSchema,
   SimCheckResponseSchema,
   type BtcItem,
   type BtcItemsInput,
-  type SimCalcResponse,
   type SimulationInput,
 } from "./schema";
 
@@ -81,7 +79,7 @@ function mapUpstreamCodeToStatus(code: number): number {
   return 502; // 그 외 upstream 오류
 }
 
-// upstream 3개 API (btc-items / sim-check / sim-calc) 모두 GET + querystring 사양.
+// upstream 2개 API (btc-items / sim-check) 모두 GET + querystring 사양.
 // BFF 라우트가 POST/JSON 으로 받더라도 여기서 querystring 으로 변환해 GET 으로 호출한다.
 async function callQsp<T>(
   routeName: string,
@@ -216,19 +214,6 @@ export async function postSimCheck(
     input,
   );
   return { success: true, data: { redirectUrl } };
-}
-
-export async function postSimCalc(
-  input: SimulationInput,
-): Promise<QspCallResult<SimCalcResponse>> {
-  // 05번은 응답 사양 미정 — full body 그대로 클라이언트에 패스스루.
-  return callQsp(
-    "sim-calc",
-    "/qm/pwrgnSimulationM/calcResults",
-    input,
-    SimCalcResponseSchema,
-    MUSBI_UPSTREAM,
-  );
 }
 
 // ============================================================================

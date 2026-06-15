@@ -70,7 +70,7 @@ src/
 │   │   ├── image/upload/     # /api/image/upload — 참조 이미지 S3 업로드(POST)/삭제(DELETE)
 │   │   ├── openapi/          # /api/openapi — buildOpenApiDocument() JSON 제공
 │   │   ├── qsp/              # /api/qsp/* — QSP BFF (btc-items: 모듈 schItemTp=M / 축전지 schItemTp=B)
-│   │   └── musbi/            # /api/musbi/* — MUSBI BFF (sim-check / sim-calc)
+│   │   └── musbi/            # /api/musbi/* — MUSBI BFF (sim-check)
 │   ├── reference/           # /reference — Scalar API Reference UI
 │   ├── components/          # UI components (all "use client")
 │   │   ├── AiDetectControls # AI 지붕 분석 트리거 (분석 시작/취소)
@@ -96,7 +96,7 @@ src/
 ### API Documentation
 
 - 사양 SSOT: `src/lib/qsp/schema.ts`, `src/lib/detect/schema.ts`, `src/lib/image/schema.ts` 의 zod 스키마
-- 빌더: `src/lib/openapi.ts` — `createDocument({ reused: "ref" })` 로 OpenAPI 3.1 생성. `.meta({ id })` 부여된 스키마는 `components.schemas` 에 자동 등록되며 paths 에서 `$ref` 로 참조된다 (10개 컴포넌트: `DetectRequest`, `DetectResponse`, `DetectPolygon`, `BboxResponse`, `ErrorEnvelope`, `BtcItem`, `SimulationInput`, `SimCalcResponse`, `UploadImageRequest`, `UploadImageResult` + 5개 응답 envelope `BtcItemsResponse` / `SimCheckResponse` / `SimCalcSuccessResponse` / `UploadImageResponse` / `DeleteImageResponse`)
+- 빌더: `src/lib/openapi.ts` — `createDocument({ reused: "ref" })` 로 OpenAPI 3.1 생성. `.meta({ id })` 부여된 스키마는 `components.schemas` 에 자동 등록되며 paths 에서 `$ref` 로 참조된다 (9개 컴포넌트: `DetectRequest`, `DetectResponse`, `DetectPolygon`, `BboxResponse`, `ErrorEnvelope`, `BtcItem`, `SimulationInput`, `UploadImageRequest`, `UploadImageResult` + 4개 응답 envelope `BtcItemsResponse` / `SimCheckResponse` / `UploadImageResponse` / `DeleteImageResponse`)
 - 엔드포인트 (둘 다 `ENABLE_API_DOCS=true` 환경에서만 노출, 그 외에는 404 — 내부 API 명세 노출 차단. `NODE_ENV` 가드는 dev/prod 모두 production 빌드를 쓰는 배포 모델과 충돌하므로 사용하지 않음):
   - `GET /api/openapi` — OpenAPI 3.1 JSON (모듈 스코프 lazy memoize)
   - `GET /reference` — Scalar 기반 API Reference UI (dev: http://localhost:3000/reference)

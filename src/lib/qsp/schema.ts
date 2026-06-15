@@ -92,20 +92,3 @@ export const SimCheckResponseSchema = z.object({
   resultCode: z.number(),
 });
 export type SimCheckResponse = z.infer<typeof SimCheckResponseSchema>;
-
-// 05 응답: 사양 표가 비어 있어 실서버 호출 후 보강.
-// 일단 README 공통 포맷({data, result}) 과 04 평탄화 포맷 둘 다 허용하는 느슨한 스키마.
-export const SimCalcResponseSchema = z
-  .object({
-    data: z.unknown().nullable().optional(),
-    result: z
-      .object({
-        code: z.number(),
-        message: z.string(),
-      })
-      .optional(),
-    resultCode: z.number().optional(),
-    resultMessage: z.string().optional(),
-  })
-  .passthrough();
-export type SimCalcResponse = z.infer<typeof SimCalcResponseSchema>;

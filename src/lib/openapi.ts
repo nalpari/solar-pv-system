@@ -6,7 +6,6 @@ import { createDocument } from "zod-openapi";
 import {
   BtcItemSchema,
   BtcItemsInputSchema,
-  SimCalcResponseSchema,
   SimulationInputSchema,
 } from "./qsp/schema";
 import {
@@ -91,20 +90,12 @@ const RegisteredSimulationInputSchema = SimulationInputSchema.meta({
   description: "PV 발전 시뮬레이션 입력 (04/05 공용)",
 });
 
-const RegisteredSimCalcResponseSchema = SimCalcResponseSchema.meta({
-  id: "SimCalcResponse",
-  description: "PV 발전 시뮬레이션 결과 (upstream 사양 미정 — passthrough)",
-});
-
 // 라우트별 성공 응답 envelope — id 부여로 클라이언트 코드 생성기에서 named type 생성
 const BtcItemsSuccessSchema = successEnvelope(z.array(RegisteredBtcItemSchema))
   .meta({ id: "BtcItemsResponse", description: "BTC 자재 마스터 조회 성공" });
 
 const SimCheckSuccessSchema = successEnvelope(z.null())
   .meta({ id: "SimCheckResponse", description: "시뮬레이션 사전 검증 성공 (data=null)" });
-
-const SimCalcSuccessSchema = successEnvelope(RegisteredSimCalcResponseSchema)
-  .meta({ id: "SimCalcSuccessResponse", description: "시뮬레이션 계산 성공" });
 
 // ============================================================================
 // image upload (multipart) — route.ts 의 검증 규칙을 문서로 표현
@@ -238,29 +229,6 @@ export function buildOpenApiDocument() {
             "200": {
               description: "검증 통과 (data 는 항상 null)",
               content: jsonContent(SimCheckSuccessSchema),
-            },
-            "400": { description: "본문 검증 실패", content: errorContent },
-            "401": { description: "Upstream 토큰 만료", content: errorContent },
-            "422": { description: "Upstream 검증 실패", content: errorContent },
-            "500": { description: "서버 설정 오류", content: errorContent },
-            "502": { description: "Upstream 오류", content: errorContent },
-            "504": { description: "Upstream 타임아웃", content: errorContent },
-          },
-        },
-      },
-      "/api/musbi/sim-calc": {
-        post: {
-          tags: ["musbi"],
-          summary: "PV 발전 시뮬레이션 결과 계산",
-          description: "실제 시뮬레이션 결과를 계산하여 반환한다. (사양 05)",
-          requestBody: {
-            required: true,
-            content: jsonContent(RegisteredSimulationInputSchema),
-          },
-          responses: {
-            "200": {
-              description: "계산 성공 (응답 사양 미정 — upstream passthrough)",
-              content: jsonContent(SimCalcSuccessSchema),
             },
             "400": { description: "본문 검증 실패", content: errorContent },
             "401": { description: "Upstream 토큰 만료", content: errorContent },
