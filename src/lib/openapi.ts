@@ -94,8 +94,8 @@ const RegisteredSimulationInputSchema = SimulationInputSchema.meta({
 const BtcItemsSuccessSchema = successEnvelope(z.array(RegisteredBtcItemSchema))
   .meta({ id: "BtcItemsResponse", description: "BTC 자재 마스터 조회 성공" });
 
-const SimCheckSuccessSchema = successEnvelope(z.null())
-  .meta({ id: "SimCheckResponse", description: "시뮬레이션 사전 검증 성공 (data=null)" });
+const SimCheckSuccessSchema = successEnvelope(z.object({ redirectUrl: z.string() }))
+  .meta({ id: "SimCheckResponse", description: "검증 성공 — 결과 페이지 리다이렉트 URL 반환" });
 
 // ============================================================================
 // image upload (multipart) — route.ts 의 검증 규칙을 문서로 표현
