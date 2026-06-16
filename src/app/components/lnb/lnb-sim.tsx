@@ -32,6 +32,8 @@ export interface LnbSimProps {
   onFormChange: (state: SimulationFormState) => void;
   onGoBack: () => void;
   onSubmit: () => void;
+  /** 결과조회 필수값(사양 Not Null) 충족 여부 — false면 버튼 비활성 */
+  canSubmit: boolean;
 }
 
 export function LnbSim({
@@ -40,6 +42,7 @@ export function LnbSim({
   onFormChange,
   onGoBack,
   onSubmit,
+  canSubmit,
 }: LnbSimProps) {
   const { azimuth, hasBattery, batteryModel, monthlyElecCost } = formState;
 
@@ -187,11 +190,7 @@ export function LnbSim({
           iconPosition="right"
           className="w-full"
           onClick={onSubmit}
-          disabled={
-            azimuth === "" ||
-            monthlyElecCost === "" ||
-            (hasBattery && batteryModel === "")
-          }
+          disabled={!canSubmit}
           icon={<ChevronRight />}
         >
           {t("simViewResults", lang)}

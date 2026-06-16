@@ -79,7 +79,7 @@ export const SimulationInputSchema = z.object({
   roofSlopeCd: z.number().finite(),
   avrgMnthElctBill: z.number().int().nonnegative(),
   batteryItemId: z.string().max(20).optional(),
-  imgSrc: z.string().max(200).optional(),
+  roofImgSrc: z.string().max(200).optional(),
   storageBatteryYn: z.enum(["Y", "N"]).optional(),
   storageBatterySelectYn: z.enum(["Y", "N"]).optional(),
 });

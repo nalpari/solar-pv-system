@@ -132,7 +132,9 @@ async function callQsp<T>(
         message: "Upstream timeout",
       };
     }
-    console.warn(`[${logName}] fetch error: ${String(err)}`);
+    const cause =
+      err instanceof Error && err.cause ? ` | cause=${String(err.cause)}` : "";
+    console.warn(`[${logName}] fetch error: ${String(err)}${cause} | url=${url}`);
     return {
       success: false,
       status: 502,
@@ -214,7 +216,7 @@ export async function postSimCheck(
   );
   if (!result.success) return result;
   // 검증 통과 → 결과 페이지 리다이렉트 URL 구성 (패스는 MUSBI_RESULT_PATH env)
-  // (imgSrc 는 sim-check 시점에 아직 없으므로 클라이언트가 업로드 후 부착)
+  // (roofImgSrc 는 sim-check 시점에 아직 없으므로 클라이언트가 업로드 후 부착)
   const redirectUrl = buildUrl(MUSBI_RESULT_HOST, MUSBI_RESULT_PATH, input);
   return { success: true, data: { redirectUrl } };
 }

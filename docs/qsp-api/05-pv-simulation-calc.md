@@ -23,7 +23,7 @@
 | `roofSlopeCd` | float | | **Y** | 지붕경사각 | ex) `21.8` |
 | `avrgMnthElctBill` | int | | **Y** | 월평균사용량(엔) | ex) `30000` |
 | `batteryItemId` | string | 20 | | 축전지 아이템코드 | ex) `107039` (미선택 시 빈값) |
-| `imgSrc` | string | 200 | | 지붕이미지파일명 | ex) `1.jpg` |
+| `roofImgSrc` | string | 200 | | 지붕이미지파일명 | ex) `1.jpg` |
 | `storageBatteryYn` | string | 1 | | 축전지 선택 여부 | 축전지 선택 시 `Y`, 그 외 `N` |
 | `storageBatterySelectYn` | string | 1 | | (보조 플래그) | 축전지 선택 시 `Y`, 그 외 `N` |
 

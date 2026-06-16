@@ -148,6 +148,10 @@ const translations = {
     ja: "処理に失敗しました。通信状態を確認して、もう一度お試しください。",
     en: "Request failed. Please check your connection and try again.",
   },
+  postCdMissing: {
+    ja: "郵便番号を取得できませんでした。住所を検索してください。",
+    en: "Could not get the postal code. Please search an address.",
+  },
 
   requiredApis: {
     ja: "必要なAPI: Maps JavaScript, Places, Geometry",

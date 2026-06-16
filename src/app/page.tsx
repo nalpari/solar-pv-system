@@ -406,6 +406,16 @@ export default function Home() {
 
   const panelCount = placedPixelPanels.length || placedPanelsList.length;
 
+  // 발전시뮬 결과조회 필수값(사양 Not Null) 충족 여부 — postCd 는 onSubmit 에서 geocode 후 검증
+  const canSubmitSim =
+    moduleId !== "" &&
+    slope !== null &&
+    panelCount > 0 &&
+    installAreas.length > 0 &&
+    simForm.azimuth !== "" &&
+    simForm.monthlyElecCost !== "" &&
+    (!simForm.hasBattery || simForm.batteryModel !== "");
+
   return (
     <APIProvider
       apiKey={GOOGLE_MAPS_API_KEY}
@@ -451,6 +461,7 @@ export default function Home() {
           }}
           sim={{
             formState: simForm,
+            canSubmit: canSubmitSim,
             onFormChange: setSimForm,
             onGoBack: () => {
               // 입력값이 기본값에서 변경된 경우 초기화 컨펌, 기본값이면 즉시 이동
@@ -472,6 +483,11 @@ export default function Home() {
                 const postCd = mapMoved
                   ? await geocodePostalCode(center)
                   : searchedPostalCode;
+                if (!postCd) {
+                  alert(t("postCdMissing", lang));
+                  setIsSubmitting(false);
+                  return;
+                }
                 const input: SimulationInput = {
                   pvSimulationYn: "Y",
                   postCd,
@@ -504,8 +520,8 @@ export default function Home() {
                   setIsSubmitting(false);
                   return;
                 }
-                // ③ calcResults 페이지로 리다이렉트 (imgSrc 부착) — 성공 시 페이지를 떠남
-                window.location.href = `${json.data.redirectUrl}&imgSrc=${encodeURIComponent(fileName)}`;
+                // ③ calcResults 페이지로 리다이렉트 (roofImgSrc 부착) — 성공 시 페이지를 떠남
+                window.location.href = `${json.data.redirectUrl}&roofImgSrc=${encodeURIComponent(fileName)}`;
               } catch {
                 // 네트워크 단절 등 예외 — 사용자 피드백 후 로딩 해제
                 alert(t("submitFailed", lang));

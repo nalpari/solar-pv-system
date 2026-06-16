@@ -21,7 +21,7 @@
 | `roofSlopeCd` | float | | **Y** | 屋根勾配 | Roof Slope |
 | `avrgMnthElctBill` | int | | **Y** | 月平均使用量（円） | Monthly Average Usage (Yen) |
 | `batteryItemId` | string | 20 | | バッテリー品目コード | Battery Item Code |
-| `imgSrc` | string | 200 | | 屋根画像ファイル名 | Roof Image File Name |
+| `roofImgSrc` | string | 200 | | 屋根画像ファイル名 | Roof Image File Name |
 | `storageBatteryYn` | string | 1 | | バッテリー使用状況 | Battery Usage Status |
 | `storageBatterySelectYn` | string | 1 | | バッテリー選択状況 | Battery Selection Status |
 
