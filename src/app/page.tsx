@@ -284,6 +284,13 @@ export default function Home() {
     setPlacedPixelPanels([]);
     setPlacedPanelsList([]);
     setIsPlacementDone(false); // 배치 완료(편집 잠금) 상태 해제
+    // 좌측메뉴 입력 초기화 (주소검색 데이터 address/center/searchedPostalCode 는 유지)
+    setSlope(DEFAULT_SLOPE);
+    setPanelSize(DEFAULT_PANEL_SIZE);
+    setModuleId("");
+    setSimForm(DEFAULT_SIM_FORM);
+    setActiveTab("design");
+    setPlacementError(null);
     // AI 감지 state는 cropData가 null 되면 detect useEffect가 자동 정리함 (I-4: DRY)
   }, []);
 
