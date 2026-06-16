@@ -64,8 +64,8 @@ export type BtcResponse = z.infer<typeof BtcResponseSchema>;
 
 // ============================================================================
 // 04 / 05. PV 발전시뮬레이션 (검증 / 계산)
-//   GET /qm/pwrgnSimulationM/checkCalcResults
-//   GET /qm/pwrgnSimulationM/calcResults
+//   GET /qm/pwrgnSimulation/checkCalcResults
+//   GET /qm/pwrgnSimulation/calcResults
 //   입력 파라미터는 04 = 05 동일하므로 schema 공유.
 // ============================================================================
 

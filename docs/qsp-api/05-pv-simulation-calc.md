@@ -5,7 +5,7 @@
 | 항목 | 값 |
 |------|----|
 | Method | `GET` |
-| Endpoint | `/qm/pwrgnSimulationM/calcResults` |
+| Endpoint | `/qm/pwrgnSimulation/calcResults` |
 | 설명 | PV 발전시뮬레이션 결과 정보 조회 |
 
 ## Request Parameter
@@ -65,7 +65,7 @@
 축전지 선택
 
 ```
-GET https://q-musubi-dev.q-cells.jp/qm/pwrgnSimulationM/calcResults
+GET https://q-musubi-dev.q-cells.jp/qm/pwrgnSimulation/calcResults
     ?pvSimulationYn=Y
     &postCd=340-9601
     &moduleItemId=106797
@@ -82,7 +82,7 @@ GET https://q-musubi-dev.q-cells.jp/qm/pwrgnSimulationM/calcResults
 축전지 미선택
 
 ```
-GET https://q-musubi-dev.q-cells.jp/qm/pwrgnSimulationM/calcResults
+GET https://q-musubi-dev.q-cells.jp/qm/pwrgnSimulation/calcResults
     ?pvSimulationYn=Y
     &postCd=340-9601
     &moduleItemId=106797

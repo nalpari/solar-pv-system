@@ -13,6 +13,11 @@ import {
 
 const QSP_API_HOST = process.env.QSP_API_HOST ?? "";
 const MUSBI_API_HOST = process.env.MUSBI_API_HOST ?? "";
+// 검증/결과 패스 — 환경별로 다를 수 있어 env 로 분리, 미설정 시 개발 기본값
+const MUSBI_CHECK_PATH =
+  process.env.MUSBI_CHECK_PATH ?? "/qm/pwrgnSimulation/checkCalcResults";
+const MUSBI_RESULT_PATH =
+  process.env.MUSBI_RESULT_PATH ?? "/qm/pwrgnSimulation/calcResults";
 const DEFAULT_TIMEOUT_MS = 30_000;
 
 type QueryValue = string | number | undefined;
@@ -200,19 +205,15 @@ export async function postSimCheck(
 ): Promise<QspCallResult<{ redirectUrl: string }>> {
   const result = await callQsp(
     "sim-check",
-    "/qm/pwrgnSimulationM/checkCalcResults",
+    MUSBI_CHECK_PATH,
     input,
     SimCheckResponseSchema,
     MUSBI_UPSTREAM,
   );
   if (!result.success) return result;
-  // 검증 통과 → host·params 동일, 엔드포인트만 calcResults 로 교체한 조회 URL 구성
+  // 검증 통과 → 결과 페이지 리다이렉트 URL 구성 (패스는 MUSBI_RESULT_PATH env)
   // (imgSrc 는 sim-check 시점에 아직 없으므로 클라이언트가 업로드 후 부착)
-  const redirectUrl = buildUrl(
-    MUSBI_API_HOST,
-    "/qm/pwrgnSimulationM/calcResults",
-    input,
-  );
+  const redirectUrl = buildUrl(MUSBI_API_HOST, MUSBI_RESULT_PATH, input);
   return { success: true, data: { redirectUrl } };
 }
 

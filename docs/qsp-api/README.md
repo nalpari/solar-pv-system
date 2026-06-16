@@ -11,8 +11,8 @@
 | No | API | Method | Endpoint | Source → Target | 문서 |
 |----|-----|--------|----------|------------------|------|
 | 3 | BTC Google Map 아이템 정보 조회 | GET | `/api/master/btcGoogleItemList` | Q.Partner → QSP | [03-btc-google-item-list.md](./03-btc-google-item-list.md) |
-| 4 | PV 발전시뮬레이션 결과전 검증 조회 | GET | `/qm/pwrgnSimulationM/checkCalcResults` | (QSP 내부) | [04-pv-simulation-check.md](./04-pv-simulation-check.md) |
-| 5 | PV 발전시뮬레이션 결과 정보 조회 | GET | `/qm/pwrgnSimulationM/calcResults` | (QSP 내부) | [05-pv-simulation-calc.md](./05-pv-simulation-calc.md) |
+| 4 | PV 발전시뮬레이션 결과전 검증 조회 | GET | `/qm/pwrgnSimulation/checkCalcResults` | (QSP 내부) | [04-pv-simulation-check.md](./04-pv-simulation-check.md) |
+| 5 | PV 발전시뮬레이션 결과 정보 조회 | GET | `/qm/pwrgnSimulation/calcResults` | (QSP 내부) | [05-pv-simulation-calc.md](./05-pv-simulation-calc.md) |
 
 > 번호는 원본 엑셀 사양서의 시트 순서를 따른다. Design 계열(1·2번) 시트는 본 폴더에서 다루지 않으므로 3번부터 시작한다.
 

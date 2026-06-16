@@ -187,6 +187,8 @@ Jenkinsfile 의 `Load Env Credential` 스테이지에서 `cat common + 선택된
 | `AWS_SECRET_ACCESS_KEY` | `.env` (공통) | 런타임 | S3 업로드 IAM 자격 |
 | `QSP_API_HOST` | `.env.dev` / `.env.prod` | 런타임 | QSalesPlatform 마스터 데이터 API 호스트. 환경별로 다름 |
 | `MUSBI_API_HOST` | `.env.dev` / `.env.prod` | 런타임 | MUSBI 시뮬레이션 API 호스트. 환경별로 다름 |
+| `MUSBI_CHECK_PATH` | `.env.dev` / `.env.prod` (선택) | 런타임 | 발전시뮬 검증(sim-check) API 패스. 미설정 시 `/qm/pwrgnSimulation/checkCalcResults`(개발 기본값) 사용 — 환경별로 다르면 설정 |
+| `MUSBI_RESULT_PATH` | `.env.dev` / `.env.prod` (선택) | 런타임 | 발전시뮬 결과 페이지 리다이렉트 패스. 미설정 시 `/qm/pwrgnSimulation/calcResults`(개발 기본값) 사용 — 환경별로 다르면 설정 |
 | `ENABLE_API_DOCS` | `.env.dev` / `.env.prod` | 런타임 | `"true"` 일 때만 `/api/openapi` 와 `/reference` 노출. dev=true / prod=false 권장 |
 
 새 키 추가 워크플로:

@@ -5,7 +5,7 @@
 | 항목 | 값 |
 |------|----|
 | Method | `GET` |
-| Endpoint | `/qm/pwrgnSimulationM/checkCalcResults` |
+| Endpoint | `/qm/pwrgnSimulation/checkCalcResults` |
 | 설명 | PV 발전시뮬레이션 결과전 검증 조회 |
 
 ## Request Parameter
