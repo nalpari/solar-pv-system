@@ -18,6 +18,8 @@ const MUSBI_CHECK_PATH =
   process.env.MUSBI_CHECK_PATH ?? "/qm/pwrgnSimulation/checkCalcResults";
 const MUSBI_RESULT_PATH =
   process.env.MUSBI_RESULT_PATH ?? "/qm/pwrgnSimulation/calcResults";
+// 결과 페이지 호스트 — 미설정 시 검증 호스트(MUSBI_API_HOST) 상속(개발), 운영은 공식사이트로 분리
+const MUSBI_RESULT_HOST = process.env.MUSBI_RESULT_HOST ?? MUSBI_API_HOST;
 const DEFAULT_TIMEOUT_MS = 30_000;
 
 type QueryValue = string | number | undefined;
