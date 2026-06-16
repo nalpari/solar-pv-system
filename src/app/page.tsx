@@ -528,7 +528,8 @@ export default function Home() {
                   return;
                 }
                 // ③ calcResults 페이지로 리다이렉트 (roofImgSrc 부착) — 성공 시 페이지를 떠남
-                window.location.href = `${json.data.redirectUrl}&roofImgSrc=${encodeURIComponent(fileName)}`;
+                const roofImgName = fileName.replace(/^pvmap\//, "");
+                window.location.href = `${json.data.redirectUrl}&roofImgSrc=${encodeURIComponent(roofImgName)}`;
               } catch {
                 // 네트워크 단절 등 예외 — 사용자 피드백 후 로딩 해제
                 alert(t("submitFailed", lang));
