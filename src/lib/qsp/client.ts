@@ -134,7 +134,7 @@ async function callQsp<T>(
     }
     const cause =
       err instanceof Error && err.cause ? ` | cause=${String(err.cause)}` : "";
-    console.warn(`[${logName}] fetch error: ${String(err)}${cause} | url=${url}`);
+    console.warn(`[${logName}] fetch error: ${String(err)}${cause}`);
     return {
       success: false,
       status: 502,
