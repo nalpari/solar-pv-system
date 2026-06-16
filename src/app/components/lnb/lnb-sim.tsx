@@ -47,6 +47,8 @@ export function LnbSim({
   const { azimuth, hasBattery, batteryModel, monthlyElecCost } = formState;
 
   const [batteryOptions, setBatteryOptions] = useState(BATTERY_MODELS);
+  // QSP 축전지 카탈로그 로드 성공 여부 — 폴백(BATTERY_MODELS)엔 matlCd 가 없어 시뮬 입력에 부적합
+  const [isQspBatteries, setIsQspBatteries] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -63,7 +65,10 @@ export function LnbSim({
           const batteries = items
             .filter((item) => item.matlGbnCd === "B")
             .map((item) => ({ value: item.matlCd, label: item.qcastCustPrdNm }));
-          if (batteries.length > 0) setBatteryOptions(batteries);
+          if (batteries.length > 0) {
+            setBatteryOptions(batteries);
+            setIsQspBatteries(true);
+          }
         }
       })
       .catch((err) => {
@@ -150,7 +155,10 @@ export function LnbSim({
             {hasBattery && (
               <SelectBox
                 value={batteryModel}
-                onChange={(e) => update({ batteryModel: e.target.value })}
+                onChange={(e) =>
+                  // QSP 로드 시 matlCd, 폴백이면 빈값 → canSubmit 비활성으로 잘못된 ID 전송 차단
+                  update({ batteryModel: isQspBatteries ? e.target.value : "" })
+                }
                 options={[
                   { value: "", label: t("selectPlaceholder", lang) },
                   ...batteryOptions,
