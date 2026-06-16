@@ -189,6 +189,7 @@ Jenkinsfile 의 `Load Env Credential` 스테이지에서 `cat common + 선택된
 | `MUSBI_API_HOST` | `.env.dev` / `.env.prod` | 런타임 | MUSBI 시뮬레이션 API 호스트. 환경별로 다름 |
 | `MUSBI_CHECK_PATH` | `.env.dev` / `.env.prod` (선택) | 런타임 | 발전시뮬 검증(sim-check) API 패스. 미설정 시 `/qm/pwrgnSimulation/checkCalcResults`(개발 기본값) 사용 — 환경별로 다르면 설정 |
 | `MUSBI_RESULT_PATH` | `.env.dev` / `.env.prod` (선택) | 런타임 | 발전시뮬 결과 페이지 리다이렉트 패스. 미설정 시 `/qm/pwrgnSimulation/calcResults`(개발 기본값) 사용 — 환경별로 다르면 설정 |
+| `MUSBI_RESULT_HOST` | `.env.prod` (선택) | 런타임 | 발전시뮬 결과 페이지 호스트. 미설정 시 `MUSBI_API_HOST` 상속(개발은 검증과 동일 호스트). 운영은 공식사이트(`https://www.q-cells.jp`)로 분리 |
 | `ENABLE_API_DOCS` | `.env.dev` / `.env.prod` | 런타임 | `"true"` 일 때만 `/api/openapi` 와 `/reference` 노출. dev=true / prod=false 권장 |
 
 새 키 추가 워크플로:
