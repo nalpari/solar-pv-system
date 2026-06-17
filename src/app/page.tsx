@@ -291,7 +291,6 @@ export default function Home() {
     setSimForm(DEFAULT_SIM_FORM);
     setActiveTab("design");
     setPlacementError(null);
-    setMapMoved(false); // 재크롭 시 드래그 여부 재판정 위해 리셋 (불필요 geocode 방지)
     // AI 감지 state는 cropData가 null 되면 detect useEffect가 자동 정리함 (I-4: DRY)
   }, []);
 
