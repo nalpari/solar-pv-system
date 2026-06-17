@@ -10,6 +10,7 @@ import type { RoofTool } from "./components/RoofEditToolbar";
 import MapView from "./components/MapView";
 import { placePanels, placePanelsOnCanvasCm } from "./utils/panelPlacement";
 import { t } from "./utils/i18n";
+import { extractPostalCode } from "./utils/postalCode";
 import type { Lang } from "./utils/i18n";
 import CropPopup, { type CropPopupHandle } from "./components/CropPopup";
 import AiDetectControls from "./components/AiDetectControls";
@@ -53,6 +54,33 @@ const ROOF_LOC_CD: Record<string, number> = {
 // 지붕경사 寸 → 度 (예: 4寸 → 21.8°)
 function sunToDegree(sun: number): number {
   return Math.round((Math.atan(sun / 10) * 180 / Math.PI) * 10) / 10;
+}
+
+// 발전시뮬 입력(SimulationInput) 조립 — UI state 를 musbi 파라미터로 매핑
+function buildSimulationInput(args: {
+  postCd: string;
+  moduleId: string;
+  panelCount: number;
+  roofCnt: number;
+  azimuth: string;
+  slope: number | null;
+  monthlyElecCost: string;
+  hasBattery: boolean;
+  batteryModel: string;
+}): SimulationInput {
+  return {
+    pvSimulationYn: "Y",
+    postCd: args.postCd,
+    moduleItemId: args.moduleId,
+    moduleCnt: args.panelCount,
+    roofCnt: args.roofCnt,
+    roofLocCd: ROOF_LOC_CD[args.azimuth] ?? 0,
+    roofSlopeCd: sunToDegree(args.slope ?? 0),
+    avrgMnthElctBill: Number(args.monthlyElecCost) || 0,
+    batteryItemId: args.hasBattery ? args.batteryModel : "",
+    storageBatteryYn: args.hasBattery ? "Y" : "N",
+    storageBatterySelectYn: args.hasBattery ? "Y" : "N",
+  };
 }
 
 export default function Home() {
@@ -338,11 +366,7 @@ export default function Home() {
   async function geocodePostalCode(loc: { lat: number; lng: number }): Promise<string> {
     try {
       const { results } = await new google.maps.Geocoder().geocode({ location: loc });
-      return (
-        results?.[0]?.address_components?.find((c) =>
-          c.types.includes("postal_code"),
-        )?.long_name ?? ""
-      );
+      return extractPostalCode(results?.[0]?.address_components);
     } catch {
       return "";
     }
@@ -368,6 +392,66 @@ export default function Home() {
       if (attempt < 3) await new Promise((r) => setTimeout(r, attempt * 500)); // 지수 백오프
     }
     return null;
+  }
+
+  // 결과조회 제출 — 우편번호 결정 → 정합성 검증 → 이미지 저장 → calcResults 리다이렉트
+  async function handleSimSubmit() {
+    if (isSubmitting) return; // 중복 클릭 방지
+    setIsSubmitting(true);
+    try {
+      // 우편번호: 이동X+검색우편 있으면 재사용, 그 외(검색우편 없음 포함) 크롭중심 geocode
+      const postCd =
+        !mapMoved && searchedPostalCode
+          ? searchedPostalCode
+          : await geocodePostalCode(center);
+      if (!postCd) {
+        alert(t("postCdMissing", lang));
+        setIsSubmitting(false);
+        return;
+      }
+      const input = buildSimulationInput({
+        postCd,
+        moduleId,
+        panelCount,
+        roofCnt: installAreas.length,
+        azimuth: simForm.azimuth,
+        slope,
+        monthlyElecCost: simForm.monthlyElecCost,
+        hasBattery: simForm.hasBattery,
+        batteryModel: simForm.batteryModel,
+      });
+      // ① 정합성 검증 + 조회 URL 취득 (실패 시 alert 후 중단)
+      const res = await fetch("/api/musbi/sim-check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      });
+      const json = await res.json();
+      if (!json.success) {
+        alert(json.error?.message ?? t("simCheckFailed", lang));
+        setIsSubmitting(false);
+        return;
+      }
+      if (!json.data?.redirectUrl) {
+        alert(t("submitFailed", lang));
+        setIsSubmitting(false);
+        return;
+      }
+      // ② 합성 이미지 S3 업로드 (4xx 즉시중단·5xx 재시도)
+      const fileName = await uploadLayoutImage();
+      if (!fileName) {
+        alert(t("imageUploadFailed", lang));
+        setIsSubmitting(false);
+        return;
+      }
+      // ③ calcResults 페이지로 리다이렉트 (roofImgSrc 부착) — 성공 시 페이지를 떠남
+      const roofImgName = fileName.replace(/^pvmap\//, "");
+      window.location.href = `${json.data.redirectUrl}&roofImgSrc=${encodeURIComponent(roofImgName)}`;
+    } catch {
+      // 네트워크 단절 등 예외 — 사용자 피드백 후 로딩 해제
+      alert(t("submitFailed", lang));
+      setIsSubmitting(false);
+    }
   }
 
   function handlePlacePanels(layout: "aligned" | "staggered" = "aligned") {
@@ -485,66 +569,7 @@ export default function Home() {
               setActiveTab("design");
               setIsPlacementDone(false);
             },
-            onSubmit: async () => {
-              if (isSubmitting) return; // 중복 클릭 방지
-              setIsSubmitting(true);
-              try {
-                // 우편번호: 이동X+검색우편 있으면 재사용, 그 외(검색우편 없음 포함) 크롭중심 geocode
-                const postCd =
-                  !mapMoved && searchedPostalCode
-                    ? searchedPostalCode
-                    : await geocodePostalCode(center);
-                if (!postCd) {
-                  alert(t("postCdMissing", lang));
-                  setIsSubmitting(false);
-                  return;
-                }
-                const input: SimulationInput = {
-                  pvSimulationYn: "Y",
-                  postCd,
-                  moduleItemId: moduleId,
-                  moduleCnt: panelCount,
-                  roofCnt: installAreas.length,
-                  roofLocCd: ROOF_LOC_CD[simForm.azimuth] ?? 0,
-                  roofSlopeCd: sunToDegree(slope ?? 0),
-                  avrgMnthElctBill: Number(simForm.monthlyElecCost) || 0,
-                  batteryItemId: simForm.hasBattery ? simForm.batteryModel : "",
-                  storageBatteryYn: simForm.hasBattery ? "Y" : "N",
-                  storageBatterySelectYn: simForm.hasBattery ? "Y" : "N",
-                };
-                // ① 정합성 검증 + 조회 URL 취득 (실패 시 B-1: alert 후 중단)
-                const res = await fetch("/api/musbi/sim-check", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify(input),
-                });
-                const json = await res.json();
-                if (!json.success) {
-                  alert(json.error?.message ?? t("simCheckFailed", lang));
-                  setIsSubmitting(false);
-                  return;
-                }
-                if (!json.data?.redirectUrl) {
-                  alert(t("submitFailed", lang));
-                  setIsSubmitting(false);
-                  return;
-                }
-                // ② 합성 이미지 S3 업로드 (A-2: 3회 재시도 후 실패면 중단)
-                const fileName = await uploadLayoutImage();
-                if (!fileName) {
-                  alert(t("imageUploadFailed", lang));
-                  setIsSubmitting(false);
-                  return;
-                }
-                // ③ calcResults 페이지로 리다이렉트 (roofImgSrc 부착) — 성공 시 페이지를 떠남
-                const roofImgName = fileName.replace(/^pvmap\//, "");
-                window.location.href = `${json.data.redirectUrl}&roofImgSrc=${encodeURIComponent(roofImgName)}`;
-              } catch {
-                // 네트워크 단절 등 예외 — 사용자 피드백 후 로딩 해제
-                alert(t("submitFailed", lang));
-                setIsSubmitting(false);
-              }
-            },
+            onSubmit: handleSimSubmit,
           }}
         />
 
