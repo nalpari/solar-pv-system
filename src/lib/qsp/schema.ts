@@ -1,6 +1,6 @@
 // src/lib/qsp/schema.ts
 // QSP.Connector.API 인터페이스 사양서 기준 zod 스키마.
-// 입력은 strict, 응답은 03/04 strict + 05 passthrough (사양 미정).
+// 입력은 strict, 응답(03/04)은 strict 검증 (05 calcResults 는 API 가 아닌 페이지 리다이렉트).
 import { z } from "zod";
 
 // ============================================================================

@@ -447,8 +447,9 @@ export default function Home() {
       // ③ calcResults 페이지로 리다이렉트 (roofImgSrc 부착) — 성공 시 페이지를 떠남
       const roofImgName = fileName.replace(/^pvmap\//, "");
       window.location.href = `${json.data.redirectUrl}&roofImgSrc=${encodeURIComponent(roofImgName)}`;
-    } catch {
-      // 네트워크 단절 등 예외 — 사용자 피드백 후 로딩 해제
+    } catch (err) {
+      // 네트워크 단절 등 예외 — 진단 로그 + 사용자 피드백 후 로딩 해제
+      console.error("[sim-submit] 결과조회 실패:", err);
       alert(t("submitFailed", lang));
       setIsSubmitting(false);
     }
