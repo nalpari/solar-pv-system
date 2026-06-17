@@ -58,11 +58,21 @@ export async function POST(req: NextRequest) {
   const configError = envError("image/upload");
   if (configError) return configError;
 
-  // formData 파싱 전 Content-Length 로 대용량 즉시 차단 — 파싱 후 file.size 검사는 이미 메모리를 소비함.
-  // multipart 오버헤드로 약간 보수적이며, 정밀 한도는 아래 file.size 로 재검증한다.
-  const contentLength = Number(req.headers.get("content-length") ?? 0);
-  if (contentLength > MAX_FILE_BYTES) {
-    return envelopeError(413, 413, "Request too large (max 10MB)");
+  // formData 파싱 전 Content-Length 로 대용량·누락을 즉시 차단 — 파싱 후 file.size 검사는 이미 메모리를 소비함.
+  // 헤더 누락(chunked)·무효값은 본문 크기를 알 수 없어 거부한다 (우리 클라는 브라우저 fetch 라 항상 전송).
+  // 정밀 한도는 아래 file.size 로 재검증한다.
+  const contentLengthHeader = req.headers.get("content-length");
+  const contentLength = Number(contentLengthHeader);
+  if (
+    !contentLengthHeader ||
+    !Number.isFinite(contentLength) ||
+    contentLength > MAX_FILE_BYTES
+  ) {
+    return envelopeError(
+      413,
+      413,
+      "Missing/invalid Content-Length or request too large (max 10MB)",
+    );
   }
 
   let file: FormDataEntryValue | null;
