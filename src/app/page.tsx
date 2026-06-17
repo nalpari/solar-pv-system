@@ -360,9 +360,12 @@ export default function Home() {
         const res = await fetch("/api/image/upload", { method: "POST", body: fd });
         const json = await res.json();
         if (json.success) return json.data.fileName as string;
+        // 4xx 는 결정적 실패(빈 파일·10MB 초과 등) — 재시도 무의미, 즉시 중단
+        if (res.status >= 400 && res.status < 500) return null;
       } catch {
-        // 재시도
+        // 네트워크 예외 — 재시도
       }
+      if (attempt < 3) await new Promise((r) => setTimeout(r, attempt * 500)); // 지수 백오프
     }
     return null;
   }
@@ -518,6 +521,11 @@ export default function Home() {
                 const json = await res.json();
                 if (!json.success) {
                   alert(json.error?.message ?? t("simCheckFailed", lang));
+                  setIsSubmitting(false);
+                  return;
+                }
+                if (!json.data?.redirectUrl) {
+                  alert(t("submitFailed", lang));
                   setIsSubmitting(false);
                   return;
                 }
