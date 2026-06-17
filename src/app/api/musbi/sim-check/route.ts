@@ -11,7 +11,7 @@ import { SimulationInputSchema } from "@/lib/qsp/schema";
 
 export const runtime = "nodejs";
 
-// SimulationInput 12개 필드 (가장 긴 imgSrc=200자) + JSON 오버헤드 충분.
+// SimulationInput 12개 필드 (가장 긴 roofImgSrc=200자) + JSON 오버헤드 충분.
 const MAX_BODY_BYTES = 8 * 1024;
 
 export async function POST(req: Request) {

@@ -4,13 +4,15 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { APIProvider } from "@vis.gl/react-google-maps";
 import { Lnb } from "./components/lnb/lnb";
 import type { SimulationFormState } from "./types";
+import type { SimulationInput } from "@/lib/qsp/schema";
 import RoofEditToolbar from "./components/RoofEditToolbar";
 import type { RoofTool } from "./components/RoofEditToolbar";
 import MapView from "./components/MapView";
 import { placePanels, placePanelsOnCanvasCm } from "./utils/panelPlacement";
 import { t } from "./utils/i18n";
+import { extractPostalCode } from "./utils/postalCode";
 import type { Lang } from "./utils/i18n";
-import CropPopup from "./components/CropPopup";
+import CropPopup, { type CropPopupHandle } from "./components/CropPopup";
 import AiDetectControls from "./components/AiDetectControls";
 import { detectRoofs } from "./utils/aiDetect";
 import type { NormalizedPolygon } from "./utils/aiDetect";
@@ -45,11 +47,49 @@ const GAP_X_CM = 0.3; // 모듈 간격 좌우 3mm (처마 평행)
 const GAP_Y_CM = 3; // 모듈 간격 상하 30mm (처마 수직)
 const MARGIN_CM = 30; // 외곽 여백 300mm
 
+// 발전시뮬 결과조회 입력 매핑 (docs/qsp-api/05)
+const ROOF_LOC_CD: Record<string, number> = {
+  N: 1, NE: 3, E: 5, SE: 7, S: 9, SW: 11, W: 13, NW: 15, // 16방위 중 앱 8방위(홀수 코드)
+};
+// 지붕경사 寸 → 度 (예: 4寸 → 21.8°)
+function sunToDegree(sun: number): number {
+  return Math.round((Math.atan(sun / 10) * 180 / Math.PI) * 10) / 10;
+}
+
+// 발전시뮬 입력(SimulationInput) 조립 — UI state 를 musbi 파라미터로 매핑
+function buildSimulationInput(args: {
+  postCd: string;
+  moduleId: string;
+  panelCount: number;
+  roofCnt: number;
+  azimuth: string;
+  slope: number | null;
+  monthlyElecCost: string;
+  hasBattery: boolean;
+  batteryModel: string;
+}): SimulationInput {
+  return {
+    pvSimulationYn: "Y",
+    postCd: args.postCd,
+    moduleItemId: args.moduleId,
+    moduleCnt: args.panelCount,
+    roofCnt: args.roofCnt,
+    roofLocCd: ROOF_LOC_CD[args.azimuth] ?? 0,
+    roofSlopeCd: sunToDegree(args.slope ?? 0),
+    avrgMnthElctBill: Number(args.monthlyElecCost) || 0,
+    batteryItemId: args.hasBattery ? args.batteryModel : "",
+    storageBatteryYn: args.hasBattery ? "Y" : "N",
+    storageBatterySelectYn: args.hasBattery ? "Y" : "N",
+  };
+}
+
 export default function Home() {
   const [lang] = useState<Lang>("ja");
   const [activeTab, setActiveTab] = useState<SidebarTab>("design");
   // 모듈 배치 완료(편집 잠금) 상태 — true면 지붕 편집·경사·모듈/배치 비활성, 발전시뮬 버튼 활성
   const [isPlacementDone, setIsPlacementDone] = useState(false);
+  // 결과조회 처리(정합성 확인 → 이미지 저장 → 조회/리다이렉트) 진행 중 — 중복 클릭 방지 + 로딩 오버레이
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [slope, setSlope] = useState<number | null>(DEFAULT_SLOPE);
   const [roofEditTool, setRoofEditTool] = useState<RoofTool>("select");
   const [simForm, setSimForm] = useState<SimulationFormState>(DEFAULT_SIM_FORM);
@@ -68,6 +108,7 @@ export default function Home() {
   // detect useEffect 의존성에서 lang 제거 (I-5: 사용자 토글 시 재호출 방지)
   // 단 catch 시점의 메시지는 latest lang으로 보여야 하므로 ref로 read
   const langRef = useRef(lang);
+  const cropPopupRef = useRef<CropPopupHandle>(null);
   useEffect(() => {
     langRef.current = lang;
   }, [lang]);
@@ -109,6 +150,8 @@ export default function Home() {
   const [selectedRoofIds, setSelectedRoofIds] = useState<string[]>([]);
   const [areas, setAreas] = useState<PolygonArea[]>([]);
   const [panelSize, setPanelSize] = useState<PanelSize | null>(DEFAULT_PANEL_SIZE);
+  // 선택 모듈 matlCd (SimulationInput.moduleItemId) — 시뮬 API 입력용
+  const [moduleId, setModuleId] = useState<string>("");
   const [placedPanelsList, setPlacedPanelsList] = useState<PlacedPanel[]>([]);
   const [pixelAreas, setPixelAreas] = useState<{ areas: PixelPolygon[]; metersPerPixel: number } | null>(null);
   const [placedPixelPanels, setPlacedPixelPanels] = useState<PixelPanel[]>([]);
@@ -261,6 +304,13 @@ export default function Home() {
     setPlacedPixelPanels([]);
     setPlacedPanelsList([]);
     setIsPlacementDone(false); // 배치 완료(편집 잠금) 상태 해제
+    // 좌측메뉴 입력 초기화 (주소검색 데이터 address/center 는 유지)
+    setSlope(DEFAULT_SLOPE);
+    setPanelSize(DEFAULT_PANEL_SIZE);
+    setModuleId("");
+    setSimForm(DEFAULT_SIM_FORM);
+    setActiveTab("design");
+    setPlacementError(null);
     // AI 감지 state는 cropData가 null 되면 detect useEffect가 자동 정리함 (I-4: DRY)
   }, []);
 
@@ -302,6 +352,96 @@ export default function Home() {
     setCropMode(false);
     setRoofEditTool("select");
     setActiveTab("simulation");
+  }
+
+  // 지도 센터좌표 → 우편번호 (reverse geocoding) — 지도 이동 시에만 호출
+  async function geocodePostalCode(loc: { lat: number; lng: number }): Promise<string> {
+    try {
+      const { results } = await new google.maps.Geocoder().geocode({ location: loc });
+      return extractPostalCode(results?.[0]?.address_components);
+    } catch {
+      return "";
+    }
+  }
+
+  // 합성 레이아웃 이미지(배경+패널)를 S3(/api/image/upload)에 업로드 → fileName 반환 (실패 시 null)
+  async function uploadLayoutImage(): Promise<string | null> {
+    const blob = await cropPopupRef.current?.getLayoutBlob();
+    if (!blob) return null; // 캔버스 없음 — 재시도 무의미
+    const fd = new FormData();
+    fd.append("file", blob, "layout.png");
+    // fetch만 최대 3회 재시도 (A-2: 다 실패하면 호출부에서 중단)
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const res = await fetch("/api/image/upload", { method: "POST", body: fd });
+        const json = await res.json();
+        if (json.success) return json.data.fileName as string;
+        // 4xx 는 결정적 실패(빈 파일·10MB 초과 등) — 재시도 무의미, 즉시 중단
+        if (res.status >= 400 && res.status < 500) return null;
+      } catch {
+        // 네트워크 예외 — 재시도
+      }
+      if (attempt < 3) await new Promise((r) => setTimeout(r, attempt * 500)); // 지수 백오프
+    }
+    return null;
+  }
+
+  // 결과조회 제출 — 우편번호 결정 → 정합성 검증 → 이미지 저장 → calcResults 리다이렉트
+  async function handleSimSubmit() {
+    if (isSubmitting) return; // 중복 클릭 방지
+    setIsSubmitting(true);
+    try {
+      // 우편번호: 항상 최종 크롭중심을 reverse geocode (크롭 이동 시 검색 우편 재사용은 위치 불일치 유발)
+      const postCd = await geocodePostalCode(center);
+      if (!postCd) {
+        alert(t("postCdMissing", lang));
+        setIsSubmitting(false);
+        return;
+      }
+      const input = buildSimulationInput({
+        postCd,
+        moduleId,
+        panelCount,
+        roofCnt: installAreas.length,
+        azimuth: simForm.azimuth,
+        slope,
+        monthlyElecCost: simForm.monthlyElecCost,
+        hasBattery: simForm.hasBattery,
+        batteryModel: simForm.batteryModel,
+      });
+      // ① 정합성 검증 + 조회 URL 취득 (실패 시 alert 후 중단)
+      const res = await fetch("/api/musbi/sim-check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      });
+      const json = await res.json();
+      if (!json.success) {
+        alert(json.error?.message ?? t("simCheckFailed", lang));
+        setIsSubmitting(false);
+        return;
+      }
+      if (!json.data?.redirectUrl) {
+        alert(t("submitFailed", lang));
+        setIsSubmitting(false);
+        return;
+      }
+      // ② 합성 이미지 S3 업로드 (4xx 즉시중단·5xx 재시도)
+      const fileName = await uploadLayoutImage();
+      if (!fileName) {
+        alert(t("imageUploadFailed", lang));
+        setIsSubmitting(false);
+        return;
+      }
+      // ③ calcResults 페이지로 리다이렉트 (roofImgSrc 부착) — 성공 시 페이지를 떠남
+      const roofImgName = fileName.replace(/^pvmap\//, "");
+      window.location.href = `${json.data.redirectUrl}&roofImgSrc=${encodeURIComponent(roofImgName)}`;
+    } catch (err) {
+      // 네트워크 단절 등 예외 — 진단 로그 + 사용자 피드백 후 로딩 해제
+      console.error("[sim-submit] 결과조회 실패:", err);
+      alert(t("submitFailed", lang));
+      setIsSubmitting(false);
+    }
   }
 
   function handlePlacePanels(layout: "aligned" | "staggered" = "aligned") {
@@ -350,6 +490,16 @@ export default function Home() {
 
   const panelCount = placedPixelPanels.length || placedPanelsList.length;
 
+  // 발전시뮬 결과조회 필수값(사양 Not Null) 충족 여부 — postCd 는 onSubmit 에서 geocode 후 검증
+  const canSubmitSim =
+    moduleId !== "" &&
+    slope !== null &&
+    panelCount > 0 &&
+    installAreas.length > 0 &&
+    simForm.azimuth !== "" &&
+    simForm.monthlyElecCost !== "" &&
+    (!simForm.hasBattery || simForm.batteryModel !== "");
+
   return (
     <APIProvider
       apiKey={GOOGLE_MAPS_API_KEY}
@@ -381,6 +531,7 @@ export default function Home() {
             areaCount: areas.length,
             panelSize,
             onPanelSizeChange: setPanelSize,
+            onModuleSelect: setModuleId,
             panelCount,
             canPlace,
             placementError,
@@ -394,6 +545,7 @@ export default function Home() {
           }}
           sim={{
             formState: simForm,
+            canSubmit: canSubmitSim,
             onFormChange: setSimForm,
             onGoBack: () => {
               // 입력값이 기본값에서 변경된 경우 초기화 컨펌, 기본값이면 즉시 이동
@@ -407,10 +559,7 @@ export default function Home() {
               setActiveTab("design");
               setIsPlacementDone(false);
             },
-            onSubmit: () => {
-              // TODO: 시뮬레이션 결과 조회 API 호출
-              console.log("Simulation submit:", simForm);
-            },
+            onSubmit: handleSimSubmit,
           }}
         />
 
@@ -558,6 +707,7 @@ export default function Home() {
                 disabled={isPlacementDone}
               />
               <CropPopup
+                ref={cropPopupRef}
                 cropData={cropData}
                 drawingMode={drawingMode}
                 onAreasChange={handleAreasChange}
@@ -586,6 +736,33 @@ export default function Home() {
           )}
         </main>
       </div>
+      {/* 결과조회 처리 중(정합성 확인 → 이미지 저장 → 조회/리다이렉트) 전체 화면 로딩 — 중복 클릭 차단 */}
+      {isSubmitting && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.4)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+          }}
+        >
+          <span
+            style={{
+              width: 48,
+              height: 48,
+              border: "4px solid rgba(255,255,255,0.3)",
+              borderTopColor: "var(--accent-blue)",
+              borderRadius: "50%",
+              animation: "spin 1s linear infinite",
+              display: "inline-block",
+            }}
+            aria-hidden="true"
+          />
+        </div>
+      )}
     </APIProvider>
   );
 }

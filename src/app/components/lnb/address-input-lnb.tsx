@@ -86,7 +86,7 @@ export function AddressInputLnb({ lang, disabled = false, onPlaceSelect }: Addre
   function handleSelect(prediction: google.maps.places.AutocompletePrediction) {
     if (!placesService.current) return;
     placesService.current.getDetails(
-      { placeId: prediction.place_id, fields: ["geometry", "formatted_address"] },
+      { placeId: prediction.place_id, fields: ["geometry", "formatted_address", "address_components"] },
       (place, status) => {
         if (status === google.maps.places.PlacesServiceStatus.OK && place?.geometry?.location) {
           setQuery(place.formatted_address || prediction.description);

@@ -6,7 +6,6 @@ import { createDocument } from "zod-openapi";
 import {
   BtcItemSchema,
   BtcItemsInputSchema,
-  SimCalcResponseSchema,
   SimulationInputSchema,
 } from "./qsp/schema";
 import {
@@ -91,20 +90,12 @@ const RegisteredSimulationInputSchema = SimulationInputSchema.meta({
   description: "PV 발전 시뮬레이션 입력 (04/05 공용)",
 });
 
-const RegisteredSimCalcResponseSchema = SimCalcResponseSchema.meta({
-  id: "SimCalcResponse",
-  description: "PV 발전 시뮬레이션 결과 (upstream 사양 미정 — passthrough)",
-});
-
 // 라우트별 성공 응답 envelope — id 부여로 클라이언트 코드 생성기에서 named type 생성
 const BtcItemsSuccessSchema = successEnvelope(z.array(RegisteredBtcItemSchema))
   .meta({ id: "BtcItemsResponse", description: "BTC 자재 마스터 조회 성공" });
 
-const SimCheckSuccessSchema = successEnvelope(z.null())
-  .meta({ id: "SimCheckResponse", description: "시뮬레이션 사전 검증 성공 (data=null)" });
-
-const SimCalcSuccessSchema = successEnvelope(RegisteredSimCalcResponseSchema)
-  .meta({ id: "SimCalcSuccessResponse", description: "시뮬레이션 계산 성공" });
+const SimCheckSuccessSchema = successEnvelope(z.object({ redirectUrl: z.string() }))
+  .meta({ id: "SimCheckResponse", description: "검증 성공 — 결과 페이지 리다이렉트 URL 반환" });
 
 // ============================================================================
 // image upload (multipart) — route.ts 의 검증 규칙을 문서로 표현
@@ -126,9 +117,6 @@ const RegisteredUploadImageResultSchema = UploadImageResultSchema.meta({
 
 const UploadImageSuccessSchema = successEnvelope(RegisteredUploadImageResultSchema)
   .meta({ id: "UploadImageResponse", description: "이미지 업로드 성공" });
-
-const DeleteImageSuccessSchema = successEnvelope(z.null())
-  .meta({ id: "DeleteImageResponse", description: "이미지 삭제 성공 (data=null)" });
 
 // reused:"ref" 옵션과 함께 paths 에서 직접 참조하지 않아도 components 에 포함되도록 보장.
 // DetectPolygon / BboxResponse 는 DetectResponse 내부에서만 사용되지만 독립 컴포넌트로 노출.
@@ -248,29 +236,6 @@ export function buildOpenApiDocument() {
           },
         },
       },
-      "/api/musbi/sim-calc": {
-        post: {
-          tags: ["musbi"],
-          summary: "PV 발전 시뮬레이션 결과 계산",
-          description: "실제 시뮬레이션 결과를 계산하여 반환한다. (사양 05)",
-          requestBody: {
-            required: true,
-            content: jsonContent(RegisteredSimulationInputSchema),
-          },
-          responses: {
-            "200": {
-              description: "계산 성공 (응답 사양 미정 — upstream passthrough)",
-              content: jsonContent(SimCalcSuccessSchema),
-            },
-            "400": { description: "본문 검증 실패", content: errorContent },
-            "401": { description: "Upstream 토큰 만료", content: errorContent },
-            "422": { description: "Upstream 검증 실패", content: errorContent },
-            "500": { description: "서버 설정 오류", content: errorContent },
-            "502": { description: "Upstream 오류", content: errorContent },
-            "504": { description: "Upstream 타임아웃", content: errorContent },
-          },
-        },
-      },
       "/api/image/upload": {
         post: {
           tags: ["image"],
@@ -293,30 +258,6 @@ export function buildOpenApiDocument() {
             "429": { description: "Rate limit", content: errorContent },
             "500": { description: "서버 설정 오류 (S3 env 미설정)", content: errorContent },
             "502": { description: "S3 업로드 실패", content: errorContent },
-          },
-        },
-        delete: {
-          tags: ["image"],
-          summary: "업로드 이미지 삭제",
-          description:
-            "업로드 시 반환된 fileName(S3 키)을 받아 해당 오브젝트를 삭제한다. `pvmap/{uuid}.{ext}` 형식 외의 키는 거부한다.",
-          requestParams: {
-            query: z.object({
-              fileName: z.string().meta({
-                description: "업로드 시 반환된 S3 오브젝트 키",
-                example: "pvmap/3fa85f64-5717-4562-b3fc-2c963f66afa6.png",
-              }),
-            }),
-          },
-          responses: {
-            "200": {
-              description: "삭제 성공",
-              content: jsonContent(DeleteImageSuccessSchema),
-            },
-            "400": { description: "fileName 누락 / 형식 불일치", content: errorContent },
-            "429": { description: "Rate limit", content: errorContent },
-            "500": { description: "서버 설정 오류 (S3 env 미설정)", content: errorContent },
-            "502": { description: "S3 삭제 실패", content: errorContent },
           },
         },
       },

@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useImperativeHandle, useRef, useState } from "react";
 import type { CropData, CropBounds, DrawingMode, LatLng, PolygonArea, PixelPanel, PixelPolygon, PixelPoint } from "../types";
 import type { Lang } from "../utils/i18n";
 import type { RoofTool } from "./RoofEditToolbar";
@@ -19,6 +19,11 @@ const COLOR_EXCLUDE = "#CF2E2E"; // --accent-red
 const COLOR_EXCLUDE_FILL = "rgba(207, 46, 46, 0.3)";
 const COLOR_SELECTED = "#FFD700"; // 선택 강조용 gold (VI 팔레트 --accent-yellow와 별도)
 const COLOR_EAVE = "#FF8A00"; // 처마(흐름방향) 기준변 하이라이트 color
+
+export interface CropPopupHandle {
+  /** 배경 이미지 + 패널 오버레이 캔버스를 합성한 PNG Blob 반환 (없으면 null) */
+  getLayoutBlob: () => Promise<Blob | null>;
+}
 
 interface CropPopupProps {
   cropData: CropData;
@@ -46,6 +51,8 @@ interface CropPopupProps {
   initialAreas?: NormalizedPolygon[];
   /** AI 감지 상태 머신 (Phase 7) — 로딩 오버레이 + Close X 버튼 가드에 사용 */
   detectStatus?: "idle" | "detecting";
+  /** 부모가 합성 이미지(getLayoutBlob)에 접근하기 위한 ref */
+  ref?: React.Ref<CropPopupHandle>;
 }
 
 interface AreaEntry {
@@ -221,6 +228,7 @@ export default function CropPopup({
   onSelectionChange,
   initialAreas,
   detectStatus = "idle",
+  ref,
 }: CropPopupProps) {
   const [areas, setAreas] = useState<AreaEntry[]>([]);
   const [currentPoints, setCurrentPoints] = useState<PixelPoint[]>([]);
@@ -1028,36 +1036,27 @@ export default function CropPopup({
     }
   }
 
-  /**
-   * 추후 기능 사용 예정으로 현재 임시 주석처리.
-   * 캔버스 + 이미지를 합성하여 PNG로 다운로드한다.
-   */
-  /*
-  function handleSave() {
-    const canvas = canvasRef.current;
-    const img = imgRef.current;
-    if (!canvas || !img) return;
+  // 배경 이미지 + 패널 오버레이 캔버스를 합성해 PNG Blob 으로 반환.
+  // (구 handleSave 의 다운로드용 합성 로직 재활용 — toDataURL → toBlob)
+  function getLayoutBlob(): Promise<Blob | null> {
+    return new Promise((resolve) => {
+      const canvas = canvasRef.current;
+      const img = imgRef.current;
+      if (!canvas || !img) return resolve(null);
 
-    const saveCanvas = document.createElement("canvas");
-    saveCanvas.width = canvas.width;
-    saveCanvas.height = canvas.height;
-    const ctx = saveCanvas.getContext("2d");
-    if (!ctx) return;
+      const saveCanvas = document.createElement("canvas");
+      saveCanvas.width = canvas.width;
+      saveCanvas.height = canvas.height;
+      const ctx = saveCanvas.getContext("2d");
+      if (!ctx) return resolve(null);
 
-    // Draw the image first
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    // Draw the overlay canvas on top
-    ctx.drawImage(canvas, 0, 0);
-
-    // Trigger download with timestamp
-    const now = new Date();
-    const ts = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(now.getSeconds()).padStart(2, "0")}`;
-    const link = document.createElement("a");
-    link.download = `solar-pv-layout_${ts}.png`;
-    link.href = saveCanvas.toDataURL("image/png");
-    link.click();
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height); // 배경
+      ctx.drawImage(canvas, 0, 0); // 패널 오버레이
+      saveCanvas.toBlob((blob) => resolve(blob), "image/png");
+    });
   }
-  */
+
+  useImperativeHandle(ref, () => ({ getLayoutBlob }), []);
 
   return (
     /* Popup card — 외부 wrapper(page.tsx)가 zIndex/배치 담당.

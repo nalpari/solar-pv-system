@@ -5,16 +5,22 @@ import { NextResponse } from "next/server";
 import type { z } from "zod";
 import {
   BtcResponseSchema,
-  SimCalcResponseSchema,
   SimCheckResponseSchema,
   type BtcItem,
   type BtcItemsInput,
-  type SimCalcResponse,
   type SimulationInput,
 } from "./schema";
 
 const QSP_API_HOST = process.env.QSP_API_HOST ?? "";
 const MUSBI_API_HOST = process.env.MUSBI_API_HOST ?? "";
+// 검증/결과 패스 — 환경별로 다를 수 있어 env 로 분리, 미설정 시 개발 기본값
+const MUSBI_CHECK_PATH =
+  process.env.MUSBI_CHECK_PATH || "/qm/pwrgnSimulation/checkCalcResults";
+const MUSBI_RESULT_PATH =
+  process.env.MUSBI_RESULT_PATH || "/qm/pwrgnSimulation/calcResults";
+// 결과 페이지 호스트 — 미설정/빈값 시 검증 호스트(MUSBI_API_HOST) 상속(개발), 운영은 공식사이트로 분리
+// (|| 로 빈 문자열 env 도 폴백 — 빈 호스트 시 buildUrl new URL("") 예외 차단)
+const MUSBI_RESULT_HOST = process.env.MUSBI_RESULT_HOST || MUSBI_API_HOST;
 const DEFAULT_TIMEOUT_MS = 30_000;
 
 type QueryValue = string | number | undefined;
@@ -81,7 +87,7 @@ function mapUpstreamCodeToStatus(code: number): number {
   return 502; // 그 외 upstream 오류
 }
 
-// upstream 3개 API (btc-items / sim-check / sim-calc) 모두 GET + querystring 사양.
+// upstream 2개 API (btc-items / sim-check) 모두 GET + querystring 사양.
 // BFF 라우트가 POST/JSON 으로 받더라도 여기서 querystring 으로 변환해 GET 으로 호출한다.
 async function callQsp<T>(
   routeName: string,
@@ -127,7 +133,9 @@ async function callQsp<T>(
         message: "Upstream timeout",
       };
     }
-    console.warn(`[${logName}] fetch error: ${String(err)}`);
+    const cause =
+      err instanceof Error && err.cause ? ` | cause=${String(err.cause)}` : "";
+    console.warn(`[${logName}] fetch error: ${String(err)}${cause}`);
     return {
       success: false,
       status: 502,
@@ -199,29 +207,19 @@ export async function fetchBtcItems(
 
 export async function postSimCheck(
   input: SimulationInput,
-): Promise<QspCallResult<null>> {
+): Promise<QspCallResult<{ redirectUrl: string }>> {
   const result = await callQsp(
     "sim-check",
-    "/qm/pwrgnSimulationM/checkCalcResults",
+    MUSBI_CHECK_PATH,
     input,
     SimCheckResponseSchema,
     MUSBI_UPSTREAM,
   );
   if (!result.success) return result;
-  return { success: true, data: null };
-}
-
-export async function postSimCalc(
-  input: SimulationInput,
-): Promise<QspCallResult<SimCalcResponse>> {
-  // 05번은 응답 사양 미정 — full body 그대로 클라이언트에 패스스루.
-  return callQsp(
-    "sim-calc",
-    "/qm/pwrgnSimulationM/calcResults",
-    input,
-    SimCalcResponseSchema,
-    MUSBI_UPSTREAM,
-  );
+  // 검증 통과 → 결과 페이지 리다이렉트 URL 구성 (패스는 MUSBI_RESULT_PATH env)
+  // (roofImgSrc 는 sim-check 시점에 아직 없으므로 클라이언트가 업로드 후 부착)
+  const redirectUrl = buildUrl(MUSBI_RESULT_HOST, MUSBI_RESULT_PATH, input);
+  return { success: true, data: { redirectUrl } };
 }
 
 // ============================================================================

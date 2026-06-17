@@ -1,6 +1,6 @@
 // src/lib/qsp/schema.ts
 // QSP.Connector.API 인터페이스 사양서 기준 zod 스키마.
-// 입력은 strict, 응답은 03/04 strict + 05 passthrough (사양 미정).
+// 입력은 strict, 응답(03/04)은 strict 검증 (05 calcResults 는 API 가 아닌 페이지 리다이렉트).
 import { z } from "zod";
 
 // ============================================================================
@@ -64,8 +64,8 @@ export type BtcResponse = z.infer<typeof BtcResponseSchema>;
 
 // ============================================================================
 // 04 / 05. PV 발전시뮬레이션 (검증 / 계산)
-//   GET /qm/pwrgnSimulationM/checkCalcResults
-//   GET /qm/pwrgnSimulationM/calcResults
+//   GET /qm/pwrgnSimulation/checkCalcResults
+//   GET /qm/pwrgnSimulation/calcResults
 //   입력 파라미터는 04 = 05 동일하므로 schema 공유.
 // ============================================================================
 
@@ -79,7 +79,7 @@ export const SimulationInputSchema = z.object({
   roofSlopeCd: z.number().finite(),
   avrgMnthElctBill: z.number().int().nonnegative(),
   batteryItemId: z.string().max(20).optional(),
-  imgSrc: z.string().max(200).optional(),
+  roofImgSrc: z.string().max(200).optional(),
   storageBatteryYn: z.enum(["Y", "N"]).optional(),
   storageBatterySelectYn: z.enum(["Y", "N"]).optional(),
 });
@@ -92,20 +92,3 @@ export const SimCheckResponseSchema = z.object({
   resultCode: z.number(),
 });
 export type SimCheckResponse = z.infer<typeof SimCheckResponseSchema>;
-
-// 05 응답: 사양 표가 비어 있어 실서버 호출 후 보강.
-// 일단 README 공통 포맷({data, result}) 과 04 평탄화 포맷 둘 다 허용하는 느슨한 스키마.
-export const SimCalcResponseSchema = z
-  .object({
-    data: z.unknown().nullable().optional(),
-    result: z
-      .object({
-        code: z.number(),
-        message: z.string(),
-      })
-      .optional(),
-    resultCode: z.number().optional(),
-    resultMessage: z.string().optional(),
-  })
-  .passthrough();
-export type SimCalcResponse = z.infer<typeof SimCalcResponseSchema>;

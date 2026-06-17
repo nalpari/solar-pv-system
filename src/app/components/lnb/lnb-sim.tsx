@@ -32,6 +32,8 @@ export interface LnbSimProps {
   onFormChange: (state: SimulationFormState) => void;
   onGoBack: () => void;
   onSubmit: () => void;
+  /** 결과조회 필수값(사양 Not Null) 충족 여부 — false면 버튼 비활성 */
+  canSubmit: boolean;
 }
 
 export function LnbSim({
@@ -40,10 +42,13 @@ export function LnbSim({
   onFormChange,
   onGoBack,
   onSubmit,
+  canSubmit,
 }: LnbSimProps) {
   const { azimuth, hasBattery, batteryModel, monthlyElecCost } = formState;
 
   const [batteryOptions, setBatteryOptions] = useState(BATTERY_MODELS);
+  // QSP 축전지 카탈로그 로드 성공 여부 — 폴백(BATTERY_MODELS)엔 matlCd 가 없어 시뮬 입력에 부적합
+  const [isQspBatteries, setIsQspBatteries] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -60,7 +65,10 @@ export function LnbSim({
           const batteries = items
             .filter((item) => item.matlGbnCd === "B")
             .map((item) => ({ value: item.matlCd, label: item.qcastCustPrdNm }));
-          if (batteries.length > 0) setBatteryOptions(batteries);
+          if (batteries.length > 0) {
+            setBatteryOptions(batteries);
+            setIsQspBatteries(true);
+          }
         }
       })
       .catch((err) => {
@@ -147,7 +155,10 @@ export function LnbSim({
             {hasBattery && (
               <SelectBox
                 value={batteryModel}
-                onChange={(e) => update({ batteryModel: e.target.value })}
+                onChange={(e) =>
+                  // QSP 로드 시 matlCd, 폴백이면 빈값 → canSubmit 비활성으로 잘못된 ID 전송 차단
+                  update({ batteryModel: isQspBatteries ? e.target.value : "" })
+                }
                 options={[
                   { value: "", label: t("selectPlaceholder", lang) },
                   ...batteryOptions,
@@ -187,11 +198,7 @@ export function LnbSim({
           iconPosition="right"
           className="w-full"
           onClick={onSubmit}
-          disabled={
-            azimuth === "" ||
-            monthlyElecCost === "" ||
-            (hasBattery && batteryModel === "")
-          }
+          disabled={!canSubmit}
           icon={<ChevronRight />}
         >
           {t("simViewResults", lang)}
