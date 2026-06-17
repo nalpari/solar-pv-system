@@ -63,7 +63,7 @@ export default function Home() {
   // 결과조회 처리(정합성 확인 → 이미지 저장 → 조회/리다이렉트) 진행 중 — 중복 클릭 방지 + 로딩 오버레이
   const [isSubmitting, setIsSubmitting] = useState(false);
   // 주소검색 선택 후 사용자가 지도를 드래그로 이동했는지 — 우편번호 출처 결정용
-  // (이동 O → 크롭중심 reverse geocode / 이동 X → 검색결과 우편번호 재사용으로 호출 절감)
+  // (이동 X + 검색우편 있음 → 재사용으로 절감 / 그 외 → 크롭중심 reverse geocode)
   const [mapMoved, setMapMoved] = useState(false);
   const [slope, setSlope] = useState<number | null>(DEFAULT_SLOPE);
   const [roofEditTool, setRoofEditTool] = useState<RoofTool>("select");
@@ -486,10 +486,11 @@ export default function Home() {
               if (isSubmitting) return; // 중복 클릭 방지
               setIsSubmitting(true);
               try {
-                // 우편번호: 지도 이동 O → 크롭중심 reverse geocode / 이동 X → 검색결과 재사용
-                const postCd = mapMoved
-                  ? await geocodePostalCode(center)
-                  : searchedPostalCode;
+                // 우편번호: 이동X+검색우편 있으면 재사용, 그 외(검색우편 없음 포함) 크롭중심 geocode
+                const postCd =
+                  !mapMoved && searchedPostalCode
+                    ? searchedPostalCode
+                    : await geocodePostalCode(center);
                 if (!postCd) {
                   alert(t("postCdMissing", lang));
                   setIsSubmitting(false);
