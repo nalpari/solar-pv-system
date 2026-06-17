@@ -53,7 +53,7 @@ pnpm dev                     # http://localhost:3000
 - **Docker** — Multi-stage standalone build (see `Dockerfile`, `docker-compose.yml`)
 - **Gemini API** — `@google/genai` ^1.0.0 (AI 지붕 자동 감지)
 - **sharp** ^0.34.5 — 서버 측 이미지 처리 (북방 마커 오버레이)
-- **@aws-sdk/client-s3** ^3.1065 — 참조 이미지 S3 업로드/삭제 (`/api/image/upload`)
+- **@aws-sdk/client-s3** ^3.1065 — 참조 이미지 S3 업로드 (`/api/image/upload`)
 - **zod** ^4.3.6 — API 응답 스키마 검증
 - **zod-openapi** ^5.4 — 기존 zod 스키마 → OpenAPI 3.1 문서 생성
 - **@scalar/nextjs-api-reference** ^0.10 — `/reference` 페이지에서 Scalar UI 렌더
@@ -67,7 +67,7 @@ src/
 ├── app/
 │   ├── api/
 │   │   ├── detect-roof/      # /api/detect-roof — Gemini Vision 호출 라우트 (서버)
-│   │   ├── image/upload/     # /api/image/upload — 참조 이미지 S3 업로드(POST)/삭제(DELETE)
+│   │   ├── image/upload/     # /api/image/upload — 참조 이미지 S3 업로드(POST)
 │   │   ├── openapi/          # /api/openapi — buildOpenApiDocument() JSON 제공
 │   │   ├── qsp/              # /api/qsp/* — QSP BFF (btc-items: 모듈 schItemTp=M / 축전지 schItemTp=B)
 │   │   └── musbi/            # /api/musbi/* — MUSBI BFF (sim-check)
@@ -96,7 +96,7 @@ src/
 ### API Documentation
 
 - 사양 SSOT: `src/lib/qsp/schema.ts`, `src/lib/detect/schema.ts`, `src/lib/image/schema.ts` 의 zod 스키마
-- 빌더: `src/lib/openapi.ts` — `createDocument({ reused: "ref" })` 로 OpenAPI 3.1 생성. `.meta({ id })` 부여된 스키마는 `components.schemas` 에 자동 등록되며 paths 에서 `$ref` 로 참조된다 (9개 컴포넌트: `DetectRequest`, `DetectResponse`, `DetectPolygon`, `BboxResponse`, `ErrorEnvelope`, `BtcItem`, `SimulationInput`, `UploadImageRequest`, `UploadImageResult` + 4개 응답 envelope `BtcItemsResponse` / `SimCheckResponse` / `UploadImageResponse` / `DeleteImageResponse`)
+- 빌더: `src/lib/openapi.ts` — `createDocument({ reused: "ref" })` 로 OpenAPI 3.1 생성. `.meta({ id })` 부여된 스키마는 `components.schemas` 에 자동 등록되며 paths 에서 `$ref` 로 참조된다 (9개 컴포넌트: `DetectRequest`, `DetectResponse`, `DetectPolygon`, `BboxResponse`, `ErrorEnvelope`, `BtcItem`, `SimulationInput`, `UploadImageRequest`, `UploadImageResult` + 3개 응답 envelope `BtcItemsResponse` / `SimCheckResponse` / `UploadImageResponse`)
 - 엔드포인트 (둘 다 `ENABLE_API_DOCS=true` 환경에서만 노출, 그 외에는 404 — 내부 API 명세 노출 차단. `NODE_ENV` 가드는 dev/prod 모두 production 빌드를 쓰는 배포 모델과 충돌하므로 사용하지 않음):
   - `GET /api/openapi` — OpenAPI 3.1 JSON (모듈 스코프 lazy memoize)
   - `GET /reference` — Scalar 기반 API Reference UI (dev: http://localhost:3000/reference)

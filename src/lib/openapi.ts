@@ -118,9 +118,6 @@ const RegisteredUploadImageResultSchema = UploadImageResultSchema.meta({
 const UploadImageSuccessSchema = successEnvelope(RegisteredUploadImageResultSchema)
   .meta({ id: "UploadImageResponse", description: "이미지 업로드 성공" });
 
-const DeleteImageSuccessSchema = successEnvelope(z.null())
-  .meta({ id: "DeleteImageResponse", description: "이미지 삭제 성공 (data=null)" });
-
 // reused:"ref" 옵션과 함께 paths 에서 직접 참조하지 않아도 components 에 포함되도록 보장.
 // DetectPolygon / BboxResponse 는 DetectResponse 내부에서만 사용되지만 독립 컴포넌트로 노출.
 const COMPONENT_SCHEMAS = {
@@ -261,30 +258,6 @@ export function buildOpenApiDocument() {
             "429": { description: "Rate limit", content: errorContent },
             "500": { description: "서버 설정 오류 (S3 env 미설정)", content: errorContent },
             "502": { description: "S3 업로드 실패", content: errorContent },
-          },
-        },
-        delete: {
-          tags: ["image"],
-          summary: "업로드 이미지 삭제",
-          description:
-            "업로드 시 반환된 fileName(S3 키)을 받아 해당 오브젝트를 삭제한다. `pvmap/{uuid}.{ext}` 형식 외의 키는 거부한다.",
-          requestParams: {
-            query: z.object({
-              fileName: z.string().meta({
-                description: "업로드 시 반환된 S3 오브젝트 키",
-                example: "pvmap/3fa85f64-5717-4562-b3fc-2c963f66afa6.png",
-              }),
-            }),
-          },
-          responses: {
-            "200": {
-              description: "삭제 성공",
-              content: jsonContent(DeleteImageSuccessSchema),
-            },
-            "400": { description: "fileName 누락 / 형식 불일치", content: errorContent },
-            "429": { description: "Rate limit", content: errorContent },
-            "500": { description: "서버 설정 오류 (S3 env 미설정)", content: errorContent },
-            "502": { description: "S3 삭제 실패", content: errorContent },
           },
         },
       },

@@ -1,18 +1,12 @@
 // src/app/api/image/upload/route.ts
-// 참조 이미지 S3 업로드/삭제 라우트 (qcast-front /api/image/upload 패턴 이식).
+// 참조 이미지 S3 업로드 라우트 (qcast-front /api/image/upload 패턴 이식).
 // - 키는 `pvmap/{uuid}.{ext}` 로 생성해 파일명 충돌·덮어쓰기를 방지한다.
-// - DELETE 는 UPLOAD_KEY_PATTERN 에 맞는 키만 허용해 다른 프리픽스 오브젝트 삭제를 차단한다.
 // - Origin 검증 + rate limit 은 src/proxy.ts (/api/image/*) 에서 적용된다.
 import { NextResponse, type NextRequest } from "next/server";
-import {
-  DeleteObjectCommand,
-  PutObjectCommand,
-  S3Client,
-} from "@aws-sdk/client-s3";
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { envelopeError } from "@/lib/qsp/client";
 import {
   ALLOWED_IMAGE_TYPES,
-  UPLOAD_KEY_PATTERN,
   type AllowedImageType,
   type UploadImageResult,
 } from "@/lib/image/schema";
@@ -64,6 +58,13 @@ export async function POST(req: NextRequest) {
   const configError = envError("image/upload");
   if (configError) return configError;
 
+  // formData 파싱 전 Content-Length 로 대용량 즉시 차단 — 파싱 후 file.size 검사는 이미 메모리를 소비함.
+  // multipart 오버헤드로 약간 보수적이며, 정밀 한도는 아래 file.size 로 재검증한다.
+  const contentLength = Number(req.headers.get("content-length") ?? 0);
+  if (contentLength > MAX_FILE_BYTES) {
+    return envelopeError(413, 413, "Request too large (max 10MB)");
+  }
+
   let file: FormDataEntryValue | null;
   try {
     const formData = await req.formData();
@@ -110,28 +111,4 @@ export async function POST(req: NextRequest) {
     fileName: Key,
   };
   return NextResponse.json({ success: true, data });
-}
-
-export async function DELETE(req: NextRequest) {
-  const configError = envError("image/upload");
-  if (configError) return configError;
-
-  const fileName = req.nextUrl.searchParams.get("fileName");
-  if (!fileName) {
-    return envelopeError(400, 400, "fileName parameter is required");
-  }
-  if (!UPLOAD_KEY_PATTERN.test(fileName)) {
-    return envelopeError(400, 400, "Invalid fileName format");
-  }
-
-  try {
-    await getS3Client().send(
-      new DeleteObjectCommand({ Bucket, Key: fileName }),
-    );
-  } catch (err) {
-    console.error("[image/upload] S3 삭제 실패:", err);
-    return envelopeError(502, 502, "Failed to delete image");
-  }
-
-  return NextResponse.json({ success: true, data: null });
 }
