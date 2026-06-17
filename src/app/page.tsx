@@ -90,9 +90,6 @@ export default function Home() {
   const [isPlacementDone, setIsPlacementDone] = useState(false);
   // 결과조회 처리(정합성 확인 → 이미지 저장 → 조회/리다이렉트) 진행 중 — 중복 클릭 방지 + 로딩 오버레이
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // 주소검색 선택 후 사용자가 지도를 드래그로 이동했는지 — 우편번호 출처 결정용
-  // (이동 X + 검색우편 있음 → 재사용으로 절감 / 그 외 → 크롭중심 reverse geocode)
-  const [mapMoved, setMapMoved] = useState(false);
   const [slope, setSlope] = useState<number | null>(DEFAULT_SLOPE);
   const [roofEditTool, setRoofEditTool] = useState<RoofTool>("select");
   const [simForm, setSimForm] = useState<SimulationFormState>(DEFAULT_SIM_FORM);
@@ -146,8 +143,6 @@ export default function Home() {
   const [confirmCropSignal, setConfirmCropSignal] = useState(0);
   const [cropData, setCropData] = useState<CropData | null>(null);
   const [address, setAddress] = useState("");
-  // 주소검색 결과 우편번호 — 지도 미이동 시 postCd 로 재사용(geocoding 비용 절감)
-  const [searchedPostalCode, setSearchedPostalCode] = useState("");
   // drawingMode는 roofEditTool에서 파생 (drawRoof → install, drawOpening → exclude, 그 외 → null)
   const [undoSignal, setUndoSignal] = useState(0);
   const [clearSignal, setClearSignal] = useState(0);
@@ -177,14 +172,11 @@ export default function Home() {
     lat: number;
     lng: number;
     address: string;
-    postalCode?: string;
     viewport?: google.maps.LatLngBounds;
   }) {
     userOverrodeRef.current = true; // 사용자가 명시적으로 위치 선택 — 늦게 도착한 geolocation 응답 무시
     setCenter({ lat: location.lat, lng: location.lng });
     setAddress(location.address);
-    setSearchedPostalCode(location.postalCode ?? "");
-    setMapMoved(false); // 새 주소 선택 → 이동 플래그 리셋
     setViewport(location.viewport ?? null);
   }
 
@@ -312,7 +304,7 @@ export default function Home() {
     setPlacedPixelPanels([]);
     setPlacedPanelsList([]);
     setIsPlacementDone(false); // 배치 완료(편집 잠금) 상태 해제
-    // 좌측메뉴 입력 초기화 (주소검색 데이터 address/center/searchedPostalCode 는 유지)
+    // 좌측메뉴 입력 초기화 (주소검색 데이터 address/center 는 유지)
     setSlope(DEFAULT_SLOPE);
     setPanelSize(DEFAULT_PANEL_SIZE);
     setModuleId("");
@@ -399,11 +391,8 @@ export default function Home() {
     if (isSubmitting) return; // 중복 클릭 방지
     setIsSubmitting(true);
     try {
-      // 우편번호: 이동X+검색우편 있으면 재사용, 그 외(검색우편 없음 포함) 크롭중심 geocode
-      const postCd =
-        !mapMoved && searchedPostalCode
-          ? searchedPostalCode
-          : await geocodePostalCode(center);
+      // 우편번호: 항상 최종 크롭중심을 reverse geocode (크롭 이동 시 검색 우편 재사용은 위치 불일치 유발)
+      const postCd = await geocodePostalCode(center);
       if (!postCd) {
         alert(t("postCdMissing", lang));
         setIsSubmitting(false);
@@ -587,7 +576,6 @@ export default function Home() {
               confirmCropSignal={confirmCropSignal}
               address={address}
               lang={lang}
-              onUserDrag={() => setMapMoved(true)}
             />
           ) : (
             <div

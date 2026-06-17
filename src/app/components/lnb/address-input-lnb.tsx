@@ -4,7 +4,6 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { MapPin } from "lucide-react";
 import { InputBox } from "@/components/common";
 import { t, type Lang } from "../../utils/i18n";
-import { extractPostalCode } from "../../utils/postalCode";
 
 interface AddressInputLnbProps {
   lang: Lang;
@@ -14,7 +13,6 @@ interface AddressInputLnbProps {
     lat: number;
     lng: number;
     address: string;
-    postalCode?: string;
     viewport?: google.maps.LatLngBounds;
   }) => void;
 }
@@ -94,12 +92,10 @@ export function AddressInputLnb({ lang, disabled = false, onPlaceSelect }: Addre
           setQuery(place.formatted_address || prediction.description);
           setPredictions([]);
           setIsOpen(false);
-          const postalCode = extractPostalCode(place.address_components);
           onPlaceSelect({
             lat: place.geometry.location.lat(),
             lng: place.geometry.location.lng(),
             address: place.formatted_address || prediction.description,
-            postalCode,
             viewport: place.geometry.viewport,
           });
         } else {
