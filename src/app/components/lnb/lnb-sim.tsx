@@ -19,13 +19,6 @@ const COMPASS_DIRECTIONS = [
   { value: "SE", ja: "南東", en: "SE" },
 ] as const;
 
-// 폴백 축전지 목록 — QSP btc-items(schItemTp=B) 로드 전/실패 시에만 사용.
-const BATTERY_MODELS = [
-  { value: "q-ready-7.7", label: "Q.READY 7.7kWh" },
-  { value: "q-ready-11.5", label: "Q.READY 11.5kWh" },
-  { value: "q-ready-15.3", label: "Q.READY 15.3kWh" },
-];
-
 export interface LnbSimProps {
   lang?: Lang;
   formState: SimulationFormState;
@@ -46,9 +39,7 @@ export function LnbSim({
 }: LnbSimProps) {
   const { azimuth, hasBattery, batteryModel, monthlyElecCost } = formState;
 
-  const [batteryOptions, setBatteryOptions] = useState(BATTERY_MODELS);
-  // QSP 축전지 카탈로그 로드 성공 여부 — 폴백(BATTERY_MODELS)엔 matlCd 가 없어 시뮬 입력에 부적합
-  const [isQspBatteries, setIsQspBatteries] = useState(false);
+  const [batteryOptions, setBatteryOptions] = useState<{ value: string; label: string }[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -67,7 +58,6 @@ export function LnbSim({
             .map((item) => ({ value: item.matlCd, label: item.qcastCustPrdNm }));
           if (batteries.length > 0) {
             setBatteryOptions(batteries);
-            setIsQspBatteries(true);
           }
         }
       })
@@ -156,8 +146,8 @@ export function LnbSim({
               <SelectBox
                 value={batteryModel}
                 onChange={(e) =>
-                  // QSP 로드 시 matlCd, 폴백이면 빈값 → canSubmit 비활성으로 잘못된 ID 전송 차단
-                  update({ batteryModel: isQspBatteries ? e.target.value : "" })
+                  // value=matlCd — QSP 카탈로그 로드 성공 시에만 옵션이 채워지므로 항상 실 ID
+                  update({ batteryModel: e.target.value })
                 }
                 options={[
                   { value: "", label: t("selectPlaceholder", lang) },

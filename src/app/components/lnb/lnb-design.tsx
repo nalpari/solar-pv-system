@@ -18,15 +18,6 @@ const SLOPE_OPTIONS: { value: number; labelKey: "slopeLabel1" | "slopeLabel3" | 
   { value: 8, labelKey: "slopeLabel8" },
 ];
 
-// 폴백 모듈 프리셋 — QSP btc-items 로드 전/실패 시에만 사용 (로드 성공 시 QSP 목록으로 교체).
-// watt는 일반적 정격 출력 추정값이며, 실값은 QSP wpOut으로 대체된다.
-const MODULE_PRESETS: { value: string; label: string; size: PanelSize }[] = [
-  { value: "re-rize-g3-440", label: "Re-RIZE-G3 440", size: { label: "Re-RIZE-G3 440", width: 991, height: 1722, watt: 440 } },
-  { value: "preset-60", label: "Standard 60-Cell", size: { label: "Standard 60-Cell", width: 991, height: 1650, watt: 370 } },
-  { value: "preset-72", label: "Standard 72-Cell", size: { label: "Standard 72-Cell", width: 991, height: 1960, watt: 440 } },
-  { value: "preset-large", label: "Large Format", size: { label: "Large Format", width: 1134, height: 2278, watt: 550 } },
-];
-
 export interface LnbDesignProps {
   lang?: Lang;
   // Address & crop
@@ -92,10 +83,8 @@ export function LnbDesign({
 }: LnbDesignProps) {
   const detecting = detectStatus === "detecting";
 
-  const [moduleOptions, setModuleOptions] = useState(MODULE_PRESETS);
+  const [moduleOptions, setModuleOptions] = useState<{ value: string; label: string; size: PanelSize }[]>([]);
   const [modulesLoading, setModulesLoading] = useState(true);
-  // QSP 카탈로그 로드 성공 여부 — 폴백(MODULE_PRESETS)엔 matlCd 가 없어 시뮬 입력에 부적합
-  const [isQspModules, setIsQspModules] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -128,7 +117,6 @@ export function LnbDesign({
           if (modules.length > 0) {
             // 명세: 모듈은 기본 미선택 — 카탈로그만 채우고 자동 선택하지 않음
             setModuleOptions(modules);
-            setIsQspModules(true);
           }
         }
       })
@@ -154,9 +142,8 @@ export function LnbDesign({
     const preset = moduleOptions.find((p) => p.value === value);
     if (preset) {
       onPanelSizeChange({ ...preset.size });
-      // QSP 로드 시 value=matlCd(moduleItemId). 폴백(MODULE_PRESETS) 상태면 시뮬용 코드가
-      // 없으므로 빈값 전달 → sim-check 검증에서 막혀 잘못된 ID 전송 방지
-      onModuleSelect?.(isQspModules ? value : "");
+      // value=matlCd(moduleItemId) — QSP 카탈로그 로드 성공 시에만 옵션이 채워지므로 항상 실 ID
+      onModuleSelect?.(value);
       onClearAllPanels(); // 모듈 변경 시 기존 배치 모듈 전체 삭제 (선택 여부 무관)
     }
   }
