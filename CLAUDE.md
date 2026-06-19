@@ -100,7 +100,7 @@ src/
 - 엔드포인트 (둘 다 `ENABLE_API_DOCS=true` 환경에서만 노출, 그 외에는 404 — 내부 API 명세 노출 차단. `NODE_ENV` 가드는 dev/prod 모두 production 빌드를 쓰는 배포 모델과 충돌하므로 사용하지 않음):
   - `GET /api/openapi` — OpenAPI 3.1 JSON (모듈 스코프 lazy memoize)
   - `GET /reference` — Scalar 기반 API Reference UI (dev: http://localhost:3000/reference)
-- 라우트 보호: `/api/qsp/*`, `/api/musbi/*`, `/api/detect-roof`, `/api/image/*` 는 `src/proxy.ts` 에서 Origin 검증 + per-IP rate limit (in-memory sliding window) 적용 — BFF(qsp/musbi)·image 는 1분 30회, 고비용 detect-roof(Gemini 2회 호출)는 1분 10회 별도 버킷. clientIP 는 `X-Forwarded-For` 의 오른쪽 신뢰 hop(`TRUSTED_PROXY_HOPS`, 기본 1)만 채택해 헤더 위조로 인한 한도 우회를 막는다 — 운영은 XFF 를 설정하는 리버스 프록시 뒤 배포 전제(직접 노출 시 IP 별 제한 불가). 단일 인스턴스 배포 전제, 스케일아웃 시 분산 저장소로 교체 필요. Next.js 16 의 proxy 컨벤션을 따른다 (구 `middleware` 컨벤션 deprecated)
+- 라우트 보호: `/api/qsp/*`, `/api/musbi/*`, `/api/detect-roof`, `/api/image/*` 는 `src/proxy.ts` 에서 Origin 검증(`ALLOWED_ORIGIN` 쉼표 구분 허용 목록과 비교, 미설정 시 `req.nextUrl.origin` 폴백) + per-IP rate limit (in-memory sliding window) 적용 — ⚠️ standalone 빌드의 `req.nextUrl.origin` 은 컨테이너 bind 주소(`HOSTNAME:PORT`, 예: `0.0.0.0:3000`)라 리버스 프록시 뒤에서는 브라우저 Origin 과 절대 일치하지 않아 POST 가 403 되므로 **배포 환경은 `ALLOWED_ORIGIN` 필수**. BFF(qsp/musbi)·image 는 1분 30회, 고비용 detect-roof(Gemini 2회 호출)는 1분 10회 별도 버킷. clientIP 는 `X-Forwarded-For` 의 오른쪽 신뢰 hop(`TRUSTED_PROXY_HOPS`, 기본 1)만 채택해 헤더 위조로 인한 한도 우회를 막는다 — 운영은 XFF 를 설정하는 리버스 프록시 뒤 배포 전제(직접 노출 시 IP 별 제한 불가). 단일 인스턴스 배포 전제, 스케일아웃 시 분산 저장소로 교체 필요. Next.js 16 의 proxy 컨벤션을 따른다 (구 `middleware` 컨벤션 deprecated)
 
 ### Key Patterns
 
@@ -191,6 +191,7 @@ Jenkinsfile 의 `Load Env Credential` 스테이지에서 `cat common + 선택된
 | `MUSBI_RESULT_PATH` | `.env.dev` / `.env.prod` (선택) | 런타임 | 발전시뮬 결과 페이지 리다이렉트 패스. 미설정 시 `/qm/pwrgnSimulation/calcResults`(개발 기본값) 사용 — 환경별로 다르면 설정 |
 | `MUSBI_RESULT_HOST` | `.env.prod` (선택) | 런타임 | 발전시뮬 결과 페이지 호스트. 미설정 시 `MUSBI_API_HOST` 상속(개발은 검증과 동일 호스트). 운영은 공식사이트(`https://www.q-cells.jp`)로 분리 |
 | `ENABLE_API_DOCS` | `.env.dev` / `.env.prod` | 런타임 | `"true"` 일 때만 `/api/openapi` 와 `/reference` 노출. dev=true / prod=false 권장 |
+| `ALLOWED_ORIGIN` | `.env.dev` / `.env.prod` | 런타임 | 프록시 CSRF Origin 허용 목록(쉼표 구분 가능). 공개 도메인 명시(예: `https://pvmap-dev.q-cells.jp`). 미설정 시 `req.nextUrl.origin` 폴백 → standalone+프록시 환경에선 POST 가 403 되므로 **배포 필수** |
 
 새 키 추가 워크플로:
 - **공통 키**: Jenkins UI 의 `pv-common-env` credential 파일에 추가

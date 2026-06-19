@@ -59,6 +59,7 @@ pipeline {
           : "${QSP_API_HOST:?credential pv-${PROFILE}-env에 QSP_API_HOST가 정의되어 있어야 합니다.}"
           : "${MUSBI_API_HOST:?credential pv-${PROFILE}-env에 MUSBI_API_HOST가 정의되어 있어야 합니다.}"
           : "${ENABLE_API_DOCS:?credential pv-${PROFILE}-env에 ENABLE_API_DOCS(true/false)가 정의되어 있어야 합니다. (API 문서 노출 플래그)}"
+          : "${ALLOWED_ORIGIN:?credential pv-${PROFILE}-env에 ALLOWED_ORIGIN(공개 도메인, 쉼표 구분)이 정의되어 있어야 합니다. (프록시 CSRF Origin 허용 목록)}"
           docker compose version
         '''
       }

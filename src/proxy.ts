@@ -26,6 +26,15 @@ const MAX_TRACKED_IPS = 10_000;
 // 프록시 없이 직접 노출하는 배포에서는 XFF 가 없어 IP 별 rate-limit 이 동작하지 않는다(운영은 프록시 뒤 배포 전제).
 const TRUSTED_PROXY_HOPS = 1;
 
+// 허용 Origin 목록 — standalone(리버스 프록시 뒤) 에서는 req.nextUrl.origin 이 컨테이너
+// bind 주소(HOSTNAME:PORT, 예: 0.0.0.0:3000)라 브라우저 Origin 과 절대 일치하지 않는다.
+// 따라서 신뢰할 공개 Origin 을 ALLOWED_ORIGIN(쉼표 구분) 으로 명시한다.
+// 미설정 시 req.nextUrl.origin 으로 폴백 → 로컬 dev(localhost) 의 same-origin 요청은 그대로 통과.
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGIN ?? "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+
 const hits = new Map<string, number[]>();
 
 function clientIp(req: NextRequest): string {
@@ -94,16 +103,17 @@ function envelopeError(
 }
 
 export function proxy(req: NextRequest) {
-  // CSRF 보호 — Origin 헤더가 있으면 사이트 origin 과 일치해야 한다(cross-origin 차단).
+  // CSRF 보호 — Origin 헤더가 있으면 허용 목록(ALLOWED_ORIGIN, 미설정 시 req.nextUrl.origin)과 일치해야 한다.
   // same-origin GET/HEAD 는 브라우저가 Origin 헤더를 붙이지 않으므로(safe method),
   // Origin 부재 시에는 GET/HEAD 만 통과시키고 그 외 메서드는 차단한다.
   const origin = req.headers.get("origin");
-  const expected = req.nextUrl.origin;
+  const allowed =
+    ALLOWED_ORIGINS.length > 0 ? ALLOWED_ORIGINS : [req.nextUrl.origin];
   const isSafeMethod = req.method === "GET" || req.method === "HEAD";
-  const blocked = origin ? origin !== expected : !isSafeMethod;
+  const blocked = origin ? !allowed.includes(origin) : !isSafeMethod;
   if (blocked) {
     console.warn(
-      `[proxy] 403 Forbidden origin — path=${req.nextUrl.pathname} method=${req.method} origin=${origin ?? "(none)"} expected=${expected}`,
+      `[proxy] 403 Forbidden origin — path=${req.nextUrl.pathname} method=${req.method} origin=${origin ?? "(none)"} allowed=${allowed.join("|")}`,
     );
     return envelopeError(403, 403, "Forbidden origin");
   }
