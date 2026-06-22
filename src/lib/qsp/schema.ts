@@ -33,14 +33,14 @@ export type BtcModule = z.infer<typeof BtcModuleSchema>;
 const BtcBatterySchema = z.object({
   matlCd: z.string().max(20),
   matlGbnCd: z.literal("B"),
-  wpOut: z.null(),
+  wpOut: z.string().nullable(),
   qcastCustPrdId: z.string().max(20),
   qcastCustPrdNm: z.string().max(500),
   basicMatl: z.string().max(40),
   matlDesc: z.string().max(40),
-  longAxis: z.null(),
-  shortAxis: z.null(),
-  thickness: z.null(),
+  longAxis: z.string().nullable(),
+  shortAxis: z.string().nullable(),
+  thickness: z.string().nullable(),
 });
 export type BtcBattery = z.infer<typeof BtcBatterySchema>;
 
