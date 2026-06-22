@@ -85,10 +85,15 @@ export const SimulationInputSchema = z.object({
 });
 export type SimulationInput = z.infer<typeof SimulationInputSchema>;
 
-// 04 응답: 평탄화 envelope (다른 API와 모양이 다름).
+// 04 응답: 03(btc) 과 동일한 result 중첩 envelope.
+// 사양 외 root 필드(code:null, data2:null)는 zod strip 으로 자동 무시.
 export const SimCheckResponseSchema = z.object({
   data: z.unknown().nullable(),
-  resultMessage: z.string(),
-  resultCode: z.number(),
+  result: z.object({
+    code: z.number(),
+    resultCode: z.string(),
+    message: z.string(),
+    resultMsg: z.string().nullable().optional(),
+  }),
 });
 export type SimCheckResponse = z.infer<typeof SimCheckResponseSchema>;
