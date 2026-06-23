@@ -52,7 +52,7 @@ pnpm dev                     # http://localhost:3000
 - **lucide-react** ^0.577.0 — Icons
 - **Docker** — Multi-stage standalone build (see `Dockerfile`, `docker-compose.yml`)
 - **Gemini API** — `@google/genai` ^1.0.0 (AI 지붕 자동 감지)
-- **sharp** ^0.34.5 — 서버 측 이미지 처리 (북방 마커 오버레이)
+- **sharp** ^0.34.5 — 서버 측 이미지 처리 (크롭 추출·PNG 인코딩)
 - **@aws-sdk/client-s3** ^3.1065 — 참조 이미지 S3 업로드 (`/api/image/upload`)
 - **zod** ^4.3.6 — API 응답 스키마 검증
 - **zod-openapi** ^5.4 — 기존 zod 스키마 → OpenAPI 3.1 문서 생성

@@ -18,7 +18,6 @@ import {
   ROOF_DETECT_SYSTEM_PROMPT,
   ROOF_DETECT_USER_PROMPT,
 } from "@/lib/detect/prompt";
-import { buildNorthMarker } from "@/lib/detect/overlay";
 
 export const runtime = "nodejs";
 
@@ -148,7 +147,7 @@ const BBOX_RESPONSE_SCHEMA: Schema = {
 
 const POLYGON_SCHEMA: Schema = {
   type: Type.OBJECT,
-  required: ["points", "label", "confidence", "azimuth", "tilt"],
+  required: ["points"],
   properties: {
     points: {
       type: Type.ARRAY,
@@ -161,10 +160,6 @@ const POLYGON_SCHEMA: Schema = {
         items: { type: Type.NUMBER, minimum: 0, maximum: 1 },
       },
     },
-    label: { type: Type.STRING },
-    confidence: { type: Type.NUMBER, minimum: 0, maximum: 1 },
-    azimuth: { type: Type.NUMBER, minimum: 0, maximum: 360 },
-    tilt: { type: Type.NUMBER, minimum: 0, maximum: 90 },
   },
 };
 
@@ -276,7 +271,6 @@ async function cropToBbox(
     failOn: "error",
   })
     .extract({ left, top, width, height })
-    .composite([buildNorthMarker(width, height)])
     .png()
     .toBuffer();
 
@@ -294,7 +288,6 @@ function transformPolygonToOriginalSpace(
   const bw = bx2 - bx1;
   const bh = by2 - by1;
   return {
-    ...polygon,
     points: polygon.points.map(([x, y]) => {
       const ox = bx1 + x * bw;
       const oy = by1 + y * bh;
