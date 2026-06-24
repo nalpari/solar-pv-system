@@ -4,6 +4,7 @@ pipeline {
   options {
     timestamps()
     disableConcurrentBuilds()
+    skipDefaultCheckout(true)
   }
 
   parameters {
@@ -17,7 +18,16 @@ pipeline {
   stages {
     stage('Checkout') {
       steps {
-        checkout scm
+        script {
+          def targetBranch = params.PROFILE == 'prod' ? 'main' : 'dev'
+          echo "PROFILE=${params.PROFILE} → '${targetBranch}' 브랜치를 빌드합니다."
+          checkout([
+            $class: 'GitSCM',
+            branches: [[name: "*/${targetBranch}"]],
+            userRemoteConfigs: scm.userRemoteConfigs,
+            extensions: scm.extensions,
+          ])
+        }
       }
     }
 
