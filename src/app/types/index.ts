@@ -7,6 +7,7 @@ export interface PanelSize {
   label: string;
   width: number; // mm
   height: number; // mm
+  watt?: number; // 모듈 출력(W) — QSP wpOut. 설치 용량 계산용
 }
 
 export type PanelOrientation = "landscape" | "portrait";
@@ -59,4 +60,11 @@ export interface PixelPanel {
   /** 이 패널이 배치된 install 폴리곤의 id */
   polygonId: string;
   corners: [PixelPoint, PixelPoint, PixelPoint, PixelPoint];
+}
+
+export interface SimulationFormState {
+  azimuth: string;
+  hasBattery: boolean;
+  batteryModel: string;
+  monthlyElecCost: string;
 }

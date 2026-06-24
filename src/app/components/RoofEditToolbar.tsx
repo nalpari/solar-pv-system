@@ -1,16 +1,5 @@
 "use client";
 
-import {
-  MousePointer,
-  Pentagon,
-  SquareDashed,
-  Workflow,
-  PencilRuler,
-  Trash2,
-  XCircle,
-  Undo2,
-  CheckCircle2,
-} from "lucide-react";
 import { t } from "../utils/i18n";
 import type { Lang } from "../utils/i18n";
 
@@ -20,23 +9,21 @@ export type RoofEditTool = RoofTool | RoofAction;
 
 interface ToolDef {
   id: RoofEditTool;
-  icon: React.ComponentType<{ size?: number; color?: string }>;
   labelKey: string;
   guideKey: string;
   isAction?: boolean;
-  danger?: boolean;
 }
 
 const TOOLS: ToolDef[] = [
-  { id: "select", icon: MousePointer, labelKey: "retSelectMove", guideKey: "retSelectMoveGuide" },
-  { id: "drawRoof", icon: Pentagon, labelKey: "retDrawRoof", guideKey: "retDrawRoofGuide" },
-  { id: "drawOpening", icon: SquareDashed, labelKey: "retDrawOpening", guideKey: "retDrawOpeningGuide" },
-  { id: "flowSetting", icon: Workflow, labelKey: "retFlowSetting", guideKey: "retFlowSettingGuide" },
-  { id: "editRoof", icon: PencilRuler, labelKey: "retEditRoof", guideKey: "retEditRoofGuide" },
-  { id: "deleteSelected", icon: Trash2, labelKey: "retDeleteSelected", guideKey: "retDeleteSelectedGuide", isAction: true, danger: true },
-  { id: "deleteAll", icon: XCircle, labelKey: "retDeleteAll", guideKey: "retDeleteAllGuide", isAction: true, danger: true },
-  { id: "undo", icon: Undo2, labelKey: "retUndo", guideKey: "retUndoGuide", isAction: true },
-  { id: "complete", icon: CheckCircle2, labelKey: "retComplete", guideKey: "retCompleteGuide", isAction: true },
+  { id: "select", labelKey: "retSelectMove", guideKey: "retSelectMoveGuide" },
+  { id: "drawRoof", labelKey: "retDrawRoof", guideKey: "retDrawRoofGuide" },
+  { id: "drawOpening", labelKey: "retDrawOpening", guideKey: "retDrawOpeningGuide" },
+  { id: "flowSetting", labelKey: "retFlowSetting", guideKey: "retFlowSettingGuide" },
+  { id: "editRoof", labelKey: "retEditRoof", guideKey: "retEditRoofGuide" },
+  { id: "deleteSelected", labelKey: "retDeleteSelected", guideKey: "retDeleteSelectedGuide", isAction: true },
+  { id: "deleteAll", labelKey: "retDeleteAll", guideKey: "retDeleteAllGuide", isAction: true },
+  { id: "undo", labelKey: "retUndo", guideKey: "retUndoGuide", isAction: true },
+  { id: "complete", labelKey: "retComplete", guideKey: "retCompleteGuide", isAction: true },
 ];
 
 interface RoofEditToolbarProps {
@@ -46,9 +33,11 @@ interface RoofEditToolbarProps {
   onAction: (action: RoofAction) => void;
   /** 선택된 지붕면/장애물 존재 여부 — 선택 삭제 버튼 활성화 판정에 사용 */
   hasSelection?: boolean;
+  /** 전체 비활성화 — 모듈 배치 완료(편집 잠금) 상태에서 지붕 편집을 막는다 */
+  disabled?: boolean;
 }
 
-export default function RoofEditToolbar({ lang, activeTool, onToolChange, onAction, hasSelection = false }: RoofEditToolbarProps) {
+export default function RoofEditToolbar({ lang, activeTool, onToolChange, onAction, hasSelection = false, disabled = false }: RoofEditToolbarProps) {
   const currentTool = TOOLS.find((tool) => tool.id === activeTool);
 
   function handleToolClick(tool: ToolDef) {
@@ -77,9 +66,8 @@ export default function RoofEditToolbar({ lang, activeTool, onToolChange, onActi
       >
         {TOOLS.map((tool, i) => {
           const isActive = !tool.isAction && activeTool === tool.id;
-          // 선택 삭제 버튼은 선택된 지붕면/장애물이 없으면 비활성화
-          const isDisabled = tool.id === "deleteSelected" && !hasSelection;
-          const Icon = tool.icon;
+          // 전체 비활성(편집 잠금) 또는 선택 삭제 버튼인데 선택이 없으면 비활성화
+          const isDisabled = disabled || (tool.id === "deleteSelected" && !hasSelection);
           return (
             <div key={tool.id} style={{ display: "flex", alignItems: "center" }}>
               {/* 구분선: select 뒤, editRoof 뒤, undo 뒤(작성 완료 앞) */}
@@ -102,25 +90,22 @@ export default function RoofEditToolbar({ lang, activeTool, onToolChange, onActi
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  width: 36,
-                  height: 36,
+                  padding: "8px 16px",
+                  minHeight: 36,
                   borderRadius: "var(--radius-md)",
                   border: "none",
                   background: isActive ? "var(--accent-blue)" : "transparent",
-                  color: isActive
-                    ? "#fff"
-                    : tool.danger
-                      ? "var(--accent-red)"
-                      : "var(--text-secondary)",
+                  color: isActive ? "#fff" : "var(--text-secondary)",
+                  fontSize: 13,
+                  fontWeight: 500,
+                  whiteSpace: "nowrap",
                   opacity: isDisabled ? 0.35 : 1,
                   cursor: isDisabled ? "not-allowed" : "pointer",
                   transition: "all 0.15s ease",
                 }}
                 onMouseEnter={(e) => {
                   if (!isActive && !isDisabled) {
-                    e.currentTarget.style.background = tool.danger
-                      ? "var(--accent-red-muted)"
-                      : "var(--bg-surface-hover)";
+                    e.currentTarget.style.background = "var(--bg-surface-hover)";
                   }
                 }}
                 onMouseLeave={(e) => {
@@ -129,7 +114,7 @@ export default function RoofEditToolbar({ lang, activeTool, onToolChange, onActi
                   }
                 }}
               >
-                <Icon size={18} />
+                {t(tool.labelKey as Parameters<typeof t>[0], lang)}
               </button>
             </div>
           );

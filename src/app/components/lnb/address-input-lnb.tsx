@@ -7,6 +7,8 @@ import { t, type Lang } from "../../utils/i18n";
 
 interface AddressInputLnbProps {
   lang: Lang;
+  /** true면 입력/검색 비활성화 — 크롭모드 진입 시 주소 재검색을 막기 위해 사용 */
+  disabled?: boolean;
   onPlaceSelect: (location: {
     lat: number;
     lng: number;
@@ -15,7 +17,7 @@ interface AddressInputLnbProps {
   }) => void;
 }
 
-export function AddressInputLnb({ lang, onPlaceSelect }: AddressInputLnbProps) {
+export function AddressInputLnb({ lang, disabled = false, onPlaceSelect }: AddressInputLnbProps) {
   const [query, setQuery] = useState("");
   const [predictions, setPredictions] = useState<google.maps.places.AutocompletePrediction[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -25,7 +27,7 @@ export function AddressInputLnb({ lang, onPlaceSelect }: AddressInputLnbProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (typeof google !== "undefined" && google.maps) {
+    if (typeof google !== "undefined" && google.maps && google.maps.places) {
       autocompleteService.current = new google.maps.places.AutocompleteService();
       const div = document.createElement("div");
       placesService.current = new google.maps.places.PlacesService(div);
@@ -58,7 +60,7 @@ export function AddressInputLnb({ lang, onPlaceSelect }: AddressInputLnbProps) {
       setIsOpen(false);
       return;
     }
-    autocompleteService.current.getPlacePredictions({ input }, (results, status) => {
+    autocompleteService.current.getPlacePredictions({ input, componentRestrictions: { country: "jp" } }, (results, status) => {
       if (status === google.maps.places.PlacesServiceStatus.OK && results) {
         setPredictions(results);
         setIsOpen(true);
@@ -84,7 +86,7 @@ export function AddressInputLnb({ lang, onPlaceSelect }: AddressInputLnbProps) {
   function handleSelect(prediction: google.maps.places.AutocompletePrediction) {
     if (!placesService.current) return;
     placesService.current.getDetails(
-      { placeId: prediction.place_id, fields: ["geometry", "formatted_address"] },
+      { placeId: prediction.place_id, fields: ["geometry", "formatted_address", "address_components"] },
       (place, status) => {
         if (status === google.maps.places.PlacesServiceStatus.OK && place?.geometry?.location) {
           setQuery(place.formatted_address || prediction.description);
@@ -107,6 +109,7 @@ export function AddressInputLnb({ lang, onPlaceSelect }: AddressInputLnbProps) {
     <div ref={containerRef} className="relative w-full">
       <InputBox
         value={query}
+        disabled={disabled}
         onChange={(e) => handleInputChange(e.target.value)}
         onFocus={() => predictions.length > 0 && setIsOpen(true)}
         onKeyDown={(e) => {
@@ -114,7 +117,7 @@ export function AddressInputLnb({ lang, onPlaceSelect }: AddressInputLnbProps) {
         }}
         placeholder={t("addressPlaceholder", lang)}
         withSearchIcon
-        onSearchClick={handleSearchClick}
+        onSearchClick={disabled ? undefined : handleSearchClick}
       />
       {isOpen && predictions.length > 0 && (
         <ul className="absolute top-[calc(100%+4px)] left-0 right-0 z-50 bg-white border border-[#eff4f8] rounded-[4px] shadow-md list-none p-1 max-h-60 overflow-y-auto">

@@ -1,6 +1,6 @@
 // src/lib/qsp/schema.ts
 // QSP.Connector.API 인터페이스 사양서 기준 zod 스키마.
-// 입력은 strict, 응답은 03/04 strict + 05 passthrough (사양 미정).
+// 입력은 strict, 응답(03/04)은 strict 검증 (05 calcResults 는 API 가 아닌 페이지 리다이렉트).
 import { z } from "zod";
 
 // ============================================================================
@@ -33,14 +33,14 @@ export type BtcModule = z.infer<typeof BtcModuleSchema>;
 const BtcBatterySchema = z.object({
   matlCd: z.string().max(20),
   matlGbnCd: z.literal("B"),
-  wpOut: z.null(),
+  wpOut: z.string().nullable(),
   qcastCustPrdId: z.string().max(20),
   qcastCustPrdNm: z.string().max(500),
   basicMatl: z.string().max(40),
   matlDesc: z.string().max(40),
-  longAxis: z.null(),
-  shortAxis: z.null(),
-  thickness: z.null(),
+  longAxis: z.string().nullable(),
+  shortAxis: z.string().nullable(),
+  thickness: z.string().nullable(),
 });
 export type BtcBattery = z.infer<typeof BtcBatterySchema>;
 
@@ -64,8 +64,8 @@ export type BtcResponse = z.infer<typeof BtcResponseSchema>;
 
 // ============================================================================
 // 04 / 05. PV 발전시뮬레이션 (검증 / 계산)
-//   GET /qm/pwrgnSimulationM/checkCalcResults
-//   GET /qm/pwrgnSimulationM/calcResults
+//   GET /qm/pwrgnSimulation/checkCalcResults
+//   GET /qm/pwrgnSimulation/calcResults
 //   입력 파라미터는 04 = 05 동일하므로 schema 공유.
 // ============================================================================
 
@@ -79,33 +79,21 @@ export const SimulationInputSchema = z.object({
   roofSlopeCd: z.number().finite(),
   avrgMnthElctBill: z.number().int().nonnegative(),
   batteryItemId: z.string().max(20).optional(),
-  imgSrc: z.string().max(200).optional(),
+  roofImgSrc: z.string().max(200).optional(),
   storageBatteryYn: z.enum(["Y", "N"]).optional(),
   storageBatterySelectYn: z.enum(["Y", "N"]).optional(),
 });
 export type SimulationInput = z.infer<typeof SimulationInputSchema>;
 
-// 04 응답: 평탄화 envelope (다른 API와 모양이 다름).
+// 04 응답: 03(btc) 과 동일한 result 중첩 envelope.
+// 사양 외 root 필드(code:null, data2:null)는 zod strip 으로 자동 무시.
 export const SimCheckResponseSchema = z.object({
   data: z.unknown().nullable(),
-  resultMessage: z.string(),
-  resultCode: z.number(),
+  result: z.object({
+    code: z.number(),
+    resultCode: z.string(),
+    message: z.string(),
+    resultMsg: z.string().nullable().optional(),
+  }),
 });
 export type SimCheckResponse = z.infer<typeof SimCheckResponseSchema>;
-
-// 05 응답: 사양 표가 비어 있어 실서버 호출 후 보강.
-// 일단 README 공통 포맷({data, result}) 과 04 평탄화 포맷 둘 다 허용하는 느슨한 스키마.
-export const SimCalcResponseSchema = z
-  .object({
-    data: z.unknown().nullable().optional(),
-    result: z
-      .object({
-        code: z.number(),
-        message: z.string(),
-      })
-      .optional(),
-    resultCode: z.number().optional(),
-    resultMessage: z.string().optional(),
-  })
-  .passthrough();
-export type SimCalcResponse = z.infer<typeof SimCalcResponseSchema>;

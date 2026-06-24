@@ -19,7 +19,7 @@ sequenceDiagram
     API->>GM: Google Maps JS API 로드
     GM-->>API: 라이브러리 로드 완료
     API-->>H: Maps API 사용 가능
-    H->>H: Header, Sidebar, MapView 렌더
+    H->>H: Lnb, MapView 렌더
 ```
 
 ## 2. 주소 검색 시퀀스
@@ -27,7 +27,7 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant U as User
-    participant AS as AddressSearch
+    participant AS as address-input-lnb
     participant AC as AutocompleteService
     participant PS as PlacesService
     participant H as Home
@@ -132,25 +132,22 @@ sequenceDiagram
     participant PC as placePanelsOnCanvasCm()
     participant PL as placePanels()
     participant CP as CropPopup
-    participant RP as ResultsPanel
+    participant RP as LnbDesign
 
-    U->>H: Place Modules 클릭
+    U->>H: Place Modules 클릭 (정렬/치도리)
     H->>H: placementError 초기화
+    H->>H: 경사·모듈 미선택 시 early return
 
     alt cropData + pixelAreas 있음
-        loop portrait / landscape
-            H->>PC: installPx, excludePx, panel size,<br/>orientation, GAP_CM, MARGIN_CM, metersPerPixel
-            PC-->>H: PixelPanel[]
-        end
-        H->>H: 더 많은 패널의 orientation 채택
+        H->>PC: installPx, excludePx, panel size,<br/>landscape, layout, GAP_X/Y_CM, MARGIN_CM,<br/>metersPerPixel, slope
+        PC->>PC: 처마 회전 + 경사 cos 보정 +<br/>x·y 위상 스캔(최대 충진) + 오목/장애물 방어
+        PC-->>H: PixelPanel[]
         H->>H: setPlacedPixelPanels()
         H->>CP: placedPanels 전달
         CP->>CP: canvas에 패널 오버레이 렌더
     else lat/lng areas 사용
-        loop portrait / landscape
-            H->>PL: installAreas, excludeAreas,<br/>panelSize, orientation, gapMm, marginMm
-            PL-->>H: PlacedPanel[]
-        end
+        H->>PL: installAreas, excludeAreas,<br/>panelSize, landscape, layout, gapXMm, gapYMm,<br/>marginMm, slope
+        PL-->>H: PlacedPanel[]
         H->>H: setPlacedPanelsList()
     end
 

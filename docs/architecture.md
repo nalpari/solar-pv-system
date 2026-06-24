@@ -8,13 +8,10 @@ Google Maps 위성 이미지에서 대상 건물 영역을 크롭하고, 크롭 
 ```
 Browser (Client)
 ├─ Left Sidebar
-│  ├─ Header (Hanwha Japan logo)
+│  ├─ Logo (Hanwha Japan)
 │  ├─ Design / Simulation tabs
-│  ├─ AddressSearch
-│  ├─ Roof edit controls
-│  ├─ PanelConfig
-│  ├─ ResultsPanel
-│  ├─ SimulationPanel
+│  ├─ LnbDesign (주소검색·경사·모듈·배치)
+│  ├─ LnbSim (방위·축전지·요금)
 │  └─ Footer language toggle
 └─ Main Map Area
    ├─ Google Maps satellite/roadmap view
@@ -40,14 +37,12 @@ Google Maps APIs
 RootLayout (Server Component)
 └─ Home (Client Component, state owner)
    └─ APIProvider (@vis.gl/react-google-maps, libraries: places + geometry)
-      ├─ Header
-      ├─ Sidebar
-      │  ├─ AddressSearch
-      │  ├─ PanelConfig
-      │  ├─ ResultsPanel
-      │  ├─ SimulationPanel
+      ├─ Lnb (Sidebar)
+      │  ├─ LnbDesign
+      │  ├─ LnbSim
       │  └─ Language toggle
       ├─ RoofEditToolbar
+      ├─ AiDetectControls
       ├─ MapView
       │  ├─ Map (@vis.gl/react-google-maps)
       │  ├─ ViewUpdater
@@ -73,12 +68,12 @@ RootLayout (Server Component)
 | `roofEditing` | `boolean` | Home | RoofEditToolbar, CropPopup |
 | `roofEditTool` | `RoofTool` | Home | RoofEditToolbar, CropPopup |
 | `drawingMode` | `DrawingMode` | Home derived value | CropPopup |
-| `areas` | `PolygonArea[]` | Home | CropPopup, ResultsPanel |
+| `areas` | `PolygonArea[]` | Home | CropPopup, LnbDesign |
 | `pixelAreas` | `{ areas, metersPerPixel } \| null` | Home | panel placement |
-| `panelSize` | `PanelSize` | Home | PanelConfig, ResultsPanel |
-| `orientation` | `PanelOrientation` | Home | ResultsPanel |
-| `placedPixelPanels` | `PixelPanel[]` | Home | CropPopup, ResultsPanel |
-| `simForm` | `SimulationFormState` | Home | SimulationPanel |
+| `panelSize` | `PanelSize` | Home | LnbDesign |
+| `orientation` | `PanelOrientation` | Home | panel placement |
+| `placedPixelPanels` | `PixelPanel[]` | Home | CropPopup, LnbDesign |
+| `simForm` | `SimulationFormState` | Home | LnbSim |
 
 ## 3. 데이터 흐름
 
@@ -86,7 +81,7 @@ RootLayout (Server Component)
 
 ```
 User input
-→ AddressSearch debounce
+→ address-input-lnb debounce
 → AutocompleteService.getPlacePredictions()
 → Prediction 선택
 → PlacesService.getDetails()
@@ -119,24 +114,28 @@ Confirm Building
 ### 3.3 패널 배치 계산 흐름
 
 ```
-User clicks "Place Modules"
-→ handlePlacePanels()
-→ portrait / landscape 양쪽 계산
-→ 더 많은 패널이 들어가는 orientation 채택
+User clicks "Place Modules" (정렬 또는 치도리)
+→ handlePlacePanels(layout)
+→ 패널 긴 변을 처마 기준선과 평행하게 — landscape 고정
+→ 경사·모듈 미선택 시 함수 레벨 방어(early return)
 
 크롭 경로:
   placePanelsOnCanvasCm(
     installPx, excludePx,
     panelSize.width, panelSize.height,
-    orientation, GAP_CM, MARGIN_CM, metersPerPixel
+    "landscape", layout, GAP_X_CM, GAP_Y_CM, MARGIN_CM, metersPerPixel, slope
   )
   → PixelPanel[]
   → CropPopup canvas overlay 렌더링
 
 lat/lng 경로:
-  placePanels(installAreas, excludeAreas, panelSize, orientation, gapMm, marginMm)
+  placePanels(installAreas, excludeAreas, panelSize, "landscape", layout, gapXMm, gapYMm, marginMm, slope)
   → PlacedPanel[]
 ```
+
+- `layout`: `"aligned"`(정렬) / `"staggered"`(치도리)
+- 모듈 간격은 좌우(`GAP_X_CM` 3mm) / 상하(`GAP_Y_CM` 30mm) 분리
+- `slope`(寸)는 cos 투영 보정에 사용
 
 ## 4. 핵심 알고리즘 - panelPlacement.ts
 
@@ -155,18 +154,21 @@ lat/lng (WGS84)
 
 1. `ensureCCW()`로 반시계 방향 정규화
 2. 각 변의 내부 법선 벡터 계산
-3. `margin`만큼 내부 오프셋
+3. `margin`만큼 오프셋 — 설치(install) 폴리곤은 **내부로 축소**(외주 이격), 제외(개구) 폴리곤은 음수 distance로 **바깥 확장**해 개구 주변에도 동일 이격 적용
 4. `lineIntersection()`으로 인접 오프셋 변의 교점 계산
 5. 유효한 인셋 폴리곤일 때만 배치 진행
 
-### 4.3 처마 평행 그리드 배치
+### 4.3 처마 기준 그리드 배치 (최대 충진)
 
-1. `eaveEdgeIndex`가 있으면 해당 변을 기준축으로 사용
-2. 없으면 가장 긴 변을 기준축으로 사용
-3. 기준축에 맞춰 인셋 폴리곤과 제외 영역을 회전
-4. `panelWidth + gap`, `panelHeight + gap` 간격으로 그리드 순회
-5. 패널 4개 꼭짓점이 설치 영역 내부이고 제외 영역과 충돌하지 않을 때만 채택
-6. 결과 좌표를 역회전해 반환
+1. `eaveEdgeIndex`가 있으면 해당 변, 없으면 가장 긴 변을 처마(기준축)로 사용
+2. 처마변을 수평으로 회전 — x축=처마 평행, y축=처마 수직
+3. **경사(寸) 보정**: `cosθ = 10/√(100+寸²)`로 처마 수직 방향 패널 높이·상하 간격을 압축 (위성 투영 → 실제 경사면)
+4. 패널 긴 변이 처마와 평행하도록 landscape (`pw`=장축, `ph`=단축×cosθ)
+5. 간격 `stepX = pw + gapX`(좌우), `stepY = ph + gapY×cosθ`(상하)
+6. **x·y 시작 위상을 각 10단계 스캔**(100조합), 처마선 쪽에서 안쪽으로 행을 쌓아 **가장 많이 채워지는 위상 채택** (최대 배치 시뮬레이션)
+7. 채택 기준: 패널 4꼭짓점이 설치 영역 내부 + **패널 변이 폴리곤/제외 영역 경계를 가로지르지 않음**(오목부·장애물 방어) + 제외 영역 비충돌
+8. 치도리(`staggered`)는 행마다 `stepX/2`씩 가로 offset
+9. 결과 좌표를 역회전해 반환
 
 ## 5. 외부 의존성
 
@@ -189,7 +191,7 @@ next/font/google
 └─ Figtree, Noto Sans JP, Geist Mono
 
 next/image
-└─ Header logo optimization
+└─ Lnb 로고 · CropPopup 캡처 이미지
 ```
 
 ## 6. 배포 아키텍처

@@ -1,36 +1,23 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Button, Radio, SelectBox, InputBox } from "@/components/common";
 import { ChevronRight, Section } from "./section";
-import type { SimulationFormState } from "../SimulationPanel";
+import type { SimulationFormState } from "../../types";
 import { t, type Lang } from "../../utils/i18n";
 
-// 16方位 — matches the existing SimulationPanel catalog so handlers stay compatible.
+// 8方位 — 화면설계서 명세(남·남서·서·북서·북·북동·동·남동). 45° 간격.
 const COMPASS_DIRECTIONS = [
   { value: "S", ja: "南", en: "S" },
-  { value: "SSW", ja: "南南西", en: "SSW" },
   { value: "SW", ja: "南西", en: "SW" },
-  { value: "WSW", ja: "西南西", en: "WSW" },
   { value: "W", ja: "西", en: "W" },
-  { value: "WNW", ja: "西北西", en: "WNW" },
   { value: "NW", ja: "北西", en: "NW" },
-  { value: "NNW", ja: "北北西", en: "NNW" },
   { value: "N", ja: "北", en: "N" },
-  { value: "NNE", ja: "北北東", en: "NNE" },
   { value: "NE", ja: "北東", en: "NE" },
-  { value: "ENE", ja: "東北東", en: "ENE" },
   { value: "E", ja: "東", en: "E" },
-  { value: "ESE", ja: "東南東", en: "ESE" },
   { value: "SE", ja: "南東", en: "SE" },
-  { value: "SSE", ja: "南南東", en: "SSE" },
 ] as const;
-
-const BATTERY_MODELS = [
-  { value: "q-ready-7.7", label: "Q.READY 7.7kWh" },
-  { value: "q-ready-11.5", label: "Q.READY 11.5kWh" },
-  { value: "q-ready-15.3", label: "Q.READY 15.3kWh" },
-];
 
 export interface LnbSimProps {
   lang?: Lang;
@@ -38,6 +25,8 @@ export interface LnbSimProps {
   onFormChange: (state: SimulationFormState) => void;
   onGoBack: () => void;
   onSubmit: () => void;
+  /** 결과조회 필수값(사양 Not Null) 충족 여부 — false면 버튼 비활성 */
+  canSubmit: boolean;
 }
 
 export function LnbSim({
@@ -46,8 +35,39 @@ export function LnbSim({
   onFormChange,
   onGoBack,
   onSubmit,
+  canSubmit,
 }: LnbSimProps) {
   const { azimuth, hasBattery, batteryModel, monthlyElecCost } = formState;
+
+  const [batteryOptions, setBatteryOptions] = useState<{ value: string; label: string }[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/qsp/btc-items?schItemTp=B")
+      .then((res) => res.json())
+      .then((json) => {
+        if (cancelled) return;
+        if (json.success && Array.isArray(json.data)) {
+          const items = json.data as Array<{
+            matlCd: string;
+            qcastCustPrdNm: string;
+            matlGbnCd: string;
+          }>;
+          const batteries = items
+            .filter((item) => item.matlGbnCd === "B")
+            .map((item) => ({ value: item.matlCd, label: item.qcastCustPrdNm }));
+          if (batteries.length > 0) {
+            setBatteryOptions(batteries);
+          }
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to fetch battery items:", err);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   function update(patch: Partial<SimulationFormState>) {
     onFormChange({ ...formState, ...patch });
@@ -125,8 +145,14 @@ export function LnbSim({
             {hasBattery && (
               <SelectBox
                 value={batteryModel}
-                onChange={(e) => update({ batteryModel: e.target.value })}
-                options={BATTERY_MODELS}
+                onChange={(e) =>
+                  // value=matlCd — QSP 카탈로그 로드 성공 시에만 옵션이 채워지므로 항상 실 ID
+                  update({ batteryModel: e.target.value })
+                }
+                options={[
+                  { value: "", label: t("selectPlaceholder", lang) },
+                  ...batteryOptions,
+                ]}
               />
             )}
           </Section>
@@ -139,13 +165,10 @@ export function LnbSim({
             iconHeight={16}
           >
             <InputBox
-              value={
-                formatCurrency(monthlyElecCost) +
-                (monthlyElecCost ? `(${t("currencySuffix", lang)})` : "")
-              }
+              value={formatCurrency(monthlyElecCost)}
               onChange={(e) => handleCostChange(e.target.value)}
-              placeholder={t("monthlyElecCostPlaceholder", lang)}
               inputMode="numeric"
+              suffix={t("currencySuffix", lang)}
               className="[&_input]:text-right [&_input]:text-[16px] [&_input]:font-medium"
             />
           </Section>
@@ -165,7 +188,7 @@ export function LnbSim({
           iconPosition="right"
           className="w-full"
           onClick={onSubmit}
-          disabled={azimuth === "" || monthlyElecCost === ""}
+          disabled={!canSubmit}
           icon={<ChevronRight />}
         >
           {t("simViewResults", lang)}
@@ -178,11 +201,11 @@ export function LnbSim({
 function Compass({ selected }: { selected: string }) {
   const idx = COMPASS_DIRECTIONS.findIndex((d) => d.value === selected);
   // Position a small red dot around the compass for the selected direction.
-  // 16-direction wheel: N at top (angle = -90°), 22.5° step clockwise.
+  // 8-direction wheel: idx0=南(아래)부터 45° step. +90° 보정으로 北(idx4)이 270°(≡-90°)=top에 정렬.
   // Compass image is 98×98; place the dot on a circle of radius 38 around its center.
   const indicator = (() => {
     if (idx < 0) return null;
-    const angle = (idx * 22.5 - 90) * (Math.PI / 180);
+    const angle = (idx * 45 + 90) * (Math.PI / 180);
     const cx = 49;
     const cy = 49;
     const r = 38;

@@ -6,7 +6,6 @@ import { createDocument } from "zod-openapi";
 import {
   BtcItemSchema,
   BtcItemsInputSchema,
-  SimCalcResponseSchema,
   SimulationInputSchema,
 } from "./qsp/schema";
 import {
@@ -14,6 +13,7 @@ import {
   DetectResponseSchema,
   PolygonSchema,
 } from "./detect/schema";
+import { ALLOWED_IMAGE_TYPES, UploadImageResultSchema } from "./image/schema";
 
 // ============================================================================
 // 공통 envelope (BFF 응답 포맷)
@@ -90,20 +90,33 @@ const RegisteredSimulationInputSchema = SimulationInputSchema.meta({
   description: "PV 발전 시뮬레이션 입력 (04/05 공용)",
 });
 
-const RegisteredSimCalcResponseSchema = SimCalcResponseSchema.meta({
-  id: "SimCalcResponse",
-  description: "PV 발전 시뮬레이션 결과 (upstream 사양 미정 — passthrough)",
-});
-
 // 라우트별 성공 응답 envelope — id 부여로 클라이언트 코드 생성기에서 named type 생성
 const BtcItemsSuccessSchema = successEnvelope(z.array(RegisteredBtcItemSchema))
   .meta({ id: "BtcItemsResponse", description: "BTC 자재 마스터 조회 성공" });
 
-const SimCheckSuccessSchema = successEnvelope(z.null())
-  .meta({ id: "SimCheckResponse", description: "시뮬레이션 사전 검증 성공 (data=null)" });
+const SimCheckSuccessSchema = successEnvelope(z.object({ redirectUrl: z.string() }))
+  .meta({ id: "SimCheckResponse", description: "검증 성공 — 결과 페이지 리다이렉트 URL 반환" });
 
-const SimCalcSuccessSchema = successEnvelope(RegisteredSimCalcResponseSchema)
-  .meta({ id: "SimCalcSuccessResponse", description: "시뮬레이션 계산 성공" });
+// ============================================================================
+// image upload (multipart) — route.ts 의 검증 규칙을 문서로 표현
+// ============================================================================
+
+const UploadImageRequestSchema = z
+  .object({
+    file: z.string().meta({
+      format: "binary",
+      description: `업로드할 이미지 파일 (${ALLOWED_IMAGE_TYPES.join(", ")}, 최대 10MB)`,
+    }),
+  })
+  .meta({ id: "UploadImageRequest", description: "이미지 업로드 multipart 본문" });
+
+const RegisteredUploadImageResultSchema = UploadImageResultSchema.meta({
+  id: "UploadImageResult",
+  description: "S3 업로드 결과 (공개 URL + 오브젝트 키)",
+});
+
+const UploadImageSuccessSchema = successEnvelope(RegisteredUploadImageResultSchema)
+  .meta({ id: "UploadImageResponse", description: "이미지 업로드 성공" });
 
 // reused:"ref" 옵션과 함께 paths 에서 직접 참조하지 않아도 components 에 포함되도록 보장.
 // DetectPolygon / BboxResponse 는 DetectResponse 내부에서만 사용되지만 독립 컴포넌트로 노출.
@@ -145,6 +158,7 @@ export function buildOpenApiDocument() {
       { name: "detect", description: "지붕 자동 감지" },
       { name: "qsp", description: "QSP.Connector BFF — 마스터" },
       { name: "musbi", description: "MUSBI BFF — 시뮬레이션" },
+      { name: "image", description: "참조 이미지 S3 업로드/삭제" },
     ],
     // DetectPolygon / BboxResponse 는 paths 에서 직접 참조되지 않으므로
     // 여기서 명시 등록해 노출. 그 외 .meta({id}) 부여 스키마는 paths 안
@@ -222,26 +236,28 @@ export function buildOpenApiDocument() {
           },
         },
       },
-      "/api/musbi/sim-calc": {
+      "/api/image/upload": {
         post: {
-          tags: ["musbi"],
-          summary: "PV 발전 시뮬레이션 결과 계산",
-          description: "실제 시뮬레이션 결과를 계산하여 반환한다. (사양 05)",
+          tags: ["image"],
+          summary: "참조 이미지 S3 업로드",
+          description:
+            "multipart/form-data 의 file 필드를 S3 `pvmap/{uuid}.{ext}` 키로 업로드하고 공개 URL 을 반환한다.",
           requestBody: {
             required: true,
-            content: jsonContent(RegisteredSimulationInputSchema),
+            content: {
+              "multipart/form-data": { schema: UploadImageRequestSchema },
+            },
           },
           responses: {
             "200": {
-              description: "계산 성공 (응답 사양 미정 — upstream passthrough)",
-              content: jsonContent(SimCalcSuccessSchema),
+              description: "업로드 성공",
+              content: jsonContent(UploadImageSuccessSchema),
             },
-            "400": { description: "본문 검증 실패", content: errorContent },
-            "401": { description: "Upstream 토큰 만료", content: errorContent },
-            "422": { description: "Upstream 검증 실패", content: errorContent },
-            "500": { description: "서버 설정 오류", content: errorContent },
-            "502": { description: "Upstream 오류", content: errorContent },
-            "504": { description: "Upstream 타임아웃", content: errorContent },
+            "400": { description: "file 누락 / 미지원 타입 / 빈 파일", content: errorContent },
+            "413": { description: "파일 크기 초과 (10MB)", content: errorContent },
+            "429": { description: "Rate limit", content: errorContent },
+            "500": { description: "서버 설정 오류 (S3 env 미설정)", content: errorContent },
+            "502": { description: "S3 업로드 실패", content: errorContent },
           },
         },
       },
