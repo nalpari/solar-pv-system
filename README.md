@@ -29,7 +29,6 @@
 | html2canvas | ^1.4.1 | 지도 영역 캡처 |
 | lucide-react | ^0.577.0 | 아이콘 |
 | @google/genai | ^1.0.0 | Gemini API SDK (지붕 자동 감지) |
-| sharp | ^0.34.5 | 서버 측 이미지 처리 (크롭 추출·PNG 인코딩) |
 | zod | ^4.3.6 | Gemini 응답 스키마 검증 |
 | babel-plugin-react-compiler | 1.0.0 | React Compiler |
 | ESLint | ^9 | flat config (`eslint-config-next`) |

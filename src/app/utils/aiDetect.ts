@@ -14,8 +14,7 @@ export interface DetectApiResponse {
   polygons: Array<{
     points: NormalizedPolygon;
   }>;
-  reason?: "ok" | "low_confidence" | "no_polygons";
-  bboxConfidence?: number;
+  reason?: "ok" | "no_polygons";
 }
 
 /**

@@ -1,21 +1,6 @@
 // src/lib/detect/prompt.ts
 
-/** Stage 1: locate the central building's bounding box. */
-export const BBOX_SYSTEM_PROMPT = `You analyze top-down satellite images and locate the bounding box of the single most central building (or main structure).
-
-OUTPUT REQUIREMENTS:
-- Respond with ONLY valid JSON. No prose, no markdown fences, no commentary.
-- JSON shape: {"bbox":[x1,y1,x2,y2],"confidence":0.0-1.0}
-- Coordinates are normalized in image space: x horizontal (0=left, 1=right), y vertical (0=top, 1=bottom).
-- The bbox must TIGHTLY enclose the entire roof of the central building, including all wings and protrusions.
-- Pick the largest connected building/structure whose centroid is closest to the image center (0.5, 0.5).
-- All values must be within [0, 1] and x1 < x2, y1 < y2.
-- If no clear building is visible, return {"bbox":[0,0,0,0],"confidence":0}.`;
-
-export const BBOX_USER_PROMPT =
-  "Return the bounding box of the central building in this satellite image, following the JSON schema exactly.";
-
-/** Stage 2: trace each individual roof FACE (plane) inside an already-cropped region. */
+/** Trace each individual roof FACE (plane) on a user-cropped satellite image. */
 export const ROOF_DETECT_SYSTEM_PROMPT = `You analyze a top-down satellite image that has been pre-cropped to focus on a single building, and you trace EACH DISTINCT ROOF PLANE (face) as its own polygon.
 
 WHAT IS A FACE:
@@ -81,8 +66,3 @@ OUTPUT REQUIREMENTS:
 
 export const ROOF_DETECT_USER_PROMPT =
   "Identify every distinct roof face in this cropped satellite image and trace each as its own polygon, following the JSON schema exactly.";
-
-/** Padding (fraction of bbox side length) added when cropping for stage 2.
- *  Generous padding prevents the model from snapping vertices to the crop edge
- *  for rotated buildings whose oriented bbox is larger than the axis-aligned bbox. */
-export const BBOX_CROP_PADDING = 0.25;

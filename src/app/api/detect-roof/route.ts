@@ -1,20 +1,13 @@
 // src/app/api/detect-roof/route.ts
 import { NextResponse } from "next/server";
 import { ApiError, GoogleGenAI, Type, type Schema } from "@google/genai";
-import sharp from "sharp";
 import { envelopeError } from "@/lib/qsp/client";
 import {
-  BboxResponseSchema,
   DetectResponseSchema,
-  type BboxResponse,
-  type DetectPolygon,
   type DetectRequestBody,
   type DetectResponse,
 } from "@/lib/detect/schema";
 import {
-  BBOX_CROP_PADDING,
-  BBOX_SYSTEM_PROMPT,
-  BBOX_USER_PROMPT,
   ROOF_DETECT_SYSTEM_PROMPT,
   ROOF_DETECT_USER_PROMPT,
 } from "@/lib/detect/prompt";
@@ -25,7 +18,6 @@ const MAX_REQUEST_BYTES = 5 * 1024 * 1024;
 // Boston H1: base64는 원본 대비 약 4/3배 팽창. 5MB 원본을 허용하려면 ~6.67MB의 data URL을 허용해야 함.
 // 256 = "data:image/...;base64," 헤더 + JSON wrapper 여유.
 const MAX_DATA_URL_LENGTH = Math.ceil((MAX_REQUEST_BYTES * 4) / 3) + 256;
-const MAX_IMAGE_PIXELS = 25_000_000;
 // 환경변수로 모델 식별자 주입. 미설정 시 POST 핸들러에서 500 응답으로 차단.
 const DETECT_MODEL = process.env.GEMINI_MODEL ?? "";
 
@@ -63,14 +55,14 @@ async function callGeminiJson<T>(
     | { success: true; data: T }
     | { success: false; error: string },
   // NOTE: on Gemini 3.1 Pro this budget covers **thinking + output**.
-  // Observed thinking alone was ~1.6K for bbox and ~5K for polygon on a
-  // simple building, and scales ~2–3× for complex roofs — keep generous
-  // headroom to avoid MAX_TOKENS truncation mid-JSON.
-  maxOutputTokens: number = 4096,
+  // Multi-face polygons + Gemini 3.1's mandatory thinking can easily burn
+  // 10–15K tokens on complex roofs; 32K leaves room on both axes without
+  // approaching the 65K model cap.
+  maxOutputTokens: number = 32768,
   // Cap thinking to trade a little reasoning depth for substantial latency
   // savings. Gemini 3.1 Pro rejects budget=0 but accepts positive caps;
   // the model will still think, just stop sooner.
-  thinkingBudget: number = 1024,
+  thinkingBudget: number = 4096,
 ): Promise<T> {
   const response = await client.models.generateContent({
     model: DETECT_MODEL,
@@ -131,20 +123,6 @@ async function callGeminiJson<T>(
   return result.data;
 }
 
-const BBOX_RESPONSE_SCHEMA: Schema = {
-  type: Type.OBJECT,
-  required: ["bbox", "confidence"],
-  properties: {
-    bbox: {
-      type: Type.ARRAY,
-      minItems: "4",
-      maxItems: "4",
-      items: { type: Type.NUMBER, minimum: 0, maximum: 1 },
-    },
-    confidence: { type: Type.NUMBER, minimum: 0, maximum: 1 },
-  },
-};
-
 const POLYGON_SCHEMA: Schema = {
   type: Type.OBJECT,
   required: ["points"],
@@ -171,42 +149,13 @@ const DETECT_RESPONSE_SCHEMA: Schema = {
   },
 };
 
-async function locateBbox(
+async function detectRoofPolygons(
   client: GoogleGenAI,
   image: ParsedDataUrl,
-): Promise<BboxResponse> {
-  return callGeminiJson(
+): Promise<DetectResponse> {
+  const result = await callGeminiJson(
     client,
     image,
-    BBOX_SYSTEM_PROMPT,
-    BBOX_USER_PROMPT,
-    BBOX_RESPONSE_SCHEMA,
-    (parsed) => {
-      const v = BboxResponseSchema.safeParse(parsed);
-      if (!v.success) {
-        return {
-          success: false,
-          error: v.error.issues
-            .map((i) => `${i.path.join(".")} ${i.message}`)
-            .join("; "),
-        };
-      }
-      const [x1, y1, x2, y2] = v.data.bbox;
-      if (v.data.confidence > 0 && (x2 <= x1 || y2 <= y1)) {
-        return { success: false, error: "bbox 좌표가 비정상" };
-      }
-      return { success: true, data: v.data };
-    },
-  );
-}
-
-async function tracePolygon(
-  client: GoogleGenAI,
-  croppedImage: ParsedDataUrl,
-): Promise<DetectResponse> {
-  return callGeminiJson(
-    client,
-    croppedImage,
     ROOF_DETECT_SYSTEM_PROMPT,
     ROOF_DETECT_USER_PROMPT,
     DETECT_RESPONSE_SCHEMA,
@@ -222,117 +171,12 @@ async function tracePolygon(
       }
       return { success: true, data: v.data };
     },
-    // Multi-face polygons + Gemini 3.1's mandatory thinking can easily burn
-    // 10–15K tokens on complex roofs; 32K leaves room on both axes without
-    // approaching the 65K model cap.
-    32768,
-    // Polygon tracing deserves more reasoning budget than a simple bbox.
-    4096,
   );
-}
-
-type CropInfo = {
-  /** padded bbox in original normalized space */
-  paddedBbox: [number, number, number, number];
-  cropped: ParsedDataUrl;
-};
-
-async function cropToBbox(
-  source: ParsedDataUrl,
-  bbox: [number, number, number, number],
-): Promise<CropInfo> {
-  const buffer = Buffer.from(source.base64, "base64");
-  const pipeline = sharp(buffer, {
-    limitInputPixels: MAX_IMAGE_PIXELS,
-    failOn: "error",
-  });
-  const meta = await pipeline.metadata();
-  const W = meta.width;
-  const H = meta.height;
-  if (!W || !H) throw new Error("이미지 크기 메타데이터를 얻지 못했습니다.");
-
-  const [x1, y1, x2, y2] = bbox;
-  const w = x2 - x1;
-  const h = y2 - y1;
-  const padX = w * BBOX_CROP_PADDING;
-  const padY = h * BBOX_CROP_PADDING;
-  const px1 = Math.max(0, x1 - padX);
-  const py1 = Math.max(0, y1 - padY);
-  const px2 = Math.min(1, x2 + padX);
-  const py2 = Math.min(1, y2 + padY);
-
-  const left = Math.max(0, Math.min(W - 1, Math.round(px1 * W)));
-  const top = Math.max(0, Math.min(H - 1, Math.round(py1 * H)));
-  const width = Math.max(1, Math.min(W - left, Math.round((px2 - px1) * W)));
-  const height = Math.max(1, Math.min(H - top, Math.round((py2 - py1) * H)));
-
-  const out = await sharp(buffer, {
-    limitInputPixels: MAX_IMAGE_PIXELS,
-    failOn: "error",
-  })
-    .extract({ left, top, width, height })
-    .png()
-    .toBuffer();
-
-  return {
-    paddedBbox: [px1, py1, px2, py2],
-    cropped: { mediaType: "image/png", base64: out.toString("base64") },
-  };
-}
-
-function transformPolygonToOriginalSpace(
-  polygon: DetectPolygon,
-  paddedBbox: [number, number, number, number],
-): DetectPolygon {
-  const [bx1, by1, bx2, by2] = paddedBbox;
-  const bw = bx2 - bx1;
-  const bh = by2 - by1;
-  return {
-    points: polygon.points.map(([x, y]) => {
-      const ox = bx1 + x * bw;
-      const oy = by1 + y * bh;
-      return [
-        Math.max(0, Math.min(1, ox)),
-        Math.max(0, Math.min(1, oy)),
-      ] as [number, number];
-    }),
-  };
-}
-
-async function runTwoStageDetection(
-  client: GoogleGenAI,
-  image: ParsedDataUrl,
-): Promise<DetectResponse> {
-  const bboxResult = await locateBbox(client, image);
-  if (bboxResult.confidence < 0.2) {
-    console.warn(
-      `[detect-roof] bbox 신뢰도 낮음 (${bboxResult.confidence.toFixed(3)} < 0.2) — 빈 결과 반환`,
-    );
-    return {
-      polygons: [],
-      reason: "low_confidence",
-      bboxConfidence: bboxResult.confidence,
-    };
+  if (result.polygons.length === 0) {
+    console.warn("[detect-roof] 폴리곤 0개 반환");
+    return { polygons: [], reason: "no_polygons" };
   }
-  const { paddedBbox, cropped } = await cropToBbox(image, bboxResult.bbox);
-  const polygonResult = await tracePolygon(client, cropped);
-  if (polygonResult.polygons.length === 0) {
-    console.warn(
-      `[detect-roof] bbox는 잡혔으나(conf=${bboxResult.confidence.toFixed(3)}) tracePolygon이 폴리곤 0개 반환`,
-    );
-    return {
-      polygons: [],
-      reason: "no_polygons",
-      bboxConfidence: bboxResult.confidence,
-    };
-  }
-  return {
-    polygons: polygonResult.polygons.map((p) =>
-      transformPolygonToOriginalSpace(p, paddedBbox),
-    ),
-    reason: "ok",
-    bboxConfidence: bboxResult.confidence,
-  };
+  return { polygons: result.polygons, reason: "ok" };
 }
 
 export async function POST(req: Request) {
@@ -383,10 +227,10 @@ export async function POST(req: Request) {
   const client = new GoogleGenAI({ apiKey });
 
   try {
-    const result = await runTwoStageDetection(client, image);
+    const result = await detectRoofPolygons(client, image);
     return NextResponse.json(result satisfies DetectResponse);
   } catch (err) {
-    if (err instanceof ApiError) return respondWithUpstreamError(err, "호출");
+    if (err instanceof ApiError) return respondWithUpstreamError(err);
     console.error("[detect-roof] 분석 실패:", err);
     return envelopeError(
       502,
@@ -400,8 +244,8 @@ export async function POST(req: Request) {
 // The client response contains a generic message + status code so the UI can
 // differentiate rate-limit vs. service-down, without leaking the upstream provider
 // or deployment configuration.
-function respondWithUpstreamError(err: ApiError, stage: string) {
-  console.error(`[detect-roof] upstream ${err.status} (${stage}):`, err.message);
+function respondWithUpstreamError(err: ApiError) {
+  console.error(`[detect-roof] upstream ${err.status}:`, err.message);
   const clientMessage =
     err.status === 429
       ? "요청이 일시적으로 많습니다. 잠시 후 다시 시도하세요."
