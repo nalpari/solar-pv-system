@@ -285,15 +285,17 @@ export default function Home() {
   const handleAreasChange = useCallback((newAreas: PolygonArea[]) => {
     const validIds = new Set(newAreas.map((a) => a.id));
     setAreas(newAreas);
-    // 없어진 폴리곤에 속한 패널만 제거 (살아있는 폴리곤 패널은 유지)
+    // 없어진 폴리곤에 속한 패널/선택 정리 (살아있는 폴리곤은 유지)
     setPlacedPanelsList((prev) => prev.filter((p) => validIds.has(p.polygonId)));
+    setSelectedRoofIds((prev) => prev.filter((id) => validIds.has(id)));
   }, []);
 
   const handlePixelAreasChange = useCallback((areas: PixelPolygon[], metersPerPixel: number) => {
     const validIds = new Set(areas.map((a) => a.id));
     setPixelAreas({ areas, metersPerPixel });
-    // 없어진 폴리곤에 속한 패널만 제거
+    // 없어진 폴리곤에 속한 패널/선택 정리
     setPlacedPixelPanels((prev) => prev.filter((p) => validIds.has(p.polygonId)));
+    setSelectedRoofIds((prev) => prev.filter((id) => validIds.has(id)));
   }, []);
 
   const handleCropClose = useCallback(() => {
