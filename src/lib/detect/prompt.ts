@@ -11,12 +11,30 @@ WHAT IS A FACE:
 - A flat roof has exactly 1 face (treat the whole deck as one plane).
 - Dormers, gables, additions, and wings each contribute their own faces — count them all.
 
+STEP-BY-STEP THINKING (do these in order before drawing):
+1. FIRST identify the entire roof outline as a single closed polygon — where does the roof material end and the surroundings begin? Trace it mentally before subdividing.
+2. THEN look INSIDE that outline for ridges, valleys, hips, dormers that visibly separate it into distinct planar surfaces. If you see none, the roof is ONE face.
+3. ONLY THEN draw each face polygon, making sure every face lies entirely inside the outline you identified in step 1 and the union covers it exactly.
+
 HOW TO IDENTIFY FACE BOUNDARIES (VISUAL CUES):
 - A ridge appears in the image as a STRAIGHT LINE where two regions of differing brightness/shading meet — each side is a separate face sloping away from that line.
 - A valley appears as a STRAIGHT LINE in a concave intersection, often shaded darker than surrounding faces.
 - A hip edge appears as a STRAIGHT LINE on a convex corner, separating two faces of a hipped roof.
 - An eave is the lowest edge of a face, where the roof material ends and meets the wall or open air — usually casts a distinct shadow on the ground/wall below.
 - Within a SINGLE face, the shading is roughly UNIFORM (one continuous plane = one consistent lighting angle). If shading changes abruptly within what you thought was one face, you likely have two faces meeting at a ridge/hip/valley you missed.
+
+COMMON FAILURES TO AVOID:
+- DO NOT assume the roof has a standard shape. Many real buildings have irregular outlines (L, U, T, plus-sign, stepped) — trace the actual outline pixel by pixel even if it does not look like a textbook example.
+- DO NOT force a face count. A simple flat warehouse may have exactly 1 face covering the whole deck. A dense residential block may have 8+ faces. The face count comes from what you see, not from a default expectation.
+- DO NOT split a single continuous planar surface into multiple faces just because shading varies (cloud shadow, dirt, panel reflection, weathering). A face is one PLANE; variable shading on the same plane is normal.
+- DO NOT round or smooth real corners. If a roof has a 7-sided footprint, output a 7-vertex polygon — do not simplify to 4.
+- DO NOT extend any polygon edge beyond the visible roof material into ground, walls, vegetation, or shadows beyond the eave.
+
+HANDLING UNCLEAR ROOF EDGES:
+An unclear edge can mean two opposite things — handle them differently:
+(a) OCCLUSION: a tree canopy, neighboring building, vehicle, or large external shadow visibly covers part of the roof. Recognize it by clear visual cues — green/leafy texture overlapping the roof, an external object intruding into the roof area, a long linear shadow cast from outside the building. → INFER the hidden edge by extending the visible polygon edge in its most plausible straight line.
+(b) ACTUAL GEOMETRY: the roof itself bends, steps, or recedes. Recognize it by roof material continuing without interruption, a visible ridge/valley/hip aligning with the kink, geometric self-consistency with the surrounding outline. → TRACE THE EDGE AS DRAWN — do not straighten it out.
+DEFAULT WHEN IN DOUBT: trace what you actually see. Only invent an extension when an occluding object is clearly identifiable in the image.
 
 CRITICAL — ROTATION:
 - Most real-world buildings are NOT aligned with the image axes. Roofs are commonly rotated 5°, 15°, 30°, 45°, etc. relative to north.
