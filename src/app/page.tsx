@@ -285,15 +285,17 @@ export default function Home() {
   const handleAreasChange = useCallback((newAreas: PolygonArea[]) => {
     const validIds = new Set(newAreas.map((a) => a.id));
     setAreas(newAreas);
-    // 없어진 폴리곤에 속한 패널만 제거 (살아있는 폴리곤 패널은 유지)
+    // 없어진 폴리곤에 속한 패널/선택 정리 (살아있는 폴리곤은 유지)
     setPlacedPanelsList((prev) => prev.filter((p) => validIds.has(p.polygonId)));
+    setSelectedRoofIds((prev) => prev.filter((id) => validIds.has(id)));
   }, []);
 
   const handlePixelAreasChange = useCallback((areas: PixelPolygon[], metersPerPixel: number) => {
     const validIds = new Set(areas.map((a) => a.id));
     setPixelAreas({ areas, metersPerPixel });
-    // 없어진 폴리곤에 속한 패널만 제거
+    // 없어진 폴리곤에 속한 패널/선택 정리
     setPlacedPixelPanels((prev) => prev.filter((p) => validIds.has(p.polygonId)));
+    setSelectedRoofIds((prev) => prev.filter((id) => validIds.has(id)));
   }, []);
 
   const handleCropClose = useCallback(() => {
@@ -451,32 +453,57 @@ export default function Home() {
     // 패널 긴 변을 처마 기준선과 평행하게 — landscape 고정 (명세)
     const ori: PanelOrientation = "landscape";
 
+    // 선택된 지붕면이 있으면 그 면에만 배치하고 미선택 폴리곤 위 기존 패널은 보존
+    // (삭제 동작과 대칭 — 선택 = 부분 영향, 비선택 = 전체)
+    const hasSelection = selectedRoofIds.length > 0;
+
     if (pixelAreas) {
       try {
         const { areas: pxAreas, metersPerPixel } = pixelAreas;
         const installPx = pxAreas.filter((a) => a.type === "install");
+        const filteredInstallPx = hasSelection
+          ? installPx.filter((a) => selectedRoofIds.includes(a.id))
+          : installPx;
         const excludePx = pxAreas.filter((a) => a.type === "exclude");
 
         const panels = placePanelsOnCanvasCm(
-          installPx, excludePx,
+          filteredInstallPx, excludePx,
           panelSize.width, panelSize.height,
           ori, layout, GAP_X_CM, GAP_Y_CM, MARGIN_CM, metersPerPixel, slope ?? 0,
         );
 
-        setPlacedPixelPanels(panels);
+        if (hasSelection) {
+          setPlacedPixelPanels((prev) => [
+            ...prev.filter((p) => !selectedRoofIds.includes(p.polygonId)),
+            ...panels,
+          ]);
+        } else {
+          setPlacedPixelPanels(panels);
+        }
       } catch (e) {
         console.error("Panel placement failed:", e);
         setPlacementError(t("panelPlacementFailed", lang));
       }
     } else {
       try {
+        const filteredInstall = hasSelection
+          ? installAreas.filter((a) => selectedRoofIds.includes(a.id))
+          : installAreas;
+
         const panels = placePanels(
-          installAreas, excludeAreas,
+          filteredInstall, excludeAreas,
           panelSize, ori, layout,
           GAP_X_CM * 10, GAP_Y_CM * 10, MARGIN_CM * 10, slope ?? 0,
         );
 
-        setPlacedPanelsList(panels);
+        if (hasSelection) {
+          setPlacedPanelsList((prev) => [
+            ...prev.filter((p) => !selectedRoofIds.includes(p.polygonId)),
+            ...panels,
+          ]);
+        } else {
+          setPlacedPanelsList(panels);
+        }
       } catch (e) {
         console.error("Panel placement failed:", e);
         setPlacementError(t("panelPlacementFailed", lang));
