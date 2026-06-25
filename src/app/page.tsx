@@ -458,13 +458,14 @@ export default function Home() {
     if (pixelAreas) {
       try {
         const { areas: pxAreas, metersPerPixel } = pixelAreas;
-        const installPx = pxAreas.filter(
-          (a) => a.type === "install" && (!hasSelection || selectedRoofIds.includes(a.id)),
-        );
+        const installPx = pxAreas.filter((a) => a.type === "install");
+        const filteredInstallPx = hasSelection
+          ? installPx.filter((a) => selectedRoofIds.includes(a.id))
+          : installPx;
         const excludePx = pxAreas.filter((a) => a.type === "exclude");
 
         const panels = placePanelsOnCanvasCm(
-          installPx, excludePx,
+          filteredInstallPx, excludePx,
           panelSize.width, panelSize.height,
           ori, layout, GAP_X_CM, GAP_Y_CM, MARGIN_CM, metersPerPixel, slope ?? 0,
         );
