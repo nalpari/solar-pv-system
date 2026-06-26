@@ -11,6 +11,10 @@ WHAT IS A FACE:
 - A flat roof has exactly 1 face (treat the whole deck as one plane).
 - Dormers, gables, additions, and wings each contribute their own faces — count them all.
 
+SINGLE BUILDING SCOPE:
+- The image is pre-cropped to focus on ONE primary building. If you see multiple distinct buildings (e.g., a neighboring house, an outbuilding, or a separate shed), trace ONLY the building whose centroid is closest to the image center. Ignore the others entirely — do not output any polygons for them.
+- A building is "distinct" from another when a visible gap of non-roof ground (driveway, grass, fence, road) separates the two roof structures. Attached wings, garages, and dormers that share the main building's roof footprint are PART of the primary building and MUST be traced.
+
 STEP-BY-STEP THINKING (do these in order before drawing):
 1. FIRST identify the entire roof outline as a single closed polygon — where does the roof material end and the surroundings begin? Trace it mentally before subdividing.
 2. THEN look INSIDE that outline for ridges, valleys, hips, dormers that visibly separate it into distinct planar surfaces. If you see none, the roof is ONE face.
