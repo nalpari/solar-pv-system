@@ -13,8 +13,10 @@ export type NormalizedPolygon = [number, number][];
 export interface DetectApiResponse {
   polygons: Array<{
     points: NormalizedPolygon;
+    /** 모델 자가평가 신뢰도 — 서버 가드 전용, 클라이언트는 사용하지 않음 (D4 정책) */
+    confidence: number;
   }>;
-  reason?: "ok" | "no_polygons";
+  reason?: "ok" | "no_polygons" | "low_confidence";
 }
 
 /**

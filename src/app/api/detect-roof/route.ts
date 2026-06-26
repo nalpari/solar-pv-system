@@ -125,7 +125,7 @@ async function callGeminiJson<T>(
 
 const POLYGON_SCHEMA: Schema = {
   type: Type.OBJECT,
-  required: ["points"],
+  required: ["points", "confidence"],
   properties: {
     points: {
       type: Type.ARRAY,
@@ -138,8 +138,17 @@ const POLYGON_SCHEMA: Schema = {
         items: { type: Type.NUMBER, minimum: 0, maximum: 1 },
       },
     },
+    confidence: { type: Type.NUMBER, minimum: 0, maximum: 1 },
   },
 };
+
+/**
+ * 폴리곤 단위 신뢰도 임계값. 어느 폴리곤이라도 이 값 미만이면 환각으로 판정해
+ * 전체 결과를 빈 배열로 차단한다 (reason="low_confidence").
+ * 사용자가 실수로 비지붕 영역(도로·들판 등)을 crop했을 때 모델이 그럴듯한 폴리곤을
+ * 환각하더라도 자가평가 신뢰도가 낮게 보고되면 차단된다.
+ */
+const CONFIDENCE_THRESHOLD = 0.5;
 
 const DETECT_RESPONSE_SCHEMA: Schema = {
   type: Type.OBJECT,
@@ -175,6 +184,15 @@ async function detectRoofPolygons(
   if (result.polygons.length === 0) {
     console.warn("[detect-roof] 폴리곤 0개 반환");
     return { polygons: [], reason: "no_polygons" };
+  }
+  // 어느 폴리곤이라도 신뢰도 임계값 미만 → 환각 의심 → 전체 차단
+  // (PARTITION 보존 — 일부만 제거하면 합집합에 빈 공간 발생)
+  const minConfidence = Math.min(...result.polygons.map((p) => p.confidence));
+  if (minConfidence < CONFIDENCE_THRESHOLD) {
+    console.warn(
+      `[detect-roof] 신뢰도 미달 — 최저 ${minConfidence.toFixed(3)} < ${CONFIDENCE_THRESHOLD}, 환각 의심`,
+    );
+    return { polygons: [], reason: "low_confidence" };
   }
   return { polygons: result.polygons, reason: "ok" };
 }

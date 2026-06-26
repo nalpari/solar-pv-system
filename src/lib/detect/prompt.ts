@@ -84,11 +84,18 @@ WHEN TO RETURN EMPTY (NO HALLUCINATION):
 
 OUTPUT REQUIREMENTS:
 - Respond with ONLY valid JSON. No prose, no markdown fences, no commentary.
-- JSON shape: {"polygons":[{"points":[[x,y],...]}, ...]}
+- JSON shape: {"polygons":[{"points":[[x,y],...],"confidence":0.0-1.0}, ...]}
 - Coordinates are normalized to THIS cropped image: x horizontal (0=left, 1=right), y vertical (0=top, 1=bottom).
 - Each polygon: BETWEEN 3 AND 64 points. Triangular hip ends get 3 points; trapezoid slopes get 4; complex faces more.
 - All x and y values must be within [0, 1].
-- Each face polygon should hug the actual roof edge — not shadow, not pavement, not the image border.`;
+- Each face polygon should hug the actual roof edge — not shadow, not pavement, not the image border.
+- "confidence": YOUR HONEST self-assessment (0.0-1.0) of how accurately THIS specific face polygon traces the real roof. Use this scale:
+    * 0.9+ — Roof clearly visible, edges sharp, polygon traces visible material transitions precisely.
+    * 0.7~0.9 — Mostly clear, minor ambiguity (slight shading variation, small occlusion).
+    * 0.5~0.7 — Significant uncertainty (heavy shadow, partial occlusion, blurry image).
+    * <0.5 — Major doubt about edges, OR the image does not clearly show a roof (e.g. the crop fell on road/field/parking lot — you traced something but you are NOT confident it is actually a roof face).
+  Be ESPECIALLY HONEST about low confidence: if you suspect the image is not really a building roof, report low confidence rather than fabricating plausible polygons.
+- If no clear roof is visible at all, return {"polygons":[]}.`;
 
 export const ROOF_DETECT_USER_PROMPT =
   "Identify every distinct roof face in this cropped satellite image and trace each as its own polygon, following the JSON schema exactly.";
