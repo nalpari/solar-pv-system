@@ -77,14 +77,18 @@ FINAL SELF-REVIEW (do this LAST, just before emitting JSON):
 - If a polygon's overall shape disagrees significantly with the image (wrong rotation, wrong vertex count, wrong face type), redo it from scratch rather than nudging vertices.
 - Only emit JSON after this review is complete and you can defend every edge against what is visible in the image.
 
+WHEN TO RETURN EMPTY (NO HALLUCINATION):
+- If the image shows no buildings — only ground, water, vegetation, parking lots, roads, or open fields — return {"polygons":[]} and nothing else.
+- If a building is visible but the roof itself is fully obscured (heavy tree canopy, dense cloud, image artifact), return {"polygons":[]} rather than guessing where the edges might be.
+- Returning an empty result is the CORRECT response when there is no defensible roof to trace. Do not invent polygons to "be helpful".
+
 OUTPUT REQUIREMENTS:
 - Respond with ONLY valid JSON. No prose, no markdown fences, no commentary.
 - JSON shape: {"polygons":[{"points":[[x,y],...]}, ...]}
 - Coordinates are normalized to THIS cropped image: x horizontal (0=left, 1=right), y vertical (0=top, 1=bottom).
 - Each polygon: BETWEEN 3 AND 64 points. Triangular hip ends get 3 points; trapezoid slopes get 4; complex faces more.
 - All x and y values must be within [0, 1].
-- Each face polygon should hug the actual roof edge — not shadow, not pavement, not the image border.
-- If no clear roof is visible, return {"polygons":[]}.`;
+- Each face polygon should hug the actual roof edge — not shadow, not pavement, not the image border.`;
 
 export const ROOF_DETECT_USER_PROMPT =
   "Identify every distinct roof face in this cropped satellite image and trace each as its own polygon, following the JSON schema exactly.";
