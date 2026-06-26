@@ -9,7 +9,6 @@ import {
   SimulationInputSchema,
 } from "./qsp/schema";
 import {
-  BboxResponseSchema,
   DetectResponseSchema,
   PolygonSchema,
 } from "./detect/schema";
@@ -72,12 +71,7 @@ const RegisteredPolygonSchema = PolygonSchema.meta({
 
 const RegisteredDetectResponseSchema = DetectResponseSchema.meta({
   id: "DetectResponse",
-  description: "Gemini Vision 2단계 추론 결과",
-});
-
-const RegisteredBboxResponseSchema = BboxResponseSchema.meta({
-  id: "BboxResponse",
-  description: "1단계 bbox 추론 결과 (내부 디버그용)",
+  description: "Gemini Vision 지붕 폴리곤 추론 결과",
 });
 
 const RegisteredBtcItemSchema = BtcItemSchema.meta({
@@ -119,10 +113,9 @@ const UploadImageSuccessSchema = successEnvelope(RegisteredUploadImageResultSche
   .meta({ id: "UploadImageResponse", description: "이미지 업로드 성공" });
 
 // reused:"ref" 옵션과 함께 paths 에서 직접 참조하지 않아도 components 에 포함되도록 보장.
-// DetectPolygon / BboxResponse 는 DetectResponse 내부에서만 사용되지만 독립 컴포넌트로 노출.
+// DetectPolygon 은 DetectResponse 내부에서만 사용되지만 독립 컴포넌트로 노출.
 const COMPONENT_SCHEMAS = {
   DetectPolygon: RegisteredPolygonSchema,
-  BboxResponse: RegisteredBboxResponseSchema,
 } as const;
 
 // ============================================================================
@@ -160,9 +153,8 @@ export function buildOpenApiDocument() {
       { name: "musbi", description: "MUSBI BFF — 시뮬레이션" },
       { name: "image", description: "참조 이미지 S3 업로드/삭제" },
     ],
-    // DetectPolygon / BboxResponse 는 paths 에서 직접 참조되지 않으므로
-    // 여기서 명시 등록해 노출. 그 외 .meta({id}) 부여 스키마는 paths 안
-    // 인스턴스 매칭으로 zod-openapi 가 자동 $ref 처리한다.
+    // DetectPolygon 은 paths 에서 직접 참조되지 않으므로 여기서 명시 등록해 노출.
+    // 그 외 .meta({id}) 부여 스키마는 paths 안 인스턴스 매칭으로 zod-openapi 가 자동 $ref 처리한다.
     components: {
       schemas: COMPONENT_SCHEMAS,
     },
@@ -172,7 +164,7 @@ export function buildOpenApiDocument() {
           tags: ["detect"],
           summary: "지붕 폴리곤 자동 감지",
           description:
-            "위성 이미지(data URL)를 받아 Gemini Vision 2단계 추론으로 지붕 폴리곤 후보를 반환한다.",
+            "위성 이미지(data URL)를 받아 Gemini Vision 으로 지붕 폴리곤 후보를 반환한다.",
           requestBody: {
             required: true,
             content: jsonContent(DetectRequestSchema),

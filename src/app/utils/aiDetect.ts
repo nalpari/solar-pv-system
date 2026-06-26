@@ -9,18 +9,14 @@ export type NormalizedPolygon = [number, number][];
 
 /**
  * `/api/detect-roof` 응답 타입 (solar-precision의 schema.ts와 동일)
- * azimuth/tilt/confidence/label은 받지만 사용 안 함 (D4: 완전 무시)
  */
 export interface DetectApiResponse {
   polygons: Array<{
     points: NormalizedPolygon;
-    label: string;
+    /** 모델 자가평가 신뢰도 — 서버 가드 전용, 클라이언트는 사용하지 않음 (D4 정책) */
     confidence: number;
-    azimuth: number;
-    tilt: number;
   }>;
-  reason?: "ok" | "low_confidence" | "no_polygons";
-  bboxConfidence?: number;
+  reason?: "ok" | "no_polygons" | "low_confidence";
 }
 
 /**
@@ -42,9 +38,6 @@ export class DetectApiError extends Error {
 
 /**
  * Gemini API에 크롭 이미지를 보내 지붕면 폴리곤 자동 감지
- *
- * 응답의 azimuth/tilt/confidence/label은 D4 결정에 따라 버리고
- * points와 reason만 의미를 가짐
  *
  * @param signal AbortSignal — cropData 교체 시 진행 중 fetch 취소(F-1)
  * @throws DetectApiError — API 가 envelope 에러를 반환한 경우 (status + code 보존)
