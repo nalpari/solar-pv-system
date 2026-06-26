@@ -16,7 +16,7 @@ export const config = {
 
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const DEFAULT_RATE_LIMIT_MAX = 30;
-// detect-roof 는 요청마다 Gemini Vision 을 최대 2회 호출하므로 과금 보호를 위해 강화.
+// detect-roof 는 Gemini Vision 호출당 thinking+output 토큰 비용이 BFF 대비 크므로 과금 보호를 위해 강화.
 const DETECT_RATE_LIMIT_MAX = 10;
 const MAX_TRACKED_IPS = 10_000;
 

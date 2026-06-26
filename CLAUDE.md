@@ -52,7 +52,6 @@ pnpm dev                     # http://localhost:3000
 - **lucide-react** ^0.577.0 — Icons
 - **Docker** — Multi-stage standalone build (see `Dockerfile`, `docker-compose.yml`)
 - **Gemini API** — `@google/genai` ^1.0.0 (AI 지붕 자동 감지)
-- **sharp** ^0.34.5 — 서버 측 이미지 처리 (북방 마커 오버레이)
 - **@aws-sdk/client-s3** ^3.1065 — 참조 이미지 S3 업로드 (`/api/image/upload`)
 - **zod** ^4.3.6 — API 응답 스키마 검증
 - **zod-openapi** ^5.4 — 기존 zod 스키마 → OpenAPI 3.1 문서 생성
@@ -87,7 +86,7 @@ src/
 │   ├── layout.tsx           # Root layout (Server Component, html lang="ja")
 │   └── page.tsx             # Main page (Client Component, owns all state, hosts design/simulation tabs)
 └── lib/
-    ├── detect/              # Gemini Vision 백엔드 모듈 (schema.ts / prompt.ts / overlay.ts)
+    ├── detect/              # Gemini Vision 백엔드 모듈 (schema.ts / prompt.ts)
     ├── image/               # 이미지 업로드 모듈 (schema.ts — 허용 타입/키 패턴/응답 스키마)
     ├── qsp/                 # QSP BFF 모듈 (schema.ts / client.ts)
     └── openapi.ts           # 기존 zod 스키마 → OpenAPI 3.1 문서 빌더 (SSOT)
@@ -96,11 +95,11 @@ src/
 ### API Documentation
 
 - 사양 SSOT: `src/lib/qsp/schema.ts`, `src/lib/detect/schema.ts`, `src/lib/image/schema.ts` 의 zod 스키마
-- 빌더: `src/lib/openapi.ts` — `createDocument({ reused: "ref" })` 로 OpenAPI 3.1 생성. `.meta({ id })` 부여된 스키마는 `components.schemas` 에 자동 등록되며 paths 에서 `$ref` 로 참조된다 (9개 컴포넌트: `DetectRequest`, `DetectResponse`, `DetectPolygon`, `BboxResponse`, `ErrorEnvelope`, `BtcItem`, `SimulationInput`, `UploadImageRequest`, `UploadImageResult` + 3개 응답 envelope `BtcItemsResponse` / `SimCheckResponse` / `UploadImageResponse`)
+- 빌더: `src/lib/openapi.ts` — `createDocument({ reused: "ref" })` 로 OpenAPI 3.1 생성. `.meta({ id })` 부여된 스키마는 `components.schemas` 에 자동 등록되며 paths 에서 `$ref` 로 참조된다 (8개 컴포넌트: `DetectRequest`, `DetectResponse`, `DetectPolygon`, `ErrorEnvelope`, `BtcItem`, `SimulationInput`, `UploadImageRequest`, `UploadImageResult` + 3개 응답 envelope `BtcItemsResponse` / `SimCheckResponse` / `UploadImageResponse`)
 - 엔드포인트 (둘 다 `ENABLE_API_DOCS=true` 환경에서만 노출, 그 외에는 404 — 내부 API 명세 노출 차단. `NODE_ENV` 가드는 dev/prod 모두 production 빌드를 쓰는 배포 모델과 충돌하므로 사용하지 않음):
   - `GET /api/openapi` — OpenAPI 3.1 JSON (모듈 스코프 lazy memoize)
   - `GET /reference` — Scalar 기반 API Reference UI (dev: http://localhost:3000/reference)
-- 라우트 보호: `/api/qsp/*`, `/api/musbi/*`, `/api/detect-roof`, `/api/image/*` 는 `src/proxy.ts` 에서 Origin 검증(`ALLOWED_ORIGIN` 쉼표 구분 허용 목록과 비교, 미설정 시 `req.nextUrl.origin` 폴백) + per-IP rate limit (in-memory sliding window) 적용 — ⚠️ standalone 빌드의 `req.nextUrl.origin` 은 컨테이너 bind 주소(`HOSTNAME:PORT`, 예: `0.0.0.0:3000`)라 리버스 프록시 뒤에서는 브라우저 Origin 과 절대 일치하지 않아 POST 가 403 되므로 **배포 환경은 `ALLOWED_ORIGIN` 필수**. BFF(qsp/musbi)·image 는 1분 30회, 고비용 detect-roof(Gemini 2회 호출)는 1분 10회 별도 버킷. clientIP 는 `X-Forwarded-For` 의 오른쪽 신뢰 hop(`TRUSTED_PROXY_HOPS`, 기본 1)만 채택해 헤더 위조로 인한 한도 우회를 막는다 — 운영은 XFF 를 설정하는 리버스 프록시 뒤 배포 전제(직접 노출 시 IP 별 제한 불가). 단일 인스턴스 배포 전제, 스케일아웃 시 분산 저장소로 교체 필요. Next.js 16 의 proxy 컨벤션을 따른다 (구 `middleware` 컨벤션 deprecated)
+- 라우트 보호: `/api/qsp/*`, `/api/musbi/*`, `/api/detect-roof`, `/api/image/*` 는 `src/proxy.ts` 에서 Origin 검증(`ALLOWED_ORIGIN` 쉼표 구분 허용 목록과 비교, 미설정 시 `req.nextUrl.origin` 폴백) + per-IP rate limit (in-memory sliding window) 적용 — ⚠️ standalone 빌드의 `req.nextUrl.origin` 은 컨테이너 bind 주소(`HOSTNAME:PORT`, 예: `0.0.0.0:3000`)라 리버스 프록시 뒤에서는 브라우저 Origin 과 절대 일치하지 않아 POST 가 403 되므로 **배포 환경은 `ALLOWED_ORIGIN` 필수**. BFF(qsp/musbi)·image 는 1분 30회, 고비용 detect-roof(Gemini Vision 단일 호출이지만 thinking+output 토큰 비용이 BFF 대비 큼)는 1분 10회 별도 버킷. clientIP 는 `X-Forwarded-For` 의 오른쪽 신뢰 hop(`TRUSTED_PROXY_HOPS`, 기본 1)만 채택해 헤더 위조로 인한 한도 우회를 막는다 — 운영은 XFF 를 설정하는 리버스 프록시 뒤 배포 전제(직접 노출 시 IP 별 제한 불가). 단일 인스턴스 배포 전제, 스케일아웃 시 분산 저장소로 교체 필요. Next.js 16 의 proxy 컨벤션을 따른다 (구 `middleware` 컨벤션 deprecated)
 
 ### Key Patterns
 
