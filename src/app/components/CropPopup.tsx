@@ -51,6 +51,8 @@ interface CropPopupProps {
   initialAreas?: NormalizedPolygon[];
   /** AI 감지 상태 머신 (Phase 7) — 로딩 오버레이 + Close X 버튼 가드에 사용 */
   detectStatus?: "idle" | "detecting";
+  /** [SAM PoC 디버그] SAM 마스크 dataURL — 캔버스에 반투명 보라색으로 오버레이, 토글 가능 */
+  debugSamMaskDataUrl?: string | null;
   /** 부모가 합성 이미지(getLayoutBlob)에 접근하기 위한 ref */
   ref?: React.Ref<CropPopupHandle>;
 }
@@ -228,9 +230,25 @@ export default function CropPopup({
   onSelectionChange,
   initialAreas,
   detectStatus = "idle",
+  debugSamMaskDataUrl,
   ref,
 }: CropPopupProps) {
   const [areas, setAreas] = useState<AreaEntry[]>([]);
+  // [SAM PoC 디버그] 마스크 토글 — 기본 켜짐
+  const [showDebugSamMask, setShowDebugSamMask] = useState(true);
+  // [SAM PoC 디버그] 비동기 로드된 마스크 Image 객체 — draw effect가 사용
+  const [debugSamMaskImage, setDebugSamMaskImage] = useState<HTMLImageElement | null>(null);
+  useEffect(() => {
+    if (!debugSamMaskDataUrl) {
+      setDebugSamMaskImage(null);
+      return;
+    }
+    // next/image의 Image와 충돌하지 않도록 브라우저 HTMLImageElement 명시
+    const img = new window.Image();
+    img.onload = () => setDebugSamMaskImage(img);
+    img.onerror = () => setDebugSamMaskImage(null);
+    img.src = debugSamMaskDataUrl;
+  }, [debugSamMaskDataUrl]);
   const [currentPoints, setCurrentPoints] = useState<PixelPoint[]>([]);
   const [mousePos, setMousePos] = useState<PixelPoint | null>(null);
   const [canvasLayout, setCanvasLayout] = useState<{
@@ -552,7 +570,15 @@ export default function CropPopup({
       ctx.fill();
       ctx.stroke();
     }
-  }, [areas, currentPoints, mousePos, drawingMode, placedPanels, selectedPolygonIds, roofEditTool]);
+
+    // [SAM PoC 디버그] SAM 마스크를 반투명 보라색으로 오버레이 (PNG 크기를 캔버스에 맞춰 스케일)
+    if (showDebugSamMask && debugSamMaskImage) {
+      ctx.save();
+      ctx.globalAlpha = 0.35;
+      ctx.drawImage(debugSamMaskImage, 0, 0, canvas.width, canvas.height);
+      ctx.restore();
+    }
+  }, [areas, currentPoints, mousePos, drawingMode, placedPanels, selectedPolygonIds, roofEditTool, showDebugSamMask, debugSamMaskImage]);
 
   /** 포인터 이벤트에서 캔버스 로컬 좌표를 추출한다 */
   function getCanvasCoords(e: React.PointerEvent<HTMLCanvasElement>): PixelPoint {
@@ -1132,6 +1158,38 @@ export default function CropPopup({
         >
           <X size={16} />
         </button>
+
+        {/* [SAM PoC 디버그] 마스크 오버레이 토글 — X 버튼 아래. 마스크 데이터 있을 때만 표시 */}
+        {debugSamMaskDataUrl && (
+          <div
+            style={{
+              position: "absolute",
+              top: 56,
+              right: 12,
+              zIndex: 10,
+              display: "flex",
+              flexDirection: "column",
+              gap: 4,
+              padding: "8px 10px",
+              background: "rgba(255,255,255,0.95)",
+              border: "1px solid var(--border-primary)",
+              borderRadius: "var(--radius-md)",
+              fontSize: 12,
+              backdropFilter: "blur(8px)",
+              userSelect: "none",
+            }}
+          >
+            <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+              <input
+                type="checkbox"
+                checked={showDebugSamMask}
+                onChange={(e) => setShowDebugSamMask(e.target.checked)}
+                disabled={!debugSamMaskImage}
+              />
+              <span style={{ color: "#9333EA", fontWeight: 600 }}>● SAM 마스크</span>
+            </label>
+          </div>
+        )}
 
         {/* Image + Canvas container — fills the popup, image scales to fit */}
         <div

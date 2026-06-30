@@ -102,6 +102,8 @@ export default function Home() {
   // 실패는 alert으로만 표시 (D10/H-2: 배너 제거) → detectError state 불필요
   const [detectStatus, setDetectStatus] = useState<"idle" | "detecting">("idle");
   const [aiSeedAreas, setAiSeedAreas] = useState<NormalizedPolygon[]>([]);
+  // [SAM PoC 디버그] SAM이 추출한 건물 마스크 dataURL — CropPopup에 반투명 오버레이로 표시
+  const [aiSamMaskDataUrl, setAiSamMaskDataUrl] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const cropRafRef = useRef<number | null>(null);
 
@@ -208,12 +210,14 @@ export default function Home() {
   useEffect(() => {
     if (!cropData) {
       setAiSeedAreas([]);
+      setAiSamMaskDataUrl(null);
       setDetectStatus("idle");
       return;
     }
     // 새 cropData 진입 = idle 상태로 시작 (분석은 사용자 "AI 분석 시작" 클릭으로)
     setDetectStatus("idle");
     setAiSeedAreas([]);
+    setAiSamMaskDataUrl(null);
     return () => {
       // F-1 유지: cropData 교체 시 진행 중 fetch + 이전 폴리곤/패널 정리
       abortControllerRef.current?.abort();
@@ -241,6 +245,7 @@ export default function Home() {
       if (!ok) return;
       handleDeleteAll();
       setAiSeedAreas([]);
+      setAiSamMaskDataUrl(null);
       // 재분석 시 경사/모듈/배치 방향도 기본값으로 초기화
       setSlope(DEFAULT_SLOPE);
       setPanelSize(DEFAULT_PANEL_SIZE);
@@ -260,6 +265,7 @@ export default function Home() {
       // H-1: 새 controller가 시작됐다면 stale 응답 무시 (race 가드)
       if (abortControllerRef.current !== controller) return;
       setAiSeedAreas(response.polygons.map((p) => p.points));
+      setAiSamMaskDataUrl(response.samMaskDataUrl ?? null);
     } catch (e) {
       if (controller.signal.aborted) return;
       if (e instanceof Error && e.name === "AbortError") return;
@@ -751,6 +757,7 @@ export default function Home() {
                 onSelectionChange={setSelectedRoofIds}
                 initialAreas={aiSeedAreas}
                 detectStatus={detectStatus}
+                debugSamMaskDataUrl={aiSamMaskDataUrl}
               />
               {/* AI 분석 트리거 — 팝업 박스 외부 하단 (RoofEditToolbar 와 대칭) */}
               <AiDetectControls
