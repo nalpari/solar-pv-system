@@ -51,6 +51,8 @@ interface CropPopupProps {
   initialAreas?: NormalizedPolygon[];
   /** AI 감지 상태 머신 (Phase 7) — 로딩 오버레이 + Close X 버튼 가드에 사용 */
   detectStatus?: "idle" | "detecting";
+  /** [SAM PoC 디버그] SAM 마스크 dataURL — 캔버스에 반투명 보라색으로 오버레이, 토글 가능 */
+  debugSamMaskDataUrl?: string | null;
   /** 부모가 합성 이미지(getLayoutBlob)에 접근하기 위한 ref */
   ref?: React.Ref<CropPopupHandle>;
 }
@@ -228,9 +230,25 @@ export default function CropPopup({
   onSelectionChange,
   initialAreas,
   detectStatus = "idle",
+  debugSamMaskDataUrl,
   ref,
 }: CropPopupProps) {
   const [areas, setAreas] = useState<AreaEntry[]>([]);
+  // [SAM PoC 디버그] 마스크 토글 — 기본 켜짐
+  const [showDebugSamMask, setShowDebugSamMask] = useState(true);
+  // [SAM PoC 디버그] 비동기 로드된 마스크 Image 객체 — draw effect가 사용
+  const [debugSamMaskImage, setDebugSamMaskImage] = useState<HTMLImageElement | null>(null);
+  useEffect(() => {
+    if (!debugSamMaskDataUrl) {
+      setDebugSamMaskImage(null);
+      return;
+    }
+    // next/image의 Image와 충돌하지 않도록 브라우저 HTMLImageElement 명시
+    const img = new window.Image();
+    img.onload = () => setDebugSamMaskImage(img);
+    img.onerror = () => setDebugSamMaskImage(null);
+    img.src = debugSamMaskDataUrl;
+  }, [debugSamMaskDataUrl]);
   const [currentPoints, setCurrentPoints] = useState<PixelPoint[]>([]);
   const [mousePos, setMousePos] = useState<PixelPoint | null>(null);
   const [canvasLayout, setCanvasLayout] = useState<{
@@ -552,7 +570,68 @@ export default function CropPopup({
       ctx.fill();
       ctx.stroke();
     }
-  }, [areas, currentPoints, mousePos, drawingMode, placedPanels, selectedPolygonIds, roofEditTool]);
+
+    // [SAM PoC 디버그] SAM 마스크 영역을 옅은 채움 + 굵고 진한 외곽선으로 표시.
+    // ⚠️ SAM 마스크 PNG 는 보통 흰 객체 + 검은 배경의 *불투명* 이미지라 알파로는 객체를
+    // 구분할 수 없다. 픽셀 밝기(luminance) 로 임계값 판정해 밝은 부분만 실루엣으로 잡는다.
+    // 그 실루엣을 offset 으로 dilate(팽창) 후 중앙을 도려내 "링(테두리)"만 남긴다.
+    if (showDebugSamMask && debugSamMaskImage) {
+      const w = canvas.width;
+      const h = canvas.height;
+      const borderPx = Math.max(4, Math.round(w / 220));
+      const LUM_THRESHOLD = 128; // 밝기 이 값 초과 → 마스크 객체
+
+      // 1) 마스크를 오프스크린에 그리고 픽셀을 읽어 밝기 기준 보라 실루엣 생성
+      const sil = document.createElement("canvas");
+      sil.width = w;
+      sil.height = h;
+      const sctx = sil.getContext("2d", { willReadFrequently: true });
+      if (sctx) {
+        sctx.drawImage(debugSamMaskImage, 0, 0, w, h);
+        const imgData = sctx.getImageData(0, 0, w, h);
+        const d = imgData.data;
+        for (let i = 0; i < d.length; i += 4) {
+          const lum = d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114;
+          if (lum > LUM_THRESHOLD) {
+            d[i] = 147; d[i + 1] = 51; d[i + 2] = 234; d[i + 3] = 255; // #9333EA 불투명
+          } else {
+            d[i + 3] = 0; // 배경 투명
+          }
+        }
+        sctx.putImageData(imgData, 0, 0);
+
+        // 2) 옅은 채움 (영역 위치 파악용)
+        ctx.save();
+        ctx.globalAlpha = 0.15;
+        ctx.drawImage(sil, 0, 0);
+        ctx.restore();
+
+        // 3) 굵은 테두리 링: 실루엣을 원형으로 offset 팽창 → 중앙 도려내기
+        const ring = document.createElement("canvas");
+        ring.width = w;
+        ring.height = h;
+        const rctx = ring.getContext("2d");
+        if (rctx) {
+          for (let deg = 0; deg < 360; deg += 30) {
+            const rad = (deg * Math.PI) / 180;
+            rctx.drawImage(
+              sil,
+              Math.round(borderPx * Math.cos(rad)),
+              Math.round(borderPx * Math.sin(rad)),
+            );
+          }
+          rctx.globalCompositeOperation = "destination-out";
+          rctx.drawImage(sil, 0, 0);
+          rctx.globalCompositeOperation = "source-over";
+
+          ctx.save();
+          ctx.globalAlpha = 1;
+          ctx.drawImage(ring, 0, 0);
+          ctx.restore();
+        }
+      }
+    }
+  }, [areas, currentPoints, mousePos, drawingMode, placedPanels, selectedPolygonIds, roofEditTool, showDebugSamMask, debugSamMaskImage]);
 
   /** 포인터 이벤트에서 캔버스 로컬 좌표를 추출한다 */
   function getCanvasCoords(e: React.PointerEvent<HTMLCanvasElement>): PixelPoint {
@@ -1132,6 +1211,38 @@ export default function CropPopup({
         >
           <X size={16} />
         </button>
+
+        {/* [SAM PoC 디버그] 마스크 오버레이 토글 — X 버튼 아래. 마스크 데이터 있을 때만 표시 */}
+        {debugSamMaskDataUrl && (
+          <div
+            style={{
+              position: "absolute",
+              top: 56,
+              right: 12,
+              zIndex: 10,
+              display: "flex",
+              flexDirection: "column",
+              gap: 4,
+              padding: "8px 10px",
+              background: "rgba(255,255,255,0.95)",
+              border: "1px solid var(--border-primary)",
+              borderRadius: "var(--radius-md)",
+              fontSize: 12,
+              backdropFilter: "blur(8px)",
+              userSelect: "none",
+            }}
+          >
+            <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+              <input
+                type="checkbox"
+                checked={showDebugSamMask}
+                onChange={(e) => setShowDebugSamMask(e.target.checked)}
+                disabled={!debugSamMaskImage}
+              />
+              <span style={{ color: "#9333EA", fontWeight: 600 }}>● SAM 마스크</span>
+            </label>
+          </div>
+        )}
 
         {/* Image + Canvas container — fills the popup, image scales to fit */}
         <div

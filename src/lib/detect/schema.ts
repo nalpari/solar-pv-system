@@ -19,6 +19,12 @@ export const DetectResponseSchema = z.object({
   reason: z
     .enum(["ok", "no_polygons", "low_confidence"])
     .optional(),
+  /**
+   * [SAM PoC 디버그] Replicate Meta SAM 2 가 추출한 건물 마스크의 base64 data URL.
+   * 클라이언트에서 CropPopup 캔버스에 반투명 보라색 오버레이로 표시하여 SAM 외곽 정확도를 시각 평가.
+   * SAM 호출 실패 / 토큰 미설정 시 undefined.
+   */
+  samMaskDataUrl: z.string().optional(),
 });
 
 export type DetectPolygon = z.infer<typeof PolygonSchema>;

@@ -306,7 +306,10 @@ function CropOverlay({
     html2canvas(mapContainer, {
       useCORS: true,
       allowTaint: true,
-      scale: window.devicePixelRatio || 1,
+      // 타일 경계 흰 줄 회피: DPR 을 그대로 쓰면 분수/저배율 기기에서 타일이 sub-pixel
+      // 위치에 놓여 html2canvas 재구성 시 1px 흰 줄이 생긴다. 최소 2 + 정수 올림으로
+      // 타일 경계를 정수 픽셀에 정렬해(레티나 기기와 동일 환경) 줄을 억제한다.
+      scale: Math.max(2, Math.ceil(window.devicePixelRatio || 1)),
     })
       .then((fullCanvas) => {
         const scale = fullCanvas.width / containerWidth;
