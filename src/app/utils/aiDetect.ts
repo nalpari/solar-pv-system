@@ -17,6 +17,8 @@ export interface DetectApiResponse {
     confidence: number;
   }>;
   reason?: "ok" | "no_polygons" | "low_confidence";
+  /** [SAM PoC 디버그] SAM 이 추출한 건물 마스크 dataURL. CropPopup 에 반투명 오버레이로 표시. */
+  samMaskDataUrl?: string;
 }
 
 /**

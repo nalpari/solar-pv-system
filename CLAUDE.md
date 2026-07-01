@@ -180,6 +180,7 @@ Jenkinsfile 의 `Load Env Credential` 스테이지에서 `cat common + 선택된
 | `NEXT_PUBLIC_AWS_S3_BASE_URL` | `.env` (공통) | **빌드타임 ARG** (클라이언트 번들 인라인) | S3 기준 이미지 베이스 URL |
 | `GEMINI_API_KEY` | `.env` (공통) | 런타임 | Gemini API key. Server route only |
 | `GEMINI_MODEL` | `.env` (공통) | 런타임 | Gemini model identifier (예: `"gemini-3.1-pro-preview"`). 미설정 시 `/api/detect-roof`는 500 응답 |
+| `REPLICATE_API_TOKEN` | `.env` (공통) | 런타임 | [SAM PoC] Replicate Meta SAM 2 호출용 토큰. 미설정 시 SAM 단계 건너뛰고 Gemini 단독 진행 (graceful degradation) |
 | `AWS_REGION` | `.env` (공통) | 런타임 | S3 리전 (예: `ap-northeast-1`) |
 | `AMPLIFY_BUCKET` | `.env` (공통) | 런타임 | S3 버킷명 (참조 이미지 업로드용 — `/api/image/upload` 가 `pvmap/` 프리픽스에 기록) |
 | `AWS_ACCESS_KEY_ID` | `.env` (공통) | 런타임 | S3 업로드 IAM 자격 |
