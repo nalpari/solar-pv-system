@@ -159,9 +159,9 @@ export function LnbDesign({
         style={{ scrollbarWidth: "thin", scrollbarColor: "#c4c4c4 transparent" }}
       >
         <div className="flex flex-col gap-3" dir="ltr">
-          {/* Section 1: モジュール配置 (address + building confirm) */}
+          {/* Section 1: 住所検索 (address + building confirm) */}
           <Section
-            title={t("sectionModulePlacement", lang)}
+            title={t("sectionAddressSearch", lang)}
             iconSrc="/assets/images/contents/tab01_cont_icon01.svg"
             iconWidth={14}
             iconHeight={16}
