@@ -4,6 +4,7 @@ const translations = {
   // Lnb design tab — 건물확정·경사·모듈·용량
   addressPlaceholder: { ja: "建物の住所を入力...", en: "Enter building address..." },
   confirmBuilding: { ja: "建物確定", en: "Confirm Building" },
+  sectionAddressSearch: { ja: "住所検索", en: "Address Search" },
   sectionModulePlacement: { ja: "モジュール配置", en: "Module Placement" },
   slopeLabel1: { ja: "緩やかな屋根（約1寸）", en: "Gentle roof (~1寸)" },
   slopeLabel3: { ja: "やや緩やかな屋根（約3寸）", en: "Slightly gentle roof (~3寸)" },
