@@ -203,7 +203,10 @@ export function LnbDesign({
           >
             <SelectBox
               value={slope === null ? "" : String(slope)}
-              onChange={(e) => onSlopeChange(e.target.value === "" ? null : Number(e.target.value))}
+              onChange={(e) => {
+                onSlopeChange(e.target.value === "" ? null : Number(e.target.value));
+                onClearAllPanels(); // 촌수 변경 시 기존 배치 모듈 전체 삭제 (모듈 변경과 동일 — 폴리곤은 유지)
+              }}
               disabled={detecting || areaCount === 0 || isPlacementDone}
               options={[
                 { value: "", label: t("selectPlaceholder", lang), disabled: true, hidden: true },
