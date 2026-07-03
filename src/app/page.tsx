@@ -316,13 +316,17 @@ export default function Home() {
     // AI 감지 state는 cropData가 null 되면 detect useEffect가 자동 정리함 (I-4: DRY)
   }, []);
 
-  /** 지붕편집 툴바의 "전체 삭제" 액션 - 그려진 폴리곤/패널만 초기화 (cropData 유지) */
+  /** 지붕편집 툴바의 "전체 삭제" 액션 - 그려진 폴리곤/패널 + 좌측 촌수·모듈 선택 초기화 (cropData 유지) */
   function handleDeleteAll() {
     setAreas([]);
     setPlacedPanelsList([]);
     setPixelAreas(null);
     setPlacedPixelPanels([]);
     setRoofEditTool("select");
+    // 촌수·모듈 셀렉트박스를 초기값(미선택)으로 되돌린다
+    setSlope(DEFAULT_SLOPE);
+    setPanelSize(DEFAULT_PANEL_SIZE);
+    setModuleId("");
     // CropPopup 내부 areas state도 함께 비우도록 신호
     setClearSignal((n) => n + 1);
   }
