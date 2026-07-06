@@ -47,6 +47,9 @@ next-env.d.ts
 # graphify
 graphify-out/
 
+# understand-anything (knowledge graph — 로컬 재생성)
+.understand-anything/
+
 # claude hooks state
 .claude/state/
 

@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Tool artifacts (understand-anything knowledge graph — generated).
+    ".understand-anything/**",
   ]),
 ]);
 
