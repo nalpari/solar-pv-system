@@ -164,6 +164,12 @@ button {
   transition: all 0.15s ease;
 }
 
+/* 비활성 버튼은 항상 not-allowed — unlayered `button{cursor:pointer}` 를
+ * 명시도(0,1,1)로 이겨, Tailwind cursor-not-allowed 가 layered 라 밀리는 문제를 방지. */
+button:disabled {
+  cursor: not-allowed;
+}
+
 button:active {
   transform: scale(0.98);
 }
