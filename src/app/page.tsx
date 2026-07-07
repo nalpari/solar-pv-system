@@ -559,7 +559,7 @@ export default function Home() {
             },
             slope,
             onSlopeChange: setSlope,
-            areaCount: areas.length,
+            areaCount: installAreas.length,
             panelSize,
             onPanelSizeChange: setPanelSize,
             onModuleSelect: setModuleId,
