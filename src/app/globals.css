@@ -132,32 +132,42 @@ body {
   outline-offset: 2px;
 }
 
-/* Input base styles — wrapped in :where() so utility classes / inline styles
- * trivially override these defaults (0 specificity). */
-:where(input[type="text"], input[type="number"], input[type="search"], select) {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-primary);
-  border-radius: var(--radius-md);
-  color: var(--text-primary);
-  font-size: 14px;
-  padding: 8px 12px;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
+/* Input base styles — placed in @layer base so Tailwind utility classes
+ * (@layer utilities) reliably override these defaults. In Tailwind v4 cascade
+ * layers decide the winner: an unlayered rule would beat layered utilities
+ * regardless of specificity, so the :where() 0-specificity trick alone fails. */
+@layer base {
+  :where(input[type="text"], input[type="number"], input[type="search"], select) {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-size: 14px;
+    padding: 8px 12px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
 
-:where(input:focus, select:focus) {
-  border-color: var(--accent-blue);
-  box-shadow: 0 0 0 3px var(--accent-blue-muted);
-  outline: none;
-}
+  :where(input:focus, select:focus) {
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px var(--accent-blue-muted);
+    outline: none;
+  }
 
-:where(input)::placeholder {
-  color: var(--text-tertiary);
+  :where(input)::placeholder {
+    color: var(--text-tertiary);
+  }
 }
 
 /* Button base */
 button {
   cursor: pointer;
   transition: all 0.15s ease;
+}
+
+/* 비활성 버튼은 항상 not-allowed — unlayered `button{cursor:pointer}` 를
+ * 명시도(0,1,1)로 이겨, Tailwind cursor-not-allowed 가 layered 라 밀리는 문제를 방지. */
+button:disabled {
+  cursor: not-allowed;
 }
 
 button:active {

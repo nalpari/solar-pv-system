@@ -189,6 +189,8 @@ export function LnbSim({
           className="w-full"
           onClick={onSubmit}
           disabled={!canSubmit}
+          disabledTitle={!canSubmit ? t("uxNeedSimInput", lang) : undefined}
+          tooltipPlacement="top"
           icon={<ChevronRight />}
         >
           {t("simViewResults", lang)}
