@@ -151,6 +151,51 @@ export function LnbDesign({
   // 설치 용량 = Σ(모듈 수 × wpOut[W]) → kW. 부동소수 꼬리만 정리
   const totalKw = parseFloat(((panelCount * (panelSize?.watt ?? 0)) / 1000).toFixed(3));
 
+  // 비활성 요소 호버 안내문구 — "왜 못 쓰는지 + 다음에 뭘 해야 하는지"를 우선순위 순으로 안내.
+  // detecting(AI 분석 중)을 최우선, 그다음 배치완료 상태, 그다음 미충족 선행조건 순.
+  const slopeDisabledTitle = detecting
+    ? t("aiDetectInProgress", lang)
+    : isPlacementDone
+      ? t("uxNeedReturnToEdit", lang)
+      : areaCount === 0
+        ? t("uxNeedRoofArea", lang)
+        : undefined;
+  const moduleDisabledTitle = detecting
+    ? t("aiDetectInProgress", lang)
+    : isPlacementDone
+      ? t("uxNeedReturnToEdit", lang)
+      : slope === null
+        ? t("uxNeedSlope", lang)
+        : undefined;
+  const placeDisabledTitle = detecting
+    ? t("aiDetectInProgress", lang)
+    : isPlacementDone
+      ? t("uxNeedReturnToEdit", lang)
+      : areaCount === 0
+        ? t("uxNeedRoofArea", lang)
+        : slope === null
+          ? t("uxNeedSlope", lang)
+          : panelSize === null
+            ? t("uxNeedModule", lang)
+            : undefined;
+  const deleteDisabledTitle = detecting
+    ? t("aiDetectInProgress", lang)
+    : isPlacementDone
+      ? t("uxNeedReturnToEdit", lang)
+      : panelSize === null
+        ? t("uxNeedModule", lang)
+        : undefined;
+  const placementDoneDisabledTitle = detecting
+    ? t("aiDetectInProgress", lang)
+    : panelCount === 0
+      ? t("uxNeedPlacementBeforeDone", lang)
+      : undefined;
+  const simInputDisabledTitle = detecting
+    ? t("aiDetectInProgress", lang)
+    : !isPlacementDone
+      ? t("uxNeedPlacementDone", lang)
+      : undefined;
+
   return (
     <>
       <div
@@ -208,6 +253,7 @@ export function LnbDesign({
                 onClearAllPanels(); // 촌수 변경 시 기존 배치 모듈 전체 삭제 (모듈 변경과 동일 — 폴리곤은 유지)
               }}
               disabled={detecting || areaCount === 0 || isPlacementDone}
+              disabledTitle={slopeDisabledTitle}
               options={[
                 { value: "", label: t("selectPlaceholder", lang), disabled: true, hidden: true },
                 ...SLOPE_OPTIONS.map((opt) => ({
@@ -230,6 +276,7 @@ export function LnbDesign({
                 value={currentModule}
                 onChange={(e) => handleModuleChange(e.target.value)}
                 disabled={detecting || modulesLoading || slope === null || isPlacementDone}
+                disabledTitle={moduleDisabledTitle}
                 options={[
                   { value: "", label: t("moduleSelectPlaceholder", lang), disabled: true, hidden: true },
                   ...moduleOptions.map((p) => ({ value: p.value, label: p.label })),
@@ -237,18 +284,20 @@ export function LnbDesign({
               />
               <div className="flex items-center gap-2">
                 <Button
-                  variant="outline"
+                  variant="blue"
                   className="flex-1"
                   onClick={() => onPlacePanels("aligned")}
                   disabled={!canPlace || detecting || isPlacementDone}
+                  disabledTitle={placeDisabledTitle}
                 >
                   {t("btnAlignedPlacement", lang)}
                 </Button>
                 <Button
-                  variant="outline"
+                  variant="blue"
                   className="flex-1"
                   onClick={() => onPlacePanels("staggered")}
                   disabled={!canPlace || detecting || isPlacementDone}
+                  disabledTitle={placeDisabledTitle}
                 >
                   {t("btnStaggeredPlacement", lang)}
                 </Button>
@@ -257,10 +306,11 @@ export function LnbDesign({
                 </TipPopover>
               </div>
               <Button
-                variant="outline"
+                variant="red"
                 className="w-full"
                 onClick={onDeleteAllPanels}
-                disabled={panelCount === 0 || detecting || isPlacementDone}
+                disabled={panelSize === null || detecting || isPlacementDone}
+                disabledTitle={deleteDisabledTitle}
               >
                 {t("btnDeleteModule", lang)}
               </Button>
@@ -301,6 +351,8 @@ export function LnbDesign({
           className="w-full"
           onClick={onPlacementDone}
           disabled={detecting || panelCount === 0}
+          disabledTitle={placementDoneDisabledTitle}
+          tooltipPlacement="top"
           icon={<ChevronRight />}
         >
           {t(isPlacementDone ? "moduleEditReturn" : "modulePlacementDone", lang)}
@@ -312,6 +364,8 @@ export function LnbDesign({
           className="w-full"
           onClick={onSwitchToSimulation}
           disabled={detecting || !isPlacementDone}
+          disabledTitle={simInputDisabledTitle}
+          tooltipPlacement="top"
           icon={<ChevronRight />}
         >
           {t("simulationCalcInput", lang)}
