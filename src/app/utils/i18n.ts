@@ -168,6 +168,35 @@ const translations = {
     ja: "AI 分析中",
     en: "AI Analyzing...",
   },
+  // 비활성 요소 호버 안내문구 (UX 보완) — 다음에 해야 할 동작을 안내
+  uxNeedRoofArea: {
+    ja: "屋根面を作成してください。",
+    en: "Please create a roof face first.",
+  },
+  uxNeedReturnToEdit: {
+    ja: "モジュール編集に戻るボタンをクリックしてください。",
+    en: "Click the 'Return to Module Editing' button.",
+  },
+  uxNeedSlope: {
+    ja: "傾斜を設定してください。",
+    en: "Please set the slope first.",
+  },
+  uxNeedModule: {
+    ja: "モジュールを選択してください。",
+    en: "Please select a module first.",
+  },
+  uxNeedPlacementBeforeDone: {
+    ja: "屋根面作成後、モジュール配置を完了してください。",
+    en: "Create a roof face and place modules first.",
+  },
+  uxNeedPlacementDone: {
+    ja: "モジュール配置完了ボタンをクリックしてください。",
+    en: "Click the 'Module Placement Done' button.",
+  },
+  uxNeedSimInput: {
+    ja: "発電シミュレーション入力を完了してください。",
+    en: "Complete the simulation inputs first.",
+  },
   aiDetectCancel: {
     ja: "AI 分析キャンセル",
     en: "Cancel AI Analysis",
