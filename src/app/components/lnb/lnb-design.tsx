@@ -182,7 +182,7 @@ export function LnbDesign({
     ? t("aiDetectInProgress", lang)
     : isPlacementDone
       ? t("uxNeedReturnToEdit", lang)
-      : panelCount === 0
+      : panelSize === null
         ? t("uxNeedModule", lang)
         : undefined;
   const placementDoneDisabledTitle = detecting
@@ -309,7 +309,7 @@ export function LnbDesign({
                 variant="red"
                 className="w-full"
                 onClick={onDeleteAllPanels}
-                disabled={panelCount === 0 || detecting || isPlacementDone}
+                disabled={panelSize === null || detecting || isPlacementDone}
                 disabledTitle={deleteDisabledTitle}
               >
                 {t("btnDeleteModule", lang)}
