@@ -51,9 +51,32 @@ const MARGIN_CM = 30; // 외곽 여백 300mm
 const ROOF_LOC_CD: Record<string, number> = {
   N: 1, NE: 3, E: 5, SE: 7, S: 9, SW: 11, W: 13, NW: 15, // 16방위 중 앱 8방위(홀수 코드)
 };
-// 지붕경사 寸 → 度 (예: 4寸 → 21.8°)
+// 지붕경사 寸 → 度 — API팀 내부 사용값에 맞춘 고정 매핑(계산식 아님).
+// 셀렉트박스는 1/3/4/6/8寸만 사용 → 나머지는 주석으로 보관.
+const SUN_TO_DEGREE: Record<number, number> = {
+  // 0.5: 2.86,
+  1: 5.71,
+  // 1.5: 8.53,
+  // 2: 11.31,
+  // 2.5: 14.04,
+  3: 16.7,
+  // 3.5: 19.29,
+  4: 21.8,
+  // 4.5: 24.23,
+  // 5: 26.57,
+  // 5.5: 28.81,
+  6: 30.96,
+  // 6.5: 33.02,
+  // 7: 34.99,
+  // 7.5: 36.87,
+  8: 38.66,
+  // 8.5: 40.36,
+  // 9: 41.99,
+  // 9.5: 43.53,
+  // 10: 45,
+};
 function sunToDegree(sun: number): number {
-  return Math.round((Math.atan(sun / 10) * 180 / Math.PI) * 10) / 10;
+  return SUN_TO_DEGREE[sun] ?? 0; // 미매핑(예: 미선택 0) → 0
 }
 
 // 발전시뮬 입력(SimulationInput) 조립 — UI state 를 musbi 파라미터로 매핑
