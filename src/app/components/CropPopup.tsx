@@ -799,6 +799,17 @@ export default function CropPopup({
     onSelectionChange?.(Array.from(selectedPolygonIds));
   }, [selectedPolygonIds, onSelectionChange]);
 
+  // 편집 잠금(배치 완료) 진입 시 미완성 그리기·점편집·선택 잔상 정리 (모드는 부모가 select로 전환).
+  // 툴 변경 시 자동 정리 effect(위)가 못 잡는 케이스(이미 select 모드에서 선택 중 완료)까지 커버.
+  // 이미 비어있으면 새 참조 생성을 피해 불필요한 캔버스 재드로우를 막는다.
+  useEffect(() => {
+    if (editLocked) {
+      setCurrentPoints((prev) => (prev.length === 0 ? prev : []));
+      setSelectedPolygonIds((prev) => (prev.size === 0 ? prev : new Set()));
+      setDraggingVertexIdx(null);
+    }
+  }, [editLocked]);
+
   // 외부(툴바 선택 삭제) 신호 수신 — 선택된 지붕면/장애물 삭제
   // 지붕면(install) 삭제 시 그 안에 완전히 포함된 장애물(exclude)도 함께 삭제.
   // 모듈은 notifyParent 후 부모가 없어진 폴리곤 기준으로 자동 제거한다.
@@ -833,6 +844,7 @@ export default function CropPopup({
 
   /** 포인터 이동 시 폴리곤 드래그(캔버스 경계 클램핑)·꼭짓점 드래그·가이드 라인을 처리한다 */
   function handlePointerMove(e: React.PointerEvent<HTMLCanvasElement>) {
+    if (editLocked) return; // 배치 완료(편집 잠금) 중엔 캡처된 포인터 이동도 무시 (pointer-events:none 우회 방어)
     const rect = canvasRef.current!.getBoundingClientRect();
     const px = e.clientX - rect.left;
     const py = e.clientY - rect.top;
@@ -898,6 +910,7 @@ export default function CropPopup({
 
   /** 포인터 업 시 드래그 이동·꼭짓점 편집을 종료한다 */
   function handlePointerUp() {
+    if (editLocked) return; // 배치 완료(편집 잠금) 중엔 놓을 때 변경 저장(notifyParent) 차단
     // End polygon drag-move / click-toggle (select 모드)
     if (roofEditTool === "select" && dragStartRef.current) {
       const candidateId = dragCandidateIdRef.current;

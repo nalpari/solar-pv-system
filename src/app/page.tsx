@@ -388,6 +388,13 @@ export default function Home() {
     setPlacedPixelPanels((prev) => prev.filter((p) => p.polygonId !== polygonId));
   }, []);
 
+  /** 모듈 배치 완료 ↔ 편집 복귀 토글. 완료로 전환 시 선택/이동(select) 모드로
+   *  (미완성 그리기·점편집·선택 잔상은 CropPopup이 editLocked 진입 시 정리). */
+  const handleTogglePlacementDone = useCallback(() => {
+    if (!isPlacementDone) setRoofEditTool("select");
+    setIsPlacementDone((v) => !v);
+  }, [isPlacementDone]);
+
   function switchToSimulation() {
     setCropMode(false);
     setRoofEditTool("select");
@@ -605,7 +612,7 @@ export default function Home() {
             onClearAllPanels: clearAllPanels,
             detectStatus,
             isPlacementDone,
-            onPlacementDone: () => setIsPlacementDone((v) => !v),
+            onPlacementDone: handleTogglePlacementDone,
             onSwitchToSimulation: switchToSimulation,
           }}
           sim={{
@@ -795,6 +802,7 @@ export default function Home() {
                 detectStatus={detectStatus}
                 onStartDetect={handleStartDetect}
                 onCancelDetect={handleCancelDetect}
+                isPlacementDone={isPlacementDone}
                 lang={lang}
               />
             </div>
