@@ -305,13 +305,24 @@ export default function Home() {
     setDetectStatus("idle");
   }, []);
 
+  // 경사·모듈 선택 초기화 — 여러 삭제/닫기 경로에서 공용 (진실의 원천 단일화)
+  const resetSlopeAndModule = useCallback(() => {
+    setSlope(DEFAULT_SLOPE);
+    setPanelSize(DEFAULT_PANEL_SIZE);
+    setModuleId("");
+  }, []);
+
   const handleAreasChange = useCallback((newAreas: PolygonArea[]) => {
     const validIds = new Set(newAreas.map((a) => a.id));
     setAreas(newAreas);
     // 없어진 폴리곤에 속한 패널/선택 정리 (살아있는 폴리곤은 유지)
     setPlacedPanelsList((prev) => prev.filter((p) => validIds.has(p.polygonId)));
     setSelectedRoofIds((prev) => prev.filter((id) => validIds.has(id)));
-  }, []);
+    // 지붕면(install)이 0개가 되면(전체/선택 삭제·undo 무관, 장애물만 남아도) 경사·모듈 초기화.
+    // exclude(장애물)는 세지 않고 install만 확인.
+    const hasInstallArea = newAreas.some((a) => a.type === "install");
+    if (!hasInstallArea) resetSlopeAndModule();
+  }, [resetSlopeAndModule]);
 
   const handlePixelAreasChange = useCallback((areas: PixelPolygon[], metersPerPixel: number) => {
     const validIds = new Set(areas.map((a) => a.id));
@@ -330,14 +341,12 @@ export default function Home() {
     setPlacedPanelsList([]);
     setIsPlacementDone(false); // 배치 완료(편집 잠금) 상태 해제
     // 좌측메뉴 입력 초기화 (주소검색 데이터 address/center 는 유지)
-    setSlope(DEFAULT_SLOPE);
-    setPanelSize(DEFAULT_PANEL_SIZE);
-    setModuleId("");
+    resetSlopeAndModule();
     setSimForm(DEFAULT_SIM_FORM);
     setActiveTab("design");
     setPlacementError(null);
     // AI 감지 state는 cropData가 null 되면 detect useEffect가 자동 정리함 (I-4: DRY)
-  }, []);
+  }, [resetSlopeAndModule]);
 
   /** 지붕편집 툴바의 "전체 삭제" 액션 - 그려진 폴리곤/패널 + 좌측 촌수·모듈 선택 초기화 (cropData 유지) */
   function handleDeleteAll() {
@@ -346,7 +355,9 @@ export default function Home() {
     setPixelAreas(null);
     setPlacedPixelPanels([]);
     setRoofEditTool("select");
-    // 촌수·모듈 셀렉트박스를 초기값(미선택)으로 되돌린다
+    // 촌수·모듈 셀렉트박스를 초기값(미선택)으로 되돌린다 — resetSlopeAndModule 과 동일 로직이나,
+    // handleDeleteAll 은 상위 handleStartDetect 가 참조하는 hoisted function 이라 useCallback 헬퍼를
+    // 참조하면 handleStartDetect deps 연쇄가 발생 → 여기서는 인라인 유지.
     setSlope(DEFAULT_SLOPE);
     setPanelSize(DEFAULT_PANEL_SIZE);
     setModuleId("");
@@ -376,6 +387,13 @@ export default function Home() {
     setPlacedPanelsList((prev) => prev.filter((p) => p.polygonId !== polygonId));
     setPlacedPixelPanels((prev) => prev.filter((p) => p.polygonId !== polygonId));
   }, []);
+
+  /** 모듈 배치 완료 ↔ 편집 복귀 토글. 완료로 전환 시 선택/이동(select) 모드로
+   *  (미완성 그리기·점편집·선택 잔상은 CropPopup이 editLocked 진입 시 정리). */
+  const handleTogglePlacementDone = useCallback(() => {
+    if (!isPlacementDone) setRoofEditTool("select");
+    setIsPlacementDone((v) => !v);
+  }, [isPlacementDone]);
 
   function switchToSimulation() {
     setCropMode(false);
@@ -594,7 +612,7 @@ export default function Home() {
             onClearAllPanels: clearAllPanels,
             detectStatus,
             isPlacementDone,
-            onPlacementDone: () => setIsPlacementDone((v) => !v),
+            onPlacementDone: handleTogglePlacementDone,
             onSwitchToSimulation: switchToSimulation,
           }}
           sim={{
@@ -784,6 +802,7 @@ export default function Home() {
                 detectStatus={detectStatus}
                 onStartDetect={handleStartDetect}
                 onCancelDetect={handleCancelDetect}
+                isPlacementDone={isPlacementDone}
                 lang={lang}
               />
             </div>

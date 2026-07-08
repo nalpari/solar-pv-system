@@ -6,6 +6,8 @@ interface AiDetectControlsProps {
   detectStatus: "idle" | "detecting";
   onStartDetect: () => void;
   onCancelDetect: () => void;
+  /** 모듈 배치 완료(편집 잠금) 상태 — true면 "AI 분석 시작" 비활성 (재분석 차단) */
+  isPlacementDone?: boolean;
   lang: Lang;
 }
 
@@ -14,9 +16,12 @@ export default function AiDetectControls({
   detectStatus,
   onStartDetect,
   onCancelDetect,
+  isPlacementDone = false,
   lang,
 }: AiDetectControlsProps) {
   const isDetecting = detectStatus === "detecting";
+  // 분석 중이거나 배치 완료(편집 잠금) 상태면 "AI 분석 시작" 비활성
+  const isStartDisabled = isDetecting || isPlacementDone;
 
   return (
     <div
@@ -49,7 +54,7 @@ export default function AiDetectControls({
       </button>
       <button
         onClick={onStartDetect}
-        disabled={isDetecting}
+        disabled={isStartDisabled}
         style={{
           padding: "10px 20px",
           borderRadius: "var(--radius-md)",
@@ -58,8 +63,8 @@ export default function AiDetectControls({
           color: "#fff",
           fontSize: 13,
           fontWeight: 600,
-          cursor: isDetecting ? "not-allowed" : "pointer",
-          opacity: isDetecting ? 0.6 : 1,
+          cursor: isStartDisabled ? "not-allowed" : "pointer",
+          opacity: isStartDisabled ? 0.6 : 1,
           pointerEvents: "auto",
           transition: "all 0.15s ease",
         }}
