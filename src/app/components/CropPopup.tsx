@@ -10,7 +10,7 @@ import type { NormalizedPolygon } from "../utils/aiDetect";
 import { normalizedToPixelPolygons } from "../utils/aiDetect";
 import { t } from "../utils/i18n";
 import { isPointInPolygon } from "../utils/panelPlacement";
-import { canMergeGroup, mergeAreaPolygons } from "../utils/mergePolygons";
+import { mergeAreaPolygons } from "../utils/mergePolygons";
 
 /** Canvas 렌더링 시 getComputedStyle 호출을 피하기 위해 CSS 변수 값을 상수로 정의 */
 const COLOR_INSTALL = "#3366AA"; // --accent-blue
@@ -885,15 +885,16 @@ export default function CropPopup({
     onSelectionChange?.(Array.from(selectedPolygonIds));
   }, [selectedPolygonIds, onSelectionChange]);
 
-  // 병합 가능 여부를 부모에 통지 — 선택된 install 면이 2개 이상이고 서로 변 공유로 연결될 때만 true.
-  // (장애물 exclude는 병합 대상 아님. 떨어진 면이 섞이면 false → 지붕결합 버튼 비활성)
+  // 병합 가능 여부를 부모에 통지 — bridge-then-union이 단일 폴리곤을 만들 때만 true.
+  // 버튼 판정과 실제 병합이 같은 mergeAreaPolygons를 공유하므로 "켜지는데 무반응"이 원천 차단된다.
+  // (장애물 exclude는 대상 아님. 코너접촉/떨어진 면/중정이면 null → 버튼 비활성)
   useEffect(() => {
     const selectedInstall = areas.filter(
       (a) => a.type === "install" && selectedPolygonIds.has(a.id),
     );
     const canMerge =
       selectedInstall.length >= 2 &&
-      canMergeGroup(selectedInstall.map((a) => a.points));
+      mergeAreaPolygons(selectedInstall.map((a) => a.points)) !== null;
     onMergeableChange?.(canMerge);
   }, [selectedPolygonIds, areas, onMergeableChange]);
 
