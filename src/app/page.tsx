@@ -172,7 +172,10 @@ export default function Home() {
   const [undoSignal, setUndoSignal] = useState(0);
   const [clearSignal, setClearSignal] = useState(0);
   const [deleteSelectedSignal, setDeleteSelectedSignal] = useState(0);
+  const [mergeSelectedSignal, setMergeSelectedSignal] = useState(0);
   const [selectedRoofIds, setSelectedRoofIds] = useState<string[]>([]);
+  // 병합 가능 여부(인접 install 면 2개 이상 선택) — CropPopup이 계산해 통지, 지붕결합 버튼 활성화용
+  const [canMergeSelected, setCanMergeSelected] = useState(false);
   const [areas, setAreas] = useState<PolygonArea[]>([]);
   const [panelSize, setPanelSize] = useState<PanelSize | null>(DEFAULT_PANEL_SIZE);
   // 선택 모듈 matlCd (SimulationInput.moduleItemId) — 시뮬 API 입력용
@@ -776,12 +779,15 @@ export default function Home() {
                     handleDeleteAll();
                   } else if (action === "deleteSelected") {
                     setDeleteSelectedSignal((n) => n + 1);
+                  } else if (action === "mergeSelected") {
+                    setMergeSelectedSignal((n) => n + 1);
                   } else if (action === "complete") {
                     // 작성 완료 → 선택/이동 모드로 자동 전환
                     setRoofEditTool("select");
                   }
                 }}
                 hasSelection={selectedRoofIds.length > 0}
+                canMerge={canMergeSelected}
                 disabled={isPlacementDone}
               />
               <CropPopup
@@ -799,7 +805,9 @@ export default function Home() {
                 undoSignal={undoSignal}
                 clearSignal={clearSignal}
                 deleteSelectedSignal={deleteSelectedSignal}
+                mergeSelectedSignal={mergeSelectedSignal}
                 onSelectionChange={setSelectedRoofIds}
+                onMergeableChange={setCanMergeSelected}
                 initialAreas={aiSeedAreas}
                 detectStatus={detectStatus}
                 debugSamMaskDataUrl={aiSamMaskDataUrl}

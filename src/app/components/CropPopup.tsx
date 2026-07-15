@@ -10,6 +10,7 @@ import type { NormalizedPolygon } from "../utils/aiDetect";
 import { normalizedToPixelPolygons } from "../utils/aiDetect";
 import { t } from "../utils/i18n";
 import { isPointInPolygon } from "../utils/panelPlacement";
+import { canMergeGroup, mergeAreaPolygons } from "../utils/mergePolygons";
 
 /** Canvas 렌더링 시 getComputedStyle 호출을 피하기 위해 CSS 변수 값을 상수로 정의 */
 const COLOR_INSTALL = "#3366AA"; // --accent-blue
@@ -45,8 +46,12 @@ interface CropPopupProps {
   clearSignal?: number;
   /** 외부(툴바 선택 삭제)로부터 선택 삭제 신호. 값이 바뀔 때마다 선택된 지붕면/장애물 삭제 */
   deleteSelectedSignal?: number;
+  /** 외부(툴바 지붕결합)로부터 병합 신호. 값이 바뀔 때마다 선택된 인접 지붕면 병합 */
+  mergeSelectedSignal?: number;
   /** 선택된 지붕면/장애물 존재 여부를 부모에 알림 (툴바 선택 삭제 버튼 활성화 판정용) */
   onSelectionChange?: (selectedIds: string[]) => void;
+  /** 병합 가능 여부(인접 install 면 2개 이상 선택)를 부모에 알림 (지붕결합 버튼 활성화 판정용) */
+  onMergeableChange?: (canMerge: boolean) => void;
   /** 외부 주입 폴리곤 (AI 자동 감지 결과, 정규화 [0..1] 좌표). 새 reference로 들어올 때 내부 areas에 1회 머지 */
   initialAreas?: NormalizedPolygon[];
   /** AI 감지 상태 머신 (Phase 7) — 로딩 오버레이 + Close X 버튼 가드에 사용 */
@@ -227,7 +232,9 @@ export default function CropPopup({
   undoSignal,
   clearSignal,
   deleteSelectedSignal,
+  mergeSelectedSignal,
   onSelectionChange,
+  onMergeableChange,
   initialAreas,
   detectStatus = "idle",
   debugSamMaskDataUrl,
@@ -878,6 +885,18 @@ export default function CropPopup({
     onSelectionChange?.(Array.from(selectedPolygonIds));
   }, [selectedPolygonIds, onSelectionChange]);
 
+  // 병합 가능 여부를 부모에 통지 — 선택된 install 면이 2개 이상이고 서로 변 공유로 연결될 때만 true.
+  // (장애물 exclude는 병합 대상 아님. 떨어진 면이 섞이면 false → 지붕결합 버튼 비활성)
+  useEffect(() => {
+    const selectedInstall = areas.filter(
+      (a) => a.type === "install" && selectedPolygonIds.has(a.id),
+    );
+    const canMerge =
+      selectedInstall.length >= 2 &&
+      canMergeGroup(selectedInstall.map((a) => a.points));
+    onMergeableChange?.(canMerge);
+  }, [selectedPolygonIds, areas, onMergeableChange]);
+
   // 편집 잠금(배치 완료) 진입 시 미완성 그리기·점편집·선택 잔상 정리 (모드는 부모가 select로 전환).
   // 툴 변경 시 자동 정리 effect(위)가 못 잡는 케이스(이미 select 모드에서 선택 중 완료)까지 커버.
   // 이미 비어있으면 새 참조 생성을 피해 불필요한 캔버스 재드로우를 막는다.
@@ -915,6 +934,55 @@ export default function CropPopup({
     setSelectedPolygonIds(new Set());
   // eslint-disable-next-line react-hooks/exhaustive-deps -- areasRef/notifyParent는 stable, signal·선택 변경에만 반응
   }, [deleteSelectedSignal, selectedPolygonIds]);
+
+  // 외부(툴바 지붕결합) 신호 수신 — 선택된 인접 install 지붕면들을 하나로 병합한다.
+  // - union 결과가 단일 폴리곤일 때만 병합 (떨어진 조각이면 거부).
+  // - 병합된 면 위의 장애물(내부 포함 exclude)과 패널은 함께 삭제:
+  //   exclude는 여기서 제거, 패널은 옛 면 id 소멸 시 부모(notifyParent→handleAreasChange)가 자동 prune.
+  // - 병합면은 새 id로 추가하되 즉시 선택 상태로 남긴다.
+  const prevMergeSelectedRef = useRef<number | undefined>(mergeSelectedSignal);
+  useEffect(() => {
+    if (mergeSelectedSignal === undefined) return;
+    if (prevMergeSelectedRef.current === mergeSelectedSignal) return;
+    prevMergeSelectedRef.current = mergeSelectedSignal;
+
+    const selectedInstall = areasRef.current.filter(
+      (a) => a.type === "install" && selectedPolygonIds.has(a.id),
+    );
+    if (selectedInstall.length < 2) return;
+
+    const mergedPoints = mergeAreaPolygons(selectedInstall.map((a) => a.points));
+    if (!mergedPoints) {
+      // 인접 판정 통과했으나 union이 단일 폴리곤이 아닌 예외적 케이스 — 조용히 무시
+      return;
+    }
+
+    const mergedIds = new Set(selectedInstall.map((a) => a.id));
+    // 병합 대상 면들 위(내부 완전 포함)의 장애물 exclude 도 함께 삭제
+    const toRemove = new Set<string>(mergedIds);
+    for (const target of selectedInstall) {
+      for (const a of areasRef.current) {
+        if (a.type === "exclude" && polygonFullyInside(a.points, target.points)) {
+          toRemove.add(a.id);
+        }
+      }
+    }
+
+    const mergedArea: AreaEntry = {
+      id: crypto.randomUUID(),
+      type: "install",
+      points: mergedPoints,
+      eaveEdgeIndex: findLongestEdgeIndex(mergedPoints),
+    };
+    const updated = [
+      ...areasRef.current.filter((a) => !toRemove.has(a.id)),
+      mergedArea,
+    ];
+    setAreas(updated);
+    notifyParent(updated);
+    setSelectedPolygonIds(new Set([mergedArea.id])); // 병합면 선택 유지
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- areasRef/notifyParent는 stable, signal·선택 변경에만 반응
+  }, [mergeSelectedSignal, selectedPolygonIds]);
 
   /** 캔버스에서 브라우저 기본 컨텍스트 메뉴를 차단한다 */
   function handleContextMenu(e: React.MouseEvent<HTMLCanvasElement>) {
