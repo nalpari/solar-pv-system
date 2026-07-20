@@ -959,13 +959,13 @@ export default function CropPopup({
     }
 
     const mergedIds = new Set(selectedInstall.map((a) => a.id));
-    // 병합 대상 면들 위(내부 완전 포함)의 장애물 exclude 도 함께 삭제
+    // 병합면 위(내부 완전 포함)의 장애물 exclude 도 함께 삭제.
+    // 개별 원본 면이 아니라 "병합된 외곽" 기준으로 검사 — 옛 공유변을 걸친 장애물은
+    // 원본 어느 면에도 완전히 포함되지 않아 누락되기 때문.
     const toRemove = new Set<string>(mergedIds);
-    for (const target of selectedInstall) {
-      for (const a of areasRef.current) {
-        if (a.type === "exclude" && polygonFullyInside(a.points, target.points)) {
-          toRemove.add(a.id);
-        }
+    for (const a of areasRef.current) {
+      if (a.type === "exclude" && polygonFullyInside(a.points, mergedPoints)) {
+        toRemove.add(a.id);
       }
     }
 
