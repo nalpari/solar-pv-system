@@ -7,6 +7,7 @@
 // — 쌍의 작은 면 대비 OVERLAP_RATIO 초과가 기준이라, 그 이하의 미세 겹침은 인접으로 허용한다.
 
 import polygonClipping from "polygon-clipping";
+import type { Pair, Ring, Polygon, MultiPolygon } from "polygon-clipping";
 import type { PixelPoint } from "../types";
 
 /** 이어붙일 수 있는 최대 gap(px). 겹침 구간 양끝에서 잰 두 변 사이 거리가
@@ -18,6 +19,12 @@ const MIN_OVERLAP = 10.0;
 const SIMPLIFY_EPS = 0.5;
 /** 면 포개짐 허용 상한 — 작은 면 대비 이 비율 초과로 area가 겹치면 인접이 아닌 포개짐으로 보고 거부. */
 const OVERLAP_RATIO = 0.05;
+/**
+ * 구멍으로 인정할 최소 면적(px²). 필러 두 개가 맞닿는 이음새에서 바늘 모양 잔재(관측 최대 ~0.45px²,
+ * 지붕이 클수록 더 작아짐)가 생기는데 이는 중정이 아니라 부동소수 오차다.
+ * 실제 중정은 가장 작게 잡아도 수백 px² 이므로 이 값으로 안전하게 갈린다.
+ */
+const HOLE_MIN_AREA = 1.0;
 
 type Seg = { a: PixelPoint; b: PixelPoint };
 
@@ -66,39 +73,37 @@ function ringArea(pts: PixelPoint[]): number {
   return Math.abs(s / 2);
 }
 
-/** polygon-clipping 결과(MultiPolygon)의 순 면적 — 구멍은 반대 winding이라 부호로 상쇄된다. */
-function multiPolyArea(mp: number[][][][]): number {
+/** 닫힌 링(마지막=처음)의 부호 면적 — 외곽은 양수, 구멍은 반대 winding이라 음수. */
+function signedRingArea(ring: Ring): number {
+  let s = 0;
+  for (let i = 0; i < ring.length - 1; i++) {
+    s += ring[i][0] * ring[i + 1][1] - ring[i + 1][0] * ring[i][1];
+  }
+  return s / 2;
+}
+
+/** polygon-clipping 결과(MultiPolygon)의 순 면적 — 구멍은 부호로 상쇄된다. */
+function multiPolyArea(mp: MultiPolygon): number {
   let s = 0;
   for (const poly of mp) {
-    for (const ring of poly) {
-      for (let i = 0; i < ring.length - 1; i++) {
-        s += ring[i][0] * ring[i + 1][1] - ring[i + 1][0] * ring[i][1];
-      }
-    }
+    for (const ring of poly) s += signedRingArea(ring);
   }
-  return Math.abs(s / 2);
+  return Math.abs(s);
 }
 
 /** PixelPoint[] → polygon-clipping Polygon 지오메트리 */
-function toGeom(pts: PixelPoint[]): number[][][] {
-  return [pts.map((p) => [p.x, p.y] as [number, number])];
+function toGeom(pts: PixelPoint[]): Polygon {
+  return [pts.map((p) => [p.x, p.y] as Pair)];
 }
 
-/** polygon-clipping union 래퍼 (캐스트 보일러플레이트 은닉) */
-function unionAll(geoms: number[][][][]): number[][][][] {
-  return polygonClipping.union(
-    geoms[0] as unknown as Parameters<typeof polygonClipping.union>[0],
-    ...(geoms.slice(1) as unknown as Parameters<typeof polygonClipping.union>[1][]),
-  );
+/** polygon-clipping union 래퍼 */
+function unionAll(geoms: Polygon[]): MultiPolygon {
+  return polygonClipping.union(geoms[0], ...geoms.slice(1));
 }
 
 /** 두 폴리곤이 area로 겹치는 교집합 면적 (0=경계만 닿거나 분리) */
 function pairOverlapArea(a: PixelPoint[], b: PixelPoint[]): number {
-  const inter = polygonClipping.intersection(
-    toGeom(a) as unknown as Parameters<typeof polygonClipping.intersection>[0],
-    toGeom(b) as unknown as Parameters<typeof polygonClipping.intersection>[1],
-  );
-  return multiPolyArea(inter);
+  return multiPolyArea(polygonClipping.intersection(toGeom(a), toGeom(b)));
 }
 
 /**
@@ -149,7 +154,7 @@ function simplifyRing(ring: PixelPoint[], eps: number): PixelPoint[] {
  * - 두 면이 area로 포개지면(쌍의 작은 면 대비 OVERLAP_RATIO 초과) 인접이 아니므로 거부.
  * - 근접·겹침 변쌍의 틈을 필러로 메운 뒤 union.
  * - 결과가 단일 폴리곤이 아니면(코너접촉·분리 → 2개) null.
- * - 구멍이 있으면(중정 등) null → 빈 공간을 메우지 않고 병합 거부.
+ * - 의미 있는 크기의 구멍(중정 등)이 생기면 null → 빈 공간을 메우지 않고 병합 거부.
  * - 미세 회전으로 생긴 톱니 정점은 제거.
  */
 export function mergeAreaPolygons(polys: PixelPoint[][]): PixelPoint[] | null {
@@ -192,18 +197,20 @@ export function mergeAreaPolygons(polys: PixelPoint[][]): PixelPoint[] | null {
   }
 
   // 3) 원본 + 필러 union
-  let result: number[][][][];
+  let result: MultiPolygon;
   try {
     result = unionAll([...polys, ...fillers].map(toGeom));
   } catch {
     return null;
   }
 
-  // 4) 단일 폴리곤 + 구멍 없음만 유효 (코너접촉·분리→2개, 중정→hole)
-  if (!Array.isArray(result) || result.length !== 1) return null;
-  if (result[0].length > 1) return null;
+  // 4) 단일 폴리곤만 유효 (코너접촉·떨어진 면 → 폴리곤 2개 이상)
+  if (result.length !== 1) return null;
+  // 의미 있는 크기의 구멍(중정)이면 거부 — 빈 공간을 메워 없는 지붕을 만들지 않는다.
+  // 단, 필러 이음새의 바늘형 잔재(HOLE_MIN_AREA 미만)는 부동소수 오차이므로 무시한다.
+  if (result[0].slice(1).some((h) => Math.abs(signedRingArea(h)) > HOLE_MIN_AREA)) return null;
   const outer = result[0][0];
-  if (!Array.isArray(outer) || outer.length < 4) return null;
+  if (outer.length < 4) return null;
 
   // 5) 닫는 중복점 제거 → 톱니 단순화
   const ring = simplifyRing(
