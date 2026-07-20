@@ -349,6 +349,7 @@ export default function Home() {
     setPlacedPixelPanels([]);
     setPlacedPanelsList([]);
     setIsPlacementDone(false); // 배치 완료(편집 잠금) 상태 해제
+    setCanMergeSelected(false); // CropPopup 언마운트 시 갱신 주체가 사라지므로 여기서 해제
     // 좌측메뉴 입력 초기화 (주소검색 데이터 address/center 는 유지)
     resetSlopeAndModule();
     setSimForm(DEFAULT_SIM_FORM);

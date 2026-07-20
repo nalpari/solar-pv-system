@@ -34,7 +34,9 @@ interface RoofEditToolbarProps {
   onAction: (action: RoofAction) => void;
   /** 선택된 지붕면/장애물 존재 여부 — 선택 삭제 버튼 활성화 판정에 사용 */
   hasSelection?: boolean;
-  /** 병합 가능 여부 — 인접(변 공유)한 지붕면 2개 이상 선택 시에만 true. 지붕결합 버튼 활성화 판정 */
+  /** 병합 가능 여부 — 선택된 지붕면 2개 이상이 하나의 면으로 합쳐질 수 있을 때만 true
+   *  (변 공유뿐 아니라 근접한 변도 이어붙여 판정. 코너접촉·떨어진 면·중정·포개짐이면 false).
+   *  지붕결합 버튼 활성화 판정 */
   canMerge?: boolean;
   /** 전체 비활성화 — 모듈 배치 완료(편집 잠금) 상태에서 지붕 편집을 막는다 */
   disabled?: boolean;

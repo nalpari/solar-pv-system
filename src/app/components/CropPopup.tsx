@@ -887,7 +887,7 @@ export default function CropPopup({
 
   // 병합 가능 여부를 부모에 통지 — bridge-then-union이 단일 폴리곤을 만들 때만 true.
   // 버튼 판정과 실제 병합이 같은 mergeAreaPolygons를 공유하므로 "켜지는데 무반응"이 원천 차단된다.
-  // (장애물 exclude는 대상 아님. 코너접촉/떨어진 면/중정이면 null → 버튼 비활성)
+  // (장애물 exclude는 대상 아님. 면 포개짐/코너접촉/떨어진 면/중정이면 null → 버튼 비활성)
   useEffect(() => {
     const selectedInstall = areas.filter(
       (a) => a.type === "install" && selectedPolygonIds.has(a.id),

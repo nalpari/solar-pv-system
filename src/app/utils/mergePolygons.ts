@@ -3,12 +3,14 @@
 // 선택된 면들 중 근접(gap ≤ GAP_TOL)하고 충분히 겹치는(≥ MIN_OVERLAP) 변쌍의 틈을
 // "필러 사각형"으로 메운 뒤 union → 결과가 단일 폴리곤(구멍 없음)이면 병합.
 // 버튼 활성 판정과 실제 병합이 이 한 함수를 공유하므로 둘이 절대 어긋나지 않는다.
-// 단, 면이 area로 포개진 경우(면 이동 중 겹침 등)는 "인접"이 아니므로 사전 배제한다.
+// 단, 면이 area로 크게 포개진 경우(면 이동 중 겹침 등)는 "인접"이 아니므로 사전 배제한다
+// — 쌍의 작은 면 대비 OVERLAP_RATIO 초과가 기준이라, 그 이하의 미세 겹침은 인접으로 허용한다.
 
 import polygonClipping from "polygon-clipping";
 import type { PixelPoint } from "../types";
 
-/** 이어붙일 수 있는 최대 gap(px). 두 변의 수직 간격이 이 값 이하일 때만 필러로 연결. */
+/** 이어붙일 수 있는 최대 gap(px). 겹침 구간 양끝에서 잰 두 변 사이 거리가
+ *  이 값 이하일 때만 필러로 연결한다(선분까지의 거리 기준 — 끝점 바깥은 그 끝점까지의 거리). */
 const GAP_TOL = 3.0;
 /** 필러를 만들 최소 겹침 길이(px). gap을 사이에 둔 변쌍이 이 길이 이상 겹쳐야 인접 인정. */
 const MIN_OVERLAP = 10.0;
@@ -153,9 +155,14 @@ function simplifyRing(ring: PixelPoint[], eps: number): PixelPoint[] {
 export function mergeAreaPolygons(polys: PixelPoint[][]): PixelPoint[] | null {
   if (polys.length < 2) return null;
 
+  // 0) 면적이 0인(정점이 모두 공선인) 면 배제 — union이 zero-area 지오메트리를 소거해 버려
+  //    "떨어져 있는데도 병합 대상에 포함되어 조용히 삭제"되고, OVERLAP_RATIO * minArea 임계도
+  //    0이 되어 포개짐 판정이 무의미해진다.
+  if (polys.some((p) => ringArea(p) <= 0)) return null;
+
   // 1) 면 포개짐 배제 — 어떤 두 면이라도 작은 쪽의 OVERLAP_RATIO 초과로 area가 겹치면
   //    "인접"이 아닌 포개짐(면 이동 중 겹침 등)이므로 병합 거부. 점·변만 공유하는 인접은 겹침 0.
-  //    쌍 단위 판정이라 선택 집합에 무관한(작은/degenerate) 면이 섞여도 다른 쌍 판정이 흔들리지 않는다.
+  //    쌍 단위 판정이라 선택 집합에 무관한 작은 면이 섞여도 다른 쌍 판정이 흔들리지 않는다.
   for (let i = 0; i < polys.length; i++) {
     for (let j = i + 1; j < polys.length; j++) {
       let overlap: number;
