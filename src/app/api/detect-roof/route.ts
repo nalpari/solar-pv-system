@@ -198,12 +198,9 @@ async function detectRoofPolygons(
     },
   );
 
-  // [SAM PoC 디버그] 클라이언트 시각 평가용. 성공/실패 분기와 무관하게 그대로 전달.
-  const debugSamMask = samMaskDataUrl ?? undefined;
-
   if (result.polygons.length === 0) {
     console.warn("[detect-roof] 폴리곤 0개 반환");
-    return { polygons: [], reason: "no_polygons", samMaskDataUrl: debugSamMask };
+    return { polygons: [], reason: "no_polygons" };
   }
   // 어느 폴리곤이라도 신뢰도 임계값 미만 → 환각 의심 → 전체 차단
   // (PARTITION 보존 — 일부만 제거하면 합집합에 빈 공간 발생)
@@ -212,9 +209,9 @@ async function detectRoofPolygons(
     console.warn(
       `[detect-roof] 신뢰도 미달 — 최저 ${minConfidence.toFixed(3)} < ${CONFIDENCE_THRESHOLD}, 환각 의심`,
     );
-    return { polygons: [], reason: "low_confidence", samMaskDataUrl: debugSamMask };
+    return { polygons: [], reason: "low_confidence" };
   }
-  return { polygons: result.polygons, reason: "ok", samMaskDataUrl: debugSamMask };
+  return { polygons: result.polygons, reason: "ok" };
 }
 
 export async function POST(req: Request) {
