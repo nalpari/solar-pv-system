@@ -50,6 +50,7 @@ pnpm dev                     # http://localhost:3000
 - **Google Maps** — `@vis.gl/react-google-maps` ^1.7.1 (Maps JS, Places, Geometry APIs)
 - **html2canvas** ^1.4.1 — Map tile capture for crop popup
 - **lucide-react** ^0.577.0 — Icons
+- **polygon-clipping** ^0.15.7 — 지붕면 병합용 폴리곤 boolean 연산 (union / intersection)
 - **Docker** — Multi-stage standalone build (see `Dockerfile`, `docker-compose.yml`)
 - **Gemini API** — `@google/genai` ^1.0.0 (AI 지붕 자동 감지)
 - **@aws-sdk/client-s3** ^3.1065 — 참조 이미지 S3 업로드 (`/api/image/upload`)
@@ -75,10 +76,11 @@ src/
 │   │   ├── AiDetectControls # AI 지붕 분석 트리거 (분석 시작/취소)
 │   │   ├── CropPopup        # Crop image popup with Canvas polygon editor, panel rendering
 │   │   ├── MapView          # Google Maps satellite view + crop overlay + zoom/recenter controls
-│   │   ├── RoofEditToolbar  # Floating toolbar over map (select / drawRoof / drawOpening / flowSetting / editRoof / undo / delete)
+│   │   ├── RoofEditToolbar  # Floating toolbar over map (select / drawRoof / drawOpening / flowSetting / mergeSelected / editRoof / undo / delete)
 │   │   └── lnb/             # 좌측 사이드바: Lnb(탭 컨테이너) / LnbDesign / LnbSim / address-input-lnb
 │   ├── utils/
 │   │   ├── aiDetect         # Gemini detect fetch 래퍼 + 정규화→픽셀 변환 어댑터
+│   │   ├── mergePolygons    # 지붕면 병합 (인접 판정 + 폴리곤 union)
 │   │   ├── panelPlacement   # Computational geometry (lat/lng + pixel-based panel layout)
 │   │   └── i18n             # Japanese/English translation system
 │   ├── types/               # Domain types (LatLng, CropData, PixelPanel, NormalizedPolygon, etc.)

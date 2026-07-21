@@ -14,7 +14,7 @@ globs:
 
 - **MapView** — Google Maps with satellite imagery and crop area selection overlay (html2canvas capture)
 - **CropPopup** — Cropped image popup with Canvas-based polygon editor and panel rendering. PNG 저장은 향후 도입 예정
-- **RoofEditToolbar** — Floating toolbar over map for polygon editing (select/drawRoof/drawOpening/flowSetting/editRoof/deleteSelected/deleteAll/undo/complete)
+- **RoofEditToolbar** — Floating toolbar over map for polygon editing (select/drawRoof/drawOpening/flowSetting/mergeSelected/editRoof/deleteSelected/deleteAll/undo/complete)
 - **AiDetectControls** — AI 지붕 분석 트리거 (분석 시작/취소)
 
 `src/app/components/lnb/` (좌측 사이드바):

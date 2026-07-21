@@ -4,7 +4,7 @@ import { t } from "../utils/i18n";
 import type { Lang } from "../utils/i18n";
 
 export type RoofTool = "select" | "drawRoof" | "drawOpening" | "flowSetting" | "editRoof";
-export type RoofAction = "deleteSelected" | "deleteAll" | "undo" | "complete";
+export type RoofAction = "mergeSelected" | "deleteSelected" | "deleteAll" | "undo" | "complete";
 export type RoofEditTool = RoofTool | RoofAction;
 
 interface ToolDef {
@@ -19,6 +19,7 @@ const TOOLS: ToolDef[] = [
   { id: "drawRoof", labelKey: "retDrawRoof", guideKey: "retDrawRoofGuide" },
   { id: "drawOpening", labelKey: "retDrawOpening", guideKey: "retDrawOpeningGuide" },
   { id: "flowSetting", labelKey: "retFlowSetting", guideKey: "retFlowSettingGuide" },
+  { id: "mergeSelected", labelKey: "retMergeSelected", guideKey: "retMergeSelectedGuide", isAction: true },
   { id: "editRoof", labelKey: "retEditRoof", guideKey: "retEditRoofGuide" },
   { id: "deleteSelected", labelKey: "retDeleteSelected", guideKey: "retDeleteSelectedGuide", isAction: true },
   { id: "deleteAll", labelKey: "retDeleteAll", guideKey: "retDeleteAllGuide", isAction: true },
@@ -33,11 +34,15 @@ interface RoofEditToolbarProps {
   onAction: (action: RoofAction) => void;
   /** 선택된 지붕면/장애물 존재 여부 — 선택 삭제 버튼 활성화 판정에 사용 */
   hasSelection?: boolean;
+  /** 병합 가능 여부 — 선택된 지붕면 2개 이상이 하나의 면으로 합쳐질 수 있을 때만 true
+   *  (변 공유뿐 아니라 근접한 변도 이어붙여 판정. 코너접촉·떨어진 면·중정·포개짐이면 false).
+   *  지붕결합 버튼 활성화 판정 */
+  canMerge?: boolean;
   /** 전체 비활성화 — 모듈 배치 완료(편집 잠금) 상태에서 지붕 편집을 막는다 */
   disabled?: boolean;
 }
 
-export default function RoofEditToolbar({ lang, activeTool, onToolChange, onAction, hasSelection = false, disabled = false }: RoofEditToolbarProps) {
+export default function RoofEditToolbar({ lang, activeTool, onToolChange, onAction, hasSelection = false, canMerge = false, disabled = false }: RoofEditToolbarProps) {
   const currentTool = TOOLS.find((tool) => tool.id === activeTool);
 
   function handleToolClick(tool: ToolDef) {
@@ -66,12 +71,15 @@ export default function RoofEditToolbar({ lang, activeTool, onToolChange, onActi
       >
         {TOOLS.map((tool, i) => {
           const isActive = !tool.isAction && activeTool === tool.id;
-          // 전체 비활성(편집 잠금) 또는 선택 삭제 버튼인데 선택이 없으면 비활성화
-          const isDisabled = disabled || (tool.id === "deleteSelected" && !hasSelection);
+          // 전체 비활성(편집 잠금) / 선택없는데 선택삭제 / 병합불가인데 지붕결합 → 비활성화
+          const isDisabled =
+            disabled ||
+            (tool.id === "deleteSelected" && !hasSelection) ||
+            (tool.id === "mergeSelected" && !canMerge);
           return (
             <div key={tool.id} style={{ display: "flex", alignItems: "center" }}>
-              {/* 구분선: select 뒤, editRoof 뒤, undo 뒤(작성 완료 앞) */}
-              {(i === 1 || i === 5 || i === 8) && (
+              {/* 구분선: select 뒤(1), editRoof 뒤(6=deleteSelected 앞), undo 뒤(9=작성완료 앞) */}
+              {(i === 1 || i === 6 || i === 9) && (
                 <div
                   style={{
                     width: 1,

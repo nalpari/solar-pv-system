@@ -98,6 +98,11 @@ const translations = {
     ja: "頂点をドラッグして屋根の形状を調整してください｜点をダブルクリックで削除",
     en: "Drag vertices to adjust roof shape | Double-click a point to delete",
   },
+  retMergeSelected: { ja: "屋根面結合", en: "Merge Selected Roofs" },
+  retMergeSelectedGuide: {
+    ja: "隣接する（辺を共有する）屋根面を1つに結合します",
+    en: "Merge adjacent roof faces (sharing an edge) into one",
+  },
   retDeleteSelected: { ja: "屋根面選択を削除", en: "Delete Selected Roof" },
   retDeleteSelectedGuide: {
     ja: "選択した面または障害物を削除します",
