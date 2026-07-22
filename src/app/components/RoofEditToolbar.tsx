@@ -38,11 +38,14 @@ interface RoofEditToolbarProps {
    *  (변 공유뿐 아니라 근접한 변도 이어붙여 판정. 코너접촉·떨어진 면·중정·포개짐이면 false).
    *  지붕결합 버튼 활성화 판정 */
   canMerge?: boolean;
+  /** 되돌릴 점 존재 여부 — 지붕면/장애물을 그리는 중 찍은 점이 1개 이상일 때만 true.
+   *  뒤로 버튼 활성화 판정 */
+  canUndo?: boolean;
   /** 전체 비활성화 — 모듈 배치 완료(편집 잠금) 상태에서 지붕 편집을 막는다 */
   disabled?: boolean;
 }
 
-export default function RoofEditToolbar({ lang, activeTool, onToolChange, onAction, hasSelection = false, canMerge = false, disabled = false }: RoofEditToolbarProps) {
+export default function RoofEditToolbar({ lang, activeTool, onToolChange, onAction, hasSelection = false, canMerge = false, canUndo = false, disabled = false }: RoofEditToolbarProps) {
   const currentTool = TOOLS.find((tool) => tool.id === activeTool);
 
   function handleToolClick(tool: ToolDef) {
@@ -71,11 +74,13 @@ export default function RoofEditToolbar({ lang, activeTool, onToolChange, onActi
       >
         {TOOLS.map((tool, i) => {
           const isActive = !tool.isAction && activeTool === tool.id;
-          // 전체 비활성(편집 잠금) / 선택없는데 선택삭제 / 병합불가인데 지붕결합 → 비활성화
+          // 전체 비활성(편집 잠금) / 선택없는데 선택삭제 / 병합불가인데 지붕결합 /
+          // 되돌릴 점 없는데 뒤로 → 비활성화
           const isDisabled =
             disabled ||
             (tool.id === "deleteSelected" && !hasSelection) ||
-            (tool.id === "mergeSelected" && !canMerge);
+            (tool.id === "mergeSelected" && !canMerge) ||
+            (tool.id === "undo" && !canUndo);
           return (
             <div key={tool.id} style={{ display: "flex", alignItems: "center" }}>
               {/* 구분선: select 뒤(1), editRoof 뒤(6=deleteSelected 앞), undo 뒤(9=작성완료 앞) */}

@@ -52,6 +52,8 @@ interface CropPopupProps {
   onSelectionChange?: (selectedIds: string[]) => void;
   /** 병합 가능 여부(인접 install 면 2개 이상 선택)를 부모에 알림 (지붕결합 버튼 활성화 판정용) */
   onMergeableChange?: (canMerge: boolean) => void;
+  /** 되돌릴 점 존재 여부(그리는 중 찍은 점이 1개 이상)를 부모에 알림 (뒤로 버튼 활성화 판정용) */
+  onUndoableChange?: (canUndo: boolean) => void;
   /** 외부 주입 폴리곤 (AI 자동 감지 결과, 정규화 [0..1] 좌표). 새 reference로 들어올 때 내부 areas에 1회 머지 */
   initialAreas?: NormalizedPolygon[];
   /** AI 감지 상태 머신 (Phase 7) — 로딩 오버레이 + Close X 버튼 가드에 사용 */
@@ -233,6 +235,7 @@ export default function CropPopup({
   mergeSelectedSignal,
   onSelectionChange,
   onMergeableChange,
+  onUndoableChange,
   initialAreas,
   detectStatus = "idle",
   ref,
@@ -806,6 +809,13 @@ export default function CropPopup({
   useEffect(() => {
     onSelectionChange?.(Array.from(selectedPolygonIds));
   }, [selectedPolygonIds, onSelectionChange]);
+
+  // 되돌릴 점 존재 여부를 부모에 통지 (툴바 뒤로 버튼 활성화 판정용).
+  // undoLastPoint 의 실행 조건(currentPoints.length >= 1)과 동일해 버튼 상태와 동작이 어긋나지 않는다.
+  // 지붕면/장애물 구분 없이 그리는 중이면 활성 — currentPoints 를 둘이 공용하기 때문.
+  useEffect(() => {
+    onUndoableChange?.(currentPoints.length >= 1);
+  }, [currentPoints, onUndoableChange]);
 
   // 병합 가능 여부를 부모에 통지 — bridge-then-union이 단일 폴리곤을 만들 때만 true.
   // 버튼 판정과 실제 병합이 같은 mergeAreaPolygons를 공유하므로 "켜지는데 무반응"이 원천 차단된다.
