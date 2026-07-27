@@ -5,6 +5,18 @@ title: solar-pv-system 번들 히스토리
 
 # Bundle history
 
+## 2026-07-27 (5)
+
+- **`.claude/rules/` 폐기** — 이 디렉터리는 `@import` 없이도 `CLAUDE.md` 와 동일하게 세션 시작 시
+  전문이 로딩된다(시스템 컨텍스트로 실측). 쪼개도 지연 로딩이 되지 않으므로 분리의 목적이 없었다.
+  4개 파일 모두 okf 포인터뿐이었고 같은 일을 `okf-hint.py` 가 파일 단위로 더 정확히 한다.
+- **번들이 아키텍처 지식의 1차 소재지가 됨** — `CLAUDE.md` 의 `API Documentation` / `Key Patterns` /
+  `Domain Types` / 환경변수 표(14키)를 제거하고 개념 색인 표로 대체. 19,858 → 9,929 bytes.
+  이제 해당 지식은 번들에만 존재하므로, **번들이 틀리면 대체 출처가 없다** — `pnpm okf:check` 의
+  STALE 판정을 이전보다 무겁게 다룰 것.
+- **`docs/context-manage.md` 정정** — `globs:` 프론트 메터로 규칙이 조건부 로딩된다는 서술은
+  Cursor 계열 규약이며 Claude Code 에는 없다. 실제 지연 로딩 수단(Skill / 훅 `additionalContext`)으로 교체.
+
 ## 2026-07-27 (4)
 
 - **발견 경로 자동화** — `.claude/hooks/okf-hint.py` 추가 (PreToolUse / `Read|Edit|MultiEdit`).
