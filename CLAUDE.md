@@ -136,18 +136,12 @@ src/
 
 ### Supplementary Guides
 
-코드 작업 전에 해당 영역의 룰 파일을 참고하세요. AGENTS.md 가 본 파일을 import 하므로 동일 컨텍스트로 로드됩니다.
-
-> **우선순위**: 도메인·아키텍처 질문은 `docs/okf/` 가 진실의 원천이다. 본 파일이나 `.claude/rules/*` 와 어긋나면 **okf 를 따르고 어긋난 쪽을 고친다**. 룰 파일은 요약을 복제하지 않고 okf 문서를 가리키기만 한다.
+> **우선순위**: 도메인·아키텍처 질문은 `docs/okf/` 가 진실의 원천이다. 본 파일과 어긋나면 **okf 를 따르고 본 파일을 고친다**.
 >
 > `src/**` 를 수정한 PR 은 `grep -rl "<수정한 파일>" docs/okf/` 로 영향받는 개념을 확인하고, 내용이 어긋나면 고치거나 `status: draft` 로 내린다. 기계 점검은 `pnpm okf:check`.
 
 | 위치 | 내용 |
 |------|------|
-| `.claude/rules/components.md` | Page/컴포넌트 영역 → okf 문서 포인터 |
-| `.claude/rules/utils.md` | 계산기하/유틸 영역 → okf 문서 포인터 |
-| `.claude/rules/styles.md` | CSS 커스텀 프로퍼티 vs Tailwind 사용 원칙 |
-| `.claude/rules/docker.md` | Docker 멀티스테이지 빌드 / compose 명령 |
 | `docs/okf/` | **OKF v0.2 지식 번들** (30개 개념) — system / domain / modules / interfaces / workflows. 도메인 규칙·좌표계 규약·외부 계약·배포 전제를 개념 단위로 기록. 진입점 `docs/okf/index.md`, 신선도 점검 `docs/okf/check.sh`. 소스 파일을 열면 `.claude/hooks/okf-hint.py` 가 관련 문서를 자동으로 지목한다 |
 | `docs/architecture.md` | 시스템 전체 아키텍처 도식 |
 | `docs/sequence-diagrams.md` | App init / i18n toggle / area calc 시퀀스 다이어그램 |
