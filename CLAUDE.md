@@ -148,7 +148,7 @@ src/
 | `.claude/rules/utils.md` | 계산기하/유틸 영역 → okf 문서 포인터 |
 | `.claude/rules/styles.md` | CSS 커스텀 프로퍼티 vs Tailwind 사용 원칙 |
 | `.claude/rules/docker.md` | Docker 멀티스테이지 빌드 / compose 명령 |
-| `docs/okf/` | **OKF v0.2 지식 번들** (30개 개념) — system / domain / modules / interfaces / workflows. 도메인 규칙·좌표계 규약·외부 계약·배포 전제를 개념 단위로 기록. 진입점 `docs/okf/index.md`, 신선도 점검 `docs/okf/check.sh` |
+| `docs/okf/` | **OKF v0.2 지식 번들** (30개 개념) — system / domain / modules / interfaces / workflows. 도메인 규칙·좌표계 규약·외부 계약·배포 전제를 개념 단위로 기록. 진입점 `docs/okf/index.md`, 신선도 점검 `docs/okf/check.sh`. 소스 파일을 열면 `.claude/hooks/okf-hint.py` 가 관련 문서를 자동으로 지목한다 |
 | `docs/architecture.md` | 시스템 전체 아키텍처 도식 |
 | `docs/sequence-diagrams.md` | App init / i18n toggle / area calc 시퀀스 다이어그램 |
 | `docs/context-manage.md` | AI 에이전트 컨텍스트 관리 사례 노트 |

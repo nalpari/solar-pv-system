@@ -5,6 +5,15 @@ title: solar-pv-system 번들 히스토리
 
 # Bundle history
 
+## 2026-07-27 (4)
+
+- **발견 경로 자동화** — `.claude/hooks/okf-hint.py` 추가 (PreToolUse / `Read|Edit|MultiEdit`).
+  소스 파일 접근 직전 해당 파일을 인용하는 개념 문서를 지목한다. 기존에는 `CLAUDE.md` 의
+  두 줄에만 의존해 에이전트가 스킵하면 그만이었다.
+- **정확도** — 단순 문자열 검색은 본문에서 파일명을 언급만 한 문서(`index.md` 예시, `log.md` 이력)까지
+  잡아서, frontmatter 의 `resource:` 줄만 정확히 매칭하도록 좁혔다.
+- **비용** — 매 Read 마다 도는 훅이라 bash+python3+grep 3프로세스를 python3 1개로 합쳤다 (90ms → 36ms).
+
 ## 2026-07-27 (3)
 
 - **CI 연동** — Jenkinsfile `Verify` 스테이지에서 `bash docs/okf/check.sh` 를 비차단(`|| true`)으로 실행.

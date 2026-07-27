@@ -46,3 +46,17 @@ grep -rl "src/app/utils/panelPlacement.ts" docs/okf/
 ```
 
 `src/**` 를 수정한 PR 은 이 결과를 리뷰 체크리스트로 삼는다.
+
+**자동 안내** — `.claude/hooks/okf-hint.py` (PreToolUse, matcher `Read|Edit|MultiEdit`).
+에이전트가 소스 파일을 열기 직전, 그 파일을 frontmatter 의 `resource:` 로 인용하는 문서를 찾아
+경로를 컨텍스트에 주입한다. 본문에서 파일명을 언급만 한 문서는 제외된다.
+
+```
+Read(src/app/utils/panelPlacement.ts) →
+  okf: 이 파일을 다루는 개념 문서 — domain/coordinate-systems.md,
+       domain/eave-reference-edge.md, domain/module-layout-rules.md,
+       domain/roof-slope-sun.md, modules/panel-placement.md
+```
+
+번들은 세션에 **자동 로드되지 않는다**. `CLAUDE.md` 가 존재를 알리고 이 훅이 접근 시점에 지목할 뿐,
+읽는 것은 에이전트의 선택이다 — 30개를 통째로 싣지 않는 progressive disclosure 가 이 형식의 전제다.
