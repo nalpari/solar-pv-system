@@ -97,6 +97,7 @@ src/
 |------|------|
 | `docs/okf/` | **OKF v0.2 지식 번들** (30개 개념). 진입점 `docs/okf/index.md` — 위 표가 그 색인이다 |
 | `docs/architecture.md` | 시스템 전체 아키텍처 도식 |
+| `docs/ci-cd-pipeline.md` / `.html` | Jenkins 파이프라인 스테이지별 상세 · Docker 멀티스테이지 · 환경변수 주입 경로 · 운영/롤백 절차 |
 | `docs/sequence-diagrams.md` | App init / i18n toggle / area calc 시퀀스 다이어그램 |
 | `docs/context-manage.md` | 에이전트 컨텍스트 관리 — 세션 상시 로딩 vs Skill/훅 지연 로딩의 실제 동작 |
 | `docs/graphify-setup.md` | graphify 도입·운영 세팅 가이드 |
