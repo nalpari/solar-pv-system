@@ -5,6 +5,7 @@ description: Docker 멀티스테이지 standalone 이미지를 Jenkins 파이프
 resource: Jenkinsfile
 tags: [deployment, docker, jenkins, ci]
 generated: { by: claude-code/opus-5, at: 2026-07-27T04:26:32Z }
+verified: { by: claude-code/opus-5, at: 2026-07-27T05:09:59Z }
 status: stable
 sources:
   - id: dockerfile
@@ -56,7 +57,12 @@ Jenkins 에이전트가 DooD(Docker-outside-of-Docker) 컨테이너라 **호스�
 2. **Load Env Credential** — `pv-common-env` + (`pv-dev-env` | `pv-prod-env`) 를 `cat` 으로 합쳐 `.env` 생성.
    같은 키가 양쪽에 있으면 프로파일 파일이 이긴다. [`configuration.md`](configuration.md) 참조.
 3. **Validate Environment** — 모든 키를 `: "${VAR:?...}"` 로 전수 검증. 새 환경변수를 추가하면 **여기에도 줄을 추가**해야 한다.
-4. **Verify**
+4. **Verify** — 두 가지를 한다.
+   - `bash docs/okf/check.sh` — OKF 번들 신선도. **비차단**(`|| true`)이며 문서 문제로 배포를 막지 않는다.
+     긴 빌드 로그에 묻히지 않도록 먼저 실행한다. `pnpm` 이 아니라 `bash` 로 직접 부르는 이유는
+     **에이전트에 Node 가 없기 때문**이다 — `check.sh` 는 bash + git 만 쓴다. bash 가 없으면 건너뛴다.
+   - `docker build --target builder` — lint·tsc·build 를 컨테이너 안에서 수행한다.
+     레이어는 Deploy 의 `compose build` 와 캐시를 공유하고, 검증용 태그는 즉시 `rmi` 한다.
 5. **Deploy** — `IMAGE_TAG=${BUILD_NUMBER}` 로 빌드 → `:{profile}-latest` 태그 부여 → 구버전 이미지 정리 → `up -d --wait`
 
 # 로컬

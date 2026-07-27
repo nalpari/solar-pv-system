@@ -21,8 +21,9 @@ Google Maps 위성영상 위에서 지붕 태양광 모듈 배치를 설계하�
   `/` 로 시작하는 경로는 번들 내부 문서를 가리킨다(`/domain/roof-face.md`).
 * 코드가 SSOT 인 값(상수·zod 스키마·매핑 테이블)은 여기서 재정의하지 않고 **위치를 가리킨다**.
   값을 옮겨 적은 곳은 반드시 `sources` 로 출처를 남긴다 — 코드가 바뀌면 이 문서가 틀린다는 뜻이다.
-* 모든 개념이 현재 `generated: claude-code/opus-5` 이고 `verified` 항목이 없다 → 신뢰 등급 **unverified**.
-  사람이 검토했다면 `verified: { by: human:<id>, at: <ISO8601> }` 를 추가할 것.
+* 신뢰 등급(OKF §5.3): `verified` 없음 → **unverified**, 비인간 actor 만 → **machine-confirmed**,
+  `human:<id>` 포함 → **human-reviewed**. 현재 `system/deployment.md` 만 machine-confirmed 이고 나머지는 unverified 다.
+  사람이 검토했다면 `verified: { by: human:<id>, at: <ISO8601> }` 를 추가할 것 — 등급이 오르고 STALE 판정도 해제된다.
 
 # 유지보수
 
@@ -31,10 +32,10 @@ Google Maps 위성영상 위에서 지붕 태양광 모듈 배치를 설계하�
 | 판정 | 의미 | 조치 |
 |------|------|------|
 | `BROKEN` | `resource` 가 가리키는 파일이 없다 | **확실히 틀린 문서다.** 고치거나 `status: draft` (exit 1) |
-| `STALE` | 소스의 마지막 커밋이 문서 기준시각보다 새롭다 | 사람이 확인. 맞으면 `verified` 추가로 해제 |
+| `STALE` | 소스의 마지막 커밋일이 문서 기준일보다 **하루 이상** 새롭다 | 사람이 확인. 맞으면 `verified` 추가로 해제 |
 | `EXPIRED` | `stale_after` 가 지났다 | 재검증 후 날짜 갱신 또는 제거 |
 
-기준시각은 frontmatter 안 `at:` 값 중 **가장 최근 것**이다.
+기준일은 frontmatter 안 `at:` 값 중 **가장 최근 것의 날짜 부분**이다 (문서를 고친 당일 커밋이 곧바로 STALE 로 뜨지 않도록 날짜 단위로 비교한다).
 사람이 검토하고 `verified: { by: human:<id>, at: <ISO8601> }` 를 추가하면 판정이 자동으로 풀리고
 신뢰 등급도 unverified → human-reviewed 로 올라간다.
 

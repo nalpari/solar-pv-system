@@ -5,6 +5,16 @@ title: solar-pv-system 번들 히스토리
 
 # Bundle history
 
+## 2026-07-27 (3)
+
+- **CI 연동** — Jenkinsfile `Verify` 스테이지에서 `bash docs/okf/check.sh` 를 비차단(`|| true`)으로 실행.
+  에이전트에 Node 가 없어 `pnpm` 이 아닌 `bash` 로 직접 호출하고, bash 가 없으면 건너뛴다.
+  [`system/deployment.md`](system/deployment.md) 의 Verify 절을 함께 갱신하고 `verified` 를 부여
+  (machine-confirmed — 사람 검토 시 `human:<id>` 로 교체할 것).
+- **점검 정확도 수정** — ① 최상위 `resource` 와 `sources[].resource` 가 같을 때 중복 보고되던 것 `sort -u` 로 제거.
+  ② 비교 단위를 시각 → **날짜**로 변경. 문서를 고치고 같은 날 커밋하면 커밋 시각이 항상 더 나중이라
+  커밋 직후 곧바로 STALE 이 뜨는 문제가 있었다.
+
 ## 2026-07-27 (2)
 
 - **신선도 점검 도입** — `docs/okf/check.sh` + `pnpm okf:check`. BROKEN(포인터 깨짐, exit 1) /

@@ -2,10 +2,10 @@
 # docs/okf/check.sh — OKF 번들 신선도 점검. git 만 사용하며 API 비용이 없다.
 #
 #   BROKEN  : frontmatter 의 resource 가 가리키는 파일이 없음 → 문서가 확실히 틀림 (exit 1)
-#   STALE   : 소스의 마지막 커밋이 문서 기준시각보다 새로움 → 사람이 확인 (경고, exit 0)
+#   STALE   : 소스의 마지막 커밋일이 문서 기준일보다 새로움 → 사람이 확인 (경고, exit 0)
 #   EXPIRED : stale_after 날짜가 지남 → 재검증 필요 (경고, exit 0)
 #
-# 기준시각은 frontmatter 안 `at:` 값 중 가장 최근 것이다. 즉 사람이 검토하고
+# 기준일은 frontmatter 안 `at:` 값 중 가장 최근 것의 날짜다. 즉 사람이 검토하고
 # `verified: { by: human:<id>, at: ... }` 를 추가하면 STALE 판정이 자동으로 해제된다.
 #
 # 사용: pnpm okf:check
@@ -30,9 +30,11 @@ while IFS= read -r doc; do
   [ -n "$fm" ] || continue
   rel="${doc#"$REPO"/}"
 
-  # 기준시각 — generated.at / verified[].at 중 최신값
+  # 기준일 — generated.at / verified[].at 중 최신값의 날짜 부분.
+  # 날짜 단위로 비교한다. 문서를 고치고 같은 날 커밋하면 커밋 시각이 항상 더 나중이라
+  # 시:분:초로 비교하면 커밋 직후 곧바로 STALE 이 뜬다. 문서 신선도는 시간 단위 관심사가 아니다.
   base="$(printf '%s\n' "$fm" \
-    | sed -n 's/.*[^a-z]at: *\([0-9][0-9-]*T[0-9:]*Z\).*/\1/p' | sort | tail -1)"
+    | sed -n 's/.*[^a-z]at: *\([0-9][0-9-]*\)T[0-9:]*Z.*/\1/p' | sort | tail -1)"
   after="$(printf '%s\n' "$fm" | sed -n 's/^stale_after: *\([0-9-]*\).*/\1/p' | head -1)"
 
   if [ -n "$after" ] && [[ "$TODAY" > "$after" || "$TODAY" == "$after" ]]; then
@@ -53,13 +55,14 @@ while IFS= read -r doc; do
     fi
 
     [ -n "$base" ] || continue
-    last="$(TZ=UTC git log -1 --format=%cd --date=format-local:%Y-%m-%dT%H:%M:%SZ -- "$src")"
+    last="$(TZ=UTC git log -1 --format=%cd --date=format-local:%Y-%m-%d -- "$src")"
     [ -n "$last" ] || continue
     if [[ "$last" > "$base" ]]; then
       echo "STALE    $rel  →  $src  ($last)"
       stale=$((stale + 1))
     fi
-  done < <(printf '%s\n' "$fm" | sed -n 's/^ *resource: *\(.*\)/\1/p' | sed 's/[[:space:]]*$//')
+  # 최상위 resource 와 sources[].resource 에 같은 경로가 오면 중복 보고되므로 sort -u.
+  done < <(printf '%s\n' "$fm" | sed -n 's/^ *resource: *\(.*\)/\1/p' | sed 's/[[:space:]]*$//' | sort -u)
 done < <(find "$BUNDLE" -name '*.md' | sort)
 
 echo "---"

@@ -81,6 +81,16 @@ pipeline {
           set -eu
           set -a; . ./.env; set +a
 
+          # OKF 지식 번들 신선도 — 비차단 경고. 문서 문제로 배포를 막지 않으므로 결과를 무시한다.
+          # 긴 docker build 에 로그가 묻히지 않도록 먼저 실행한다.
+          # pnpm 이 아닌 bash 로 직접 호출 — 에이전트에 Node 가 없고, check.sh 는 bash+git 만 쓴다.
+          echo '--- OKF 번들 신선도 점검 ---'
+          if command -v bash >/dev/null 2>&1; then
+            bash docs/okf/check.sh || echo '[okf] 경고가 있습니다 — 배포는 계속합니다.'
+          else
+            echo '[okf] bash 없음 — 점검을 건너뜁니다.'
+          fi
+
           # 호스트 Node 불필요 — Dockerfile builder 스테이지에서 lint·tsc·build 를 모두 수행한다.
           # builder 타깃 빌드가 성공하면 검증 통과. 레이어는 Deploy 의 compose build 와 캐시 공유된다.
           docker build \\
