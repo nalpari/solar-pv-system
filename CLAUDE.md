@@ -35,6 +35,7 @@ pnpm dev                     # http://localhost:3000
 | `pnpm build` | Production build (`output: "standalone"`) |
 | `pnpm start` | Serve production build |
 | `pnpm lint` | Run ESLint (flat config) |
+| `pnpm okf:check` | OKF 지식 번들 신선도 점검 (BROKEN/STALE/EXPIRED). git 만 사용, API 비용 0 |
 | `npx tsc --noEmit` | TypeScript type-check |
 | `docker compose up --build` | Docker build & run |
 | `docker compose up --build -d` | Docker build & run (백그라운드) |
@@ -107,7 +108,7 @@ src/
 
 - **State Management**: `page.tsx` owns all state, passes via props (Props-Down / Callbacks-Up). Sidebar tabs (`design` | `simulation`) are also held there.
 - **Styling**: CSS custom properties in `globals.css`, inline styles — NOT Tailwind utility classes
-- **i18n**: `utils/i18n.ts` with `t(key, lang)` function, `Lang` type (`"ja" | "en"`), sidebar footer toggle synced to `<html lang>` in `page.tsx`
+- **i18n**: `utils/i18n.ts` with `t(key, lang)` function, `Lang` type (`"ja" | "en"`). `page.tsx` 가 `lang` 을 소유하고 `<html lang>` 에 동기화한다. ⚠️ **언어 전환 UI 는 없다** — `page.tsx` 의 `const [lang] = useState<Lang>("ja")` 가 setter 를 버려 `"ja"` 고정이며, 저장소에 `setLang` 호출부가 없다. 번역문(ja/en)은 모두 갖춰져 있으므로 토글은 setter 를 노출해 `Lnb` 로 내려주면 된다
 - **Workflow**: Address search → confirm building (drag crop on map, captured via `html2canvas`) → CropPopup polygon editor (drawRoof / drawOpening / flowSetting / editRoof) → set slope (寸: 1/3/4/6/8, 필수) and module preset (필수) → place modules (정렬/치도리, 패널 긴 변을 처마 기준선과 평행하게 landscape 고정, 경사 cos 보정·시작 위상 스캔으로 최대 충진) → 모듈 배치 완료(편집 잠금) 토글 → optional Simulation tab input
 - **Panel Placement**: Three functions in `utils/panelPlacement.ts`
   - `placePanels` — lat/lng-based (mm internal)
@@ -137,12 +138,17 @@ src/
 
 코드 작업 전에 해당 영역의 룰 파일을 참고하세요. AGENTS.md 가 본 파일을 import 하므로 동일 컨텍스트로 로드됩니다.
 
+> **우선순위**: 도메인·아키텍처 질문은 `docs/okf/` 가 진실의 원천이다. 본 파일이나 `.claude/rules/*` 와 어긋나면 **okf 를 따르고 어긋난 쪽을 고친다**. 룰 파일은 요약을 복제하지 않고 okf 문서를 가리키기만 한다.
+>
+> `src/**` 를 수정한 PR 은 `grep -rl "<수정한 파일>" docs/okf/` 로 영향받는 개념을 확인하고, 내용이 어긋나면 고치거나 `status: draft` 로 내린다. 기계 점검은 `pnpm okf:check`.
+
 | 위치 | 내용 |
 |------|------|
-| `.claude/rules/components.md` | Page 구조 · 주요 컴포넌트 · 도메인 타입 요약 |
-| `.claude/rules/utils.md` | `panelPlacement.ts` 좌표 변환 / 단위 체계 / Y축 flip |
+| `.claude/rules/components.md` | Page/컴포넌트 영역 → okf 문서 포인터 |
+| `.claude/rules/utils.md` | 계산기하/유틸 영역 → okf 문서 포인터 |
 | `.claude/rules/styles.md` | CSS 커스텀 프로퍼티 vs Tailwind 사용 원칙 |
 | `.claude/rules/docker.md` | Docker 멀티스테이지 빌드 / compose 명령 |
+| `docs/okf/` | **OKF v0.2 지식 번들** (30개 개념) — system / domain / modules / interfaces / workflows. 도메인 규칙·좌표계 규약·외부 계약·배포 전제를 개념 단위로 기록. 진입점 `docs/okf/index.md`, 신선도 점검 `docs/okf/check.sh` |
 | `docs/architecture.md` | 시스템 전체 아키텍처 도식 |
 | `docs/sequence-diagrams.md` | App init / i18n toggle / area calc 시퀀스 다이어그램 |
 | `docs/context-manage.md` | AI 에이전트 컨텍스트 관리 사례 노트 |
@@ -212,7 +218,7 @@ Currently no test framework configured. Verify changes via:
 
 - `AGENTS.md` 는 본 파일(`CLAUDE.md`)을 그대로 import 하는 shim 입니다 — 모든 가이드는 여기에서 관리합니다
 - See `README.md` for the user-facing feature list, screenshots, and step-by-step usage
-- The app defaults to Japanese UI (`<html lang="ja">`) with English toggle available in the sidebar footer
+- The app renders Japanese UI (`<html lang="ja">`). English translations exist in `utils/i18n.ts` but **no toggle is wired** — see the i18n note in Key Patterns
 - 발전 시뮬레이션 입력값(방위·축전지·월평균 전기요금)을 수집한다. 축전지 목록은 QSP btc-items(`schItemTp=B`)로 조회한다. 결과 조회는 musbi sim-check(파라미터 검증) 200 통과 시 합성 레이아웃 이미지를 S3 저장 후, 동일 파라미터로 musbi 결과 페이지(calcResults)로 리다이렉트한다 (calcResults 는 API 가 아닌 페이지 리다이렉트)
 
 ## graphify

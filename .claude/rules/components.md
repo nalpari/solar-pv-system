@@ -6,22 +6,15 @@ globs:
 
 # Components & Page Structure
 
-## Page structure
+이 영역의 지식은 **`docs/okf/` 번들이 진실의 원천**이다. 여기 요약을 복제하지 않는다.
 
-`page.tsx` is a `"use client"` component that owns all application state (areas, panel config, placed panels) and passes it down to child components. No server components beyond `layout.tsx`.
+| 무엇을 알고 싶은가 | 읽을 문서 |
+|---------------------|-----------|
+| `page.tsx` 상태 소유·시그널 패턴·레이스 가드 | `docs/okf/modules/page-orchestrator.md` |
+| `CropPopup` 부모와의 프로토콜·색 상수·편집 잠금 | `docs/okf/modules/crop-popup.md` |
+| `MapView` 크롭 캡처·2단 클릭·실패 폴백 | `docs/okf/modules/map-view.md` |
+| 사용자 흐름과 각 단계 게이트·초기화 전파 | `docs/okf/workflows/design-flow.md` |
+| 시뮬레이션 제출 3단계와 파라미터 매핑 | `docs/okf/workflows/simulation-flow.md` |
+| 도메인 타입(`PolygonArea` / `PixelPolygon` 등) | `docs/okf/domain/roof-face.md`, `src/app/types/index.ts` |
 
-## Key components (`src/app/components/`)
-
-- **MapView** — Google Maps with satellite imagery and crop area selection overlay (html2canvas capture)
-- **CropPopup** — Cropped image popup with Canvas-based polygon editor and panel rendering. PNG 저장은 향후 도입 예정
-- **RoofEditToolbar** — Floating toolbar over map for polygon editing (select/drawRoof/drawOpening/flowSetting/mergeSelected/editRoof/deleteSelected/deleteAll/undo/complete)
-- **AiDetectControls** — AI 지붕 분석 트리거 (분석 시작/취소)
-
-`src/app/components/lnb/` (좌측 사이드바):
-- **Lnb** — 사이드바 컨테이너 (Design / Simulation 탭)
-- **LnbDesign** — 디자인 탭: 주소 검색·경사·모듈 선택·배치
-- **LnbSim** — 시뮬레이션 탭: 방위·축전지·월 평균 전기요금
-
-## Domain Types (`src/app/types/index.ts`)
-
-`LatLng`, `PanelSize`, `PanelOrientation`, `DrawingMode`, `PolygonArea`, `PlacedPanel`, `CropData`, `CropBounds`, `PixelPoint`, `PixelPolygon`, `PixelPanel`.
+이 파일들을 수정했다면 `pnpm okf:check` 로 영향받는 문서를 확인한다.
