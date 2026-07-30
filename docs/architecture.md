@@ -1,6 +1,6 @@
 # Solar PV Planner — 시스템 아키텍처
 
-> 대상 커밋: `718d376` (2026-07-27) · 근거: `src/**`, `next.config.ts`, `package.json`, `docs/okf/`
+> 대상 커밋: `718d376` (2026-07-27) + 2026-07-30 OpenRouter 전환 반영 · 근거: `src/**`, `next.config.ts`, `package.json`, `docs/okf/`
 > 도메인 규칙·계약의 진실의 원천은 [`docs/okf/`](okf/index.md) 다. 본 문서는 그 개념들을 **시스템 전체 조망** 관점에서 한 장에 펼친 것이다.
 > 어긋나는 곳이 있으면 okf 가 이긴다.
 
@@ -48,13 +48,13 @@
                               └──────────────┬──────────────────────────┘
                                              ▼
                               ┌─ UPSTREAM ──────────────────────────────┐
-                              │  Gemini · Replicate SAM 2               │
+                              │  OpenRouter · Replicate SAM 2           │
                               │  QSP 마스터 · MUSBI 시뮬 · AWS S3        │
                               │  자격증명은 서버에만 존재                 │
                               └─────────────────────────────────────────┘
 ```
 
-**경계 규칙 하나**: 클라이언트가 직접 부르는 외부 서비스는 **Google Maps 뿐**이다. 나머지(Gemini · Replicate · QSP · MUSBI · S3)는 전부 서버 라우트가 호출하고 자격증명은 브라우저에 내려가지 않는다.
+**경계 규칙 하나**: 클라이언트가 직접 부르는 외부 서비스는 **Google Maps 뿐**이다. 나머지(OpenRouter · Replicate · QSP · MUSBI · S3)는 전부 서버 라우트가 호출하고 자격증명은 브라우저에 내려가지 않는다.
 
 Google Maps 키만 예외인 이유는 Maps JS SDK 가 브라우저에서 동작해야 하기 때문이고, 그래서 키 보호는 코드가 아니라 **Google Cloud 콘솔의 HTTP 리퍼러 제한**에 의존한다.
 
@@ -173,7 +173,7 @@ UI 비활성화에 더해 `handlePlacePanels` 진입부에서도 다시 막는�
 ```
 크롭 dataURL
  → ① Replicate SAM 2 combined_mask   실패·토큰없음 → null 반환하고 건너뜀 (graceful, 조용함)
- → ② Gemini Vision                   이미지 1~2장(원본 → 마스크 순서가 계약) + responseSchema 강제
+ → ② OpenRouter 비전 추론             이미지 1~2장(원본 → 마스크 순서가 계약) + json_schema strict 강제
  → ③ zod 검증 → 신뢰도 게이트          하나라도 0.5 미만이면 전체를 빈 배열로 차단
  → 정규화 [0..1] 폴리곤
  → ④ 클라이언트 어댑터                 캔버스 크기를 아는 시점에 픽셀 변환 + 처마를 가장 긴 변으로 자동 지정
@@ -191,7 +191,7 @@ UI 비활성화에 더해 `handlePlacePanels` 진입부에서도 다시 막는�
 
 | 엔드포인트 | 업스트림 | 하는 일 |
 |-----------|---------|---------|
-| `POST /api/detect-roof` | Replicate + Gemini | 크롭 이미지 → 정규화 폴리곤 |
+| `POST /api/detect-roof` | Replicate + OpenRouter | 크롭 이미지 → 정규화 폴리곤 |
 | `GET /api/qsp/btc-items` | QSP 마스터 | 모듈(`M`) / 축전지(`B`) 목록 |
 | `POST /api/musbi/sim-check` | MUSBI | 파라미터 검증 + **결과 페이지 URL 발급** (계산하지 않는다) |
 | `POST /api/image/upload` | AWS S3 | 합성 레이아웃 PNG 저장 |
@@ -380,13 +380,16 @@ lat/lng ──(첫 정점 원점, 평면 근사)──▶ 로컬 미터 ──(m
 └ next/font/google                   Figtree · Noto Sans JP · Geist Mono
 
 서버
-├ @google/genai ^1.52                Gemini Vision (지붕 감지)
 ├ @aws-sdk/client-s3 ^3.1065         레이아웃 이미지 업로드
 ├ zod ^4.3.6                         요청·업스트림 응답 검증 (SSOT)
 ├ zod-openapi ^5.4.6                 zod → OpenAPI 3.1
 ├ @scalar/nextjs-api-reference ^0.10 /reference UI
-└ fetch                              Replicate · QSP · MUSBI (전용 SDK 없음)
+└ fetch                              OpenRouter · Replicate · QSP · MUSBI (전용 SDK 없음)
 ```
+
+2026-07-30 에 `@google/genai` 를 제거했다 — 지붕 감지 추론이 OpenRouter Chat Completions 로 옮겨가며
+**신규 의존성 0**(순수 `fetch`)이 됐고, 이 SDK 단독 유래였던 전이 의존성 `protobufjs` 도 함께 사라졌다.
+설계 근거 → [`plans/2026-07-27-gemini-to-openrouter-migration.md`](plans/2026-07-27-gemini-to-openrouter-migration.md)
 
 ---
 

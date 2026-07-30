@@ -7,7 +7,7 @@
 - **주소 검색** — Google Places Autocomplete로 건물 위치 탐색
 - **위성 지도** — 위성/일반 보기 토글, 줌 컨트롤, 중심 복귀 버튼
 - **건물 확정 (Crop)** — 지도 위에서 드래그해 대상 영역을 캡처(`html2canvas`) → 크롭 팝업 진입
-- **AI 지붕 감지** — 크롭 팝업의 **AI 分析開始 / Start AI Analysis** 버튼을 클릭하면 Gemini Vision이 위성 이미지에서 지붕면 폴리곤을 추출. 사용자가 수동으로 편집·추가 가능
+- **AI 지붕 감지** — 크롭 팝업의 **AI 分析開始 / Start AI Analysis** 버튼을 클릭하면 AI 비전 모델(OpenRouter 경유)이 위성 이미지에서 지붕면 폴리곤을 추출. 사용자가 수동으로 편집·추가 가능
 - **지붕 편집 툴바** — 크롭 이미지 위에서 폴리곤 편집
   - `select` 선택/이동, `drawRoof` 지붕면, `drawOpening` 개구부(제외 영역), `flowSetting` 처마(흐름방향), `mergeSelected` 지붕면 병합, `editRoof` 꼭짓점 편집, `deleteSelected`, `deleteAll`, `undo`
 - **지붕면 병합** — 인접한(변을 공유하거나 근접한) 지붕면을 2개 이상 선택해 하나로 결합. AI가 하나의 지붕을 여러 조각으로 나눠 인식했을 때 사용. 병합 시 해당 면 위의 개구부와 모듈은 함께 제거되며, 병합된 면은 선택 상태로 남는다
@@ -30,8 +30,8 @@
 | html2canvas | ^1.4.1 | 지도 영역 캡처 |
 | lucide-react | ^0.577.0 | 아이콘 |
 | polygon-clipping | ^0.15.7 | 지붕면 병합용 폴리곤 boolean 연산 (union / intersection) |
-| @google/genai | ^1.0.0 | Gemini API SDK (지붕 자동 감지) |
-| zod | ^4.3.6 | Gemini 응답 스키마 검증 |
+| OpenRouter API | — | 지붕 자동 감지 추론 (Chat Completions). 전용 SDK 없이 `fetch` 로 직접 호출 |
+| zod | ^4.3.6 | AI 응답·요청 스키마 검증 (최종 SSOT) |
 | babel-plugin-react-compiler | 1.0.0 | React Compiler |
 | ESLint | ^9 | flat config (`eslint-config-next`) |
 
@@ -42,7 +42,7 @@
 - Node.js 20+
 - pnpm
 - Google Maps API 키 (Maps JavaScript API, Places API, Geometry API 활성화 필요)
-- Gemini API 키 ([Google AI Studio](https://aistudio.google.com/apikey)에서 발급)
+- OpenRouter API 키 ([openrouter.ai/keys](https://openrouter.ai/keys)에서 발급) + 사용할 모델 슬러그
 
 ### 설치 및 실행
 
@@ -54,7 +54,8 @@ pnpm install
 
 ```
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_api_key_here
-GEMINI_API_KEY=your_gemini_api_key_here
+OPENROUTER_API_KEY=your_openrouter_api_key_here
+OPENROUTER_MODEL=google/gemini-3.1-pro-preview
 ```
 
 QSP/MUSBI BFF API(모듈 목록 조회 등)와 API 문서(`/reference`)를 로컬에서 호출하려면 dev 전용 키(`QSP_API_HOST`, `MUSBI_API_HOST`, `ENABLE_API_DOCS`)도 필요합니다. 이 키들은 `.env.dev`에 있지만 **`next dev`는 `.env.dev` 파일명을 자동 로드하지 않습니다** — Next.js가 자동 로드하는 파일은 `.env` · `.env.local` · `.env.development` 등으로 한정되며, `.env.dev`/`.env.prod`는 배포 시 Jenkins가 `.env`로 병합하는 용도입니다. 따라서 로컬에서는 `.env.dev`를 `.env.local`로 복사해 사용합니다:
@@ -97,7 +98,10 @@ docker compose down             # 중지
 
 ```bash
 docker build --build-arg NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_api_key_here -t solar-pv-system .
-docker run -p 3000:3000 -e GEMINI_API_KEY=your_gemini_api_key_here solar-pv-system
+docker run -p 3000:3000 \
+  -e OPENROUTER_API_KEY=your_openrouter_api_key_here \
+  -e OPENROUTER_MODEL=google/gemini-3.1-pro-preview \
+  solar-pv-system
 ```
 
 ## 아키텍처
@@ -207,7 +211,9 @@ src/app/
 | 변수 | 필수 | 설명 |
 |------|------|------|
 | `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | ✅ | Google Maps API 키 (Maps JS / Places / Geometry) |
-| `GEMINI_API_KEY` | ✅ | Gemini API 키 (지붕 자동 감지). 서버 라우트에서만 사용하므로 `NEXT_PUBLIC_` 접두사 금지 |
+| `OPENROUTER_API_KEY` | ✅ | OpenRouter API 키 (지붕 자동 감지). 서버 라우트에서만 사용하므로 `NEXT_PUBLIC_` 접두사 금지. 미설정 시 detect-roof 가 500 |
+| `OPENROUTER_MODEL` | ✅ | 추론 모델 슬러그 (예: `google/gemini-3.1-pro-preview`). **기본값이 없어** 미설정 시 detect-roof 가 500 |
+| `GEMINI_API_KEY` / `GEMINI_MODEL` | — | OpenRouter 전환 후 **미사용**. 안정화 관측 기간 롤백 대비로 남겨둔 잔존 키 |
 
 ## 추가 문서
 

@@ -4,13 +4,13 @@ title: Configuration
 description: 환경변수는 공통/dev/prod 3파일로 분리되어 Jenkins credential 로 주입되며, NEXT_PUBLIC_* 만 빌드타임에 인라인된다.
 resource: CLAUDE.md
 tags: [configuration, env, secrets]
-generated: { by: claude-code/opus-5, at: 2026-07-27T04:26:32Z }
+generated: { by: claude-code/opus-5, at: 2026-07-30T06:37:15Z }
 status: stable
 sources:
   - id: claude-md
     resource: CLAUDE.md
     title: Environment Variables 절
-    last_modified: 2026-07-23
+    last_modified: 2026-07-30
   - id: dockerfile
     resource: Dockerfile
     title: 빌드 ARG 선언
@@ -38,8 +38,9 @@ compose 는 `env_file: .env` 로 통째로 마운트한다.
 |----------|------|------|------|
 | `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | 공통 | 빌드 ARG | Maps JS / Places / Geometry / Geocoder |
 | `NEXT_PUBLIC_AWS_S3_BASE_URL` | 공통 | 빌드 ARG | 업로드 이미지 공개 URL 조립 기준 |
-| `GEMINI_API_KEY` | 공통 | 런타임 | [detect-roof](/interfaces/detect-roof.md) |
-| `GEMINI_MODEL` | 공통 | 런타임 | 미설정 시 detect-roof 가 500. 기본값 없음 |
+| `OPENROUTER_API_KEY` | 공통 | 런타임 | [detect-roof](/interfaces/detect-roof.md) 추론 호출. 미설정 시 500 |
+| `OPENROUTER_MODEL` | 공통 | 런타임 | 모델 슬러그(1차 `google/gemini-3.1-pro-preview`). 미설정 시 detect-roof 가 500. **기본값 없음** |
+| `GEMINI_API_KEY` · `GEMINI_MODEL` | 공통 | — | **미사용.** OpenRouter 전환 후 코드가 읽지 않는다. 안정화 관측 기간 롤백 대비로 잔존 |
 | `REPLICATE_API_TOKEN` | 공통 | 런타임 | SAM 마스크. 미설정 시 조용히 건너뛴다(graceful degradation) |
 | `AWS_REGION` / `AMPLIFY_BUCKET` / `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | 공통 | 런타임 | [image-upload](/interfaces/image-upload.md) |
 | `QSP_API_HOST` | dev/prod | 런타임 | 모듈·축전지 마스터 |
@@ -49,6 +50,9 @@ compose 는 `env_file: .env` 로 통째로 마운트한다.
 | `MUSBI_RESULT_HOST` | prod (선택) | 런타임 | 미설정 시 `MUSBI_API_HOST` 상속. 운영은 공식사이트로 분리 |
 | `ENABLE_API_DOCS` | dev/prod | 런타임 | `"true"` 일 때만 `/api/openapi` · `/reference` 노출. dev=true / prod=false 권장 |
 | `ALLOWED_ORIGIN` | dev/prod | 런타임 | **배포 필수.** 미설정 시 POST 가 전부 403 — [`security-perimeter.md`](security-perimeter.md) 참조 |
+
+잔존 `GEMINI_*` 는 Jenkinsfile `Validate Environment` 의 검증 대상에서 빠졌다 — 검증하지 않는 여분 키는
+파이프라인을 실패시키지 않으므로 남겨두는 비용이 0 이고, 롤백(git revert) 시 그대로 재사용된다.
 
 # 새 키를 추가할 때
 
