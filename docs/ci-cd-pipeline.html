@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Solar PV System · CI/CD 파이프라인</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0b0c10; --ink-2:#0e1015; --panel:#13161e; --panel-2:#171b25;
+  --line:rgba(255,255,255,.09); --line-2:rgba(255,255,255,.15);
+  --text:#e9e7e0; --muted:#9ea2ad; --faint:#6a6e7a;
+  --solar:#ffb23e; --solar-hot:#ff7a35;
+  --ok:#4ade80; --warn:#ffce4a; --bad:#ff6b6b; --info:#5bb8ff; --dev:#5bb8ff; --prod:#ff8c42;
+  --maxw:1080px;
+  --font-body:"IBM Plex Sans KR",system-ui,-apple-system,sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--ink); color:var(--text);
+  font-family:var(--font-body); line-height:1.75; letter-spacing:.005em;
+  -webkit-font-smoothing:antialiased;
+}
+body::before{
+  content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
+  background:
+    radial-gradient(1000px 640px at 86% -10%, rgba(255,138,53,.14), transparent 60%),
+    radial-gradient(820px 520px at 8% 2%, rgba(91,184,255,.06), transparent 55%),
+    linear-gradient(180deg,#0c0e13,var(--ink) 42%);
+}
+.wrap{max-width:var(--maxw); margin:0 auto; padding:0 26px}
+a{color:var(--solar); text-decoration:none; border-bottom:1px solid rgba(255,178,62,.28)}
+a:hover{border-bottom-color:var(--solar)}
+code{font-family:var(--font-mono); font-size:.88em; background:rgba(255,255,255,.06);
+  border:1px solid var(--line); border-radius:5px; padding:1px 6px; color:#f0ede4}
+
+/* header */
+header{padding:64px 0 26px; border-bottom:1px solid var(--line); margin-bottom:8px}
+.kicker{display:flex; align-items:center; gap:12px; font-family:var(--font-mono); font-size:11.5px;
+  letter-spacing:.3em; text-transform:uppercase; color:var(--solar); margin-bottom:22px}
+.kicker .sun{width:10px;height:10px;border-radius:50%;background:var(--solar);
+  box-shadow:0 0 0 3px rgba(255,178,62,.16),0 0 20px 3px rgba(255,138,53,.55)}
+.kicker .ks{flex:1;height:1px;background:linear-gradient(90deg,var(--line-2),transparent)}
+h1{font-size:clamp(30px,5vw,50px); line-height:1.1; letter-spacing:-.025em; font-weight:600; margin:0}
+h1 span{color:var(--solar)}
+.lead{color:var(--muted); max-width:700px; margin:18px 0 0; font-size:16px}
+.srcline{font-family:var(--font-mono); font-size:12px; color:var(--faint); margin-top:20px}
+
+/* toc */
+nav.toc{display:flex; flex-wrap:wrap; gap:8px; margin:26px 0 46px}
+nav.toc a{font-family:var(--font-mono); font-size:12px; color:var(--muted); border:1px solid var(--line);
+  border-radius:999px; padding:5px 13px; background:rgba(255,255,255,.02); border-bottom:1px solid var(--line)}
+nav.toc a:hover{color:var(--text); border-color:var(--line-2)}
+
+/* sections */
+section{margin:0 0 58px; scroll-margin-top:24px}
+h2{font-size:23px; font-weight:600; letter-spacing:-.01em; margin:0 0 20px;
+  display:flex; align-items:baseline; gap:12px}
+h2 .n{font-family:var(--font-mono); font-size:12px; color:var(--solar); letter-spacing:.1em}
+h3{font-size:16px; font-weight:600; margin:30px 0 12px; color:#f4f1e9}
+p{margin:0 0 14px; color:#d6d3cb}
+ul,ol{margin:0 0 14px; padding-left:20px; color:#d6d3cb}
+li{margin:5px 0}
+strong{color:#fff; font-weight:600}
+
+/* tables */
+.tw{overflow-x:auto; border:1px solid var(--line); border-radius:12px; margin:0 0 18px;
+  background:linear-gradient(180deg,var(--panel),var(--ink-2))}
+table{border-collapse:collapse; width:100%; font-size:14px; min-width:520px}
+th,td{text-align:left; padding:11px 15px; border-bottom:1px solid var(--line); vertical-align:top}
+th{font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--faint); font-weight:500; background:rgba(255,255,255,.02)}
+tr:last-child td{border-bottom:0}
+td code{background:rgba(255,255,255,.05)}
+.num{font-family:var(--font-mono); color:var(--faint); width:34px}
+
+/* code blocks */
+pre{font-family:var(--font-mono); font-size:12.6px; line-height:1.65; overflow-x:auto;
+  background:#0a0c11; border:1px solid var(--line); border-radius:12px; padding:18px 20px;
+  margin:0 0 18px; color:#cfd3dc}
+pre b{color:var(--solar); font-weight:500}
+pre i{color:var(--faint); font-style:normal}
+pre u{color:var(--ok); text-decoration:none}
+
+/* pipeline flow */
+.flow{display:grid; gap:10px; margin:4px 0 22px}
+.stage{border:1px solid var(--line); border-radius:12px; padding:15px 18px;
+  background:linear-gradient(180deg,var(--panel-2),var(--ink-2)); position:relative}
+.stage::after{content:"▼"; position:absolute; left:50%; bottom:-16px; transform:translateX(-50%);
+  color:var(--faint); font-size:10px}
+.stage:last-child::after{display:none}
+.stage .sh{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+.stage .sn{font-family:var(--font-mono); font-size:11px; color:var(--faint)}
+.stage .st{font-weight:600; font-size:15px}
+.stage .sd{color:var(--muted); font-size:13.5px; margin-top:6px}
+.stage .sd code{font-size:12px}
+.tag{font-family:var(--font-mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase;
+  padding:2px 8px; border-radius:999px; border:1px solid currentColor}
+.t-gate{color:var(--bad)} .t-soft{color:var(--warn)} .t-ok{color:var(--ok)} .t-info{color:var(--info)}
+
+/* callouts */
+.note{border-left:3px solid var(--solar); background:rgba(255,178,62,.055);
+  border-radius:0 10px 10px 0; padding:14px 18px; margin:0 0 18px}
+.note.warn{border-left-color:var(--warn); background:rgba(255,206,74,.06)}
+.note.bad{border-left-color:var(--bad); background:rgba(255,107,107,.06)}
+.note p:last-child{margin-bottom:0}
+.note .nh{font-family:var(--font-mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase;
+  color:var(--solar); margin-bottom:6px}
+.note.warn .nh{color:var(--warn)} .note.bad .nh{color:var(--bad)}
+
+/* profile cards */
+.cards{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:0 0 20px}
+@media(max-width:720px){.cards{grid-template-columns:1fr}}
+.card{border:1px solid var(--line); border-radius:14px; padding:20px 22px;
+  background:linear-gradient(180deg,var(--panel),var(--ink-2))}
+.card h4{margin:0 0 4px; font-size:19px; font-family:var(--font-mono); letter-spacing:-.01em}
+.card.dev h4{color:var(--dev)} .card.prod h4{color:var(--prod)}
+.card dl{margin:12px 0 0; display:grid; grid-template-columns:auto 1fr; gap:6px 14px; font-size:13.5px}
+.card dt{font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--faint); padding-top:3px}
+.card dd{margin:0; color:#ddd9d0}
+
+footer{border-top:1px solid var(--line); padding:26px 0 60px; margin-top:20px;
+  font-family:var(--font-mono); font-size:12px; color:var(--faint)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="kicker"><span class="sun"></span><span>CI / CD Pipeline</span><span class="ks"></span><span>Jenkins · Docker</span></div>
+  <h1>Solar PV System<br><span>배포 파이프라인</span></h1>
+  <p class="lead">Jenkins Declarative Pipeline 하나가 <strong>브랜치 선택 → 시크릿 병합 → 환경변수 전수 검증 → 컨테이너 안 lint·타입·빌드 → compose 배포</strong>까지 수행한다. GitHub Actions 는 사용하지 않는다.</p>
+  <p class="srcline">근거: Jenkinsfile · Dockerfile · docker-compose.yml · .dockerignore &nbsp;/&nbsp; 대상 커밋 761cc1f (2026-07-27)</p>
+</header>
+
+<nav class="toc">
+  <a href="#overview">1. 한눈에</a>
+  <a href="#flow">2. 전체 흐름</a>
+  <a href="#stages">3. 스테이지 상세</a>
+  <a href="#image">4. 이미지</a>
+  <a href="#runtime">5. 런타임</a>
+  <a href="#env">6. 환경변수 경로</a>
+  <a href="#ops">7. 운영</a>
+  <a href="#limits">8. 알려진 제약</a>
+  <a href="#checklist">9. 체크리스트</a>
+</nav>
+
+<section id="overview">
+  <h2><span class="n">01</span>한눈에</h2>
+  <div class="tw"><table>
+    <tr><th>항목</th><th>내용</th></tr>
+    <tr><td>CI 엔진</td><td><strong>Jenkins Declarative Pipeline</strong> (<code>Jenkinsfile</code>, 리포 루트)</td></tr>
+    <tr><td>GitHub Actions</td><td><strong>없음</strong> — <code>.github/</code> 디렉터리 자체가 없다</td></tr>
+    <tr><td>트리거</td><td><code>triggers { }</code> 블록 없음 → <strong>수동 파라미터 빌드 전용.</strong> 푸시로 자동 배포되지 않는다</td></tr>
+    <tr><td>파라미터</td><td><code>PROFILE</code> = <code>dev</code> | <code>prod</code> (choice, 기본 <code>dev</code>)</td></tr>
+    <tr><td>동시 실행</td><td><code>disableConcurrentBuilds()</code></td></tr>
+    <tr><td>산출물</td><td>Docker 이미지 <code>solar-pv-system:{profile}-{BUILD_NUMBER}</code></td></tr>
+    <tr><td>배포</td><td>같은 Docker 호스트에서 <code>docker compose up -d --wait</code> (blue/green 아님)</td></tr>
+    <tr><td>레지스트리</td><td><strong>없음</strong> — push 하지 않고 로컬 데몬 이미지로만 존재</td></tr>
+  </table></div>
+
+  <p><code>PROFILE</code> 하나가 브랜치 · credential · compose 프로파일 · 포트를 전부 결정한다.</p>
+
+  <div class="cards">
+    <div class="card dev">
+      <h4>PROFILE = dev</h4>
+      <dl>
+        <dt>브랜치</dt><dd><code>dev</code></dd>
+        <dt>Credential</dt><dd><code>pv-common-env</code> + <code>pv-dev-env</code></dd>
+        <dt>서비스</dt><dd><code>app-dev</code> (1 인스턴스)</dd>
+        <dt>포트</dt><dd><strong>4010</strong> → 3000</dd>
+      </dl>
+    </div>
+    <div class="card prod">
+      <h4>PROFILE = prod</h4>
+      <dl>
+        <dt>브랜치</dt><dd><code>main</code></dd>
+        <dt>Credential</dt><dd><code>pv-common-env</code> + <code>pv-prod-env</code></dd>
+        <dt>서비스</dt><dd><code>app-prod-4000</code>, <code>app-prod-4001</code></dd>
+        <dt>포트</dt><dd><strong>4000 / 4001</strong> → 3000</dd>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<section id="flow">
+  <h2><span class="n">02</span>전체 흐름</h2>
+  <div class="flow">
+    <div class="stage">
+      <div class="sh"><span class="sn">STAGE 1</span><span class="st">Checkout</span><span class="tag t-info">SCM</span></div>
+      <div class="sd"><code>skipDefaultCheckout(true)</code> 후 GitSCM 직접 호출 — <code>prod → */main</code>, <code>dev → */dev</code>. remote·extensions 는 잡 설정 재사용, <strong>브랜치만 파라미터가 결정</strong>.</div>
+    </div>
+    <div class="stage">
+      <div class="sh"><span class="sn">STAGE 2</span><span class="st">Load Env Credential</span><span class="tag t-info">SECRET</span></div>
+      <div class="sd">Secret file 2개를 <code>cat</code> 병합 → <code>.env</code> (<code>chmod 600</code>). <strong>같은 키는 뒤에 붙는 프로파일 파일이 이긴다.</strong></div>
+    </div>
+    <div class="stage">
+      <div class="sh"><span class="sn">STAGE 3</span><span class="st">Validate Environment</span><span class="tag t-gate">차단 게이트</span></div>
+      <div class="sd">필수 키 12개를 <code>: "${VAR:?msg}"</code> 로 전수 검증 + <code>docker compose version</code>. 하나라도 비면 <strong>배포 전에 즉시 실패</strong>.</div>
+    </div>
+    <div class="stage">
+      <div class="sh"><span class="sn">STAGE 4</span><span class="st">Verify</span><span class="tag t-soft">비차단</span><span class="tag t-gate">차단 게이트</span></div>
+      <div class="sd">① <code>bash docs/okf/check.sh</code> — 문서 신선도, <strong>경고만</strong>.<br>② <code>docker build --target builder</code> — lint · tsc · build 를 컨테이너 안에서 수행. <strong>실패 시 배포 중단.</strong></div>
+    </div>
+    <div class="stage">
+      <div class="sh"><span class="sn">STAGE 5</span><span class="st">Deploy</span><span class="tag t-ok">HEALTH GATE</span></div>
+      <div class="sd"><code>IMAGE_TAG=${BUILD_NUMBER}</code> 빌드 → <code>:{profile}-latest</code> 재태깅 → <code>up -d --wait</code>(healthy 까지 블로킹) → 구버전 이미지 정리(최근 2개 보존).</div>
+    </div>
+    <div class="stage">
+      <div class="sh"><span class="sn">POST</span><span class="st">always</span><span class="tag t-info">CLEANUP</span></div>
+      <div class="sd"><code>docker compose ps</code> 로 최종 상태 기록 후 <code>rm -f .env</code>. <code>set +e</code> 라 정리 실패가 빌드 결과를 뒤집지 않는다.</div>
+    </div>
+  </div>
+</section>
+
+<section id="stages">
+  <h2><span class="n">03</span>스테이지 상세</h2>
+
+  <h3>3.1 &nbsp;Checkout</h3>
+  <p>Jenkins 기본 체크아웃을 끄고 스테이지 안에서 <code>GitSCM</code> 을 직접 부른다. 잡 설정에 어떤 브랜치가 걸려 있든 실제 빌드 대상은 <code>PROFILE</code> 이 정한다.</p>
+<pre>def targetBranch = params.PROFILE == 'prod' ? <b>'main'</b> : <b>'dev'</b>
+checkout([$class:'GitSCM', branches:[[name:"*/${targetBranch}"]],
+          userRemoteConfigs: scm.userRemoteConfigs, extensions: scm.extensions])</pre>
+
+  <h3>3.2 &nbsp;Load Env Credential</h3>
+  <div class="tw"><table>
+    <tr><th>Credential ID</th><th>종류</th><th>역할</th></tr>
+    <tr><td><code>pv-common-env</code></td><td>Secret file</td><td>dev/prod 공통 — Maps · Gemini · AWS S3</td></tr>
+    <tr><td><code>pv-dev-env</code></td><td>Secret file</td><td>dev 전용 — QSP/MUSBI 호스트, 문서 노출 플래그, Origin 허용목록</td></tr>
+    <tr><td><code>pv-prod-env</code></td><td>Secret file</td><td>prod 전용 — 동일 키의 운영 값</td></tr>
+  </table></div>
+<pre>cat "$ENV_COMMON" &gt; .env
+printf '\n' &gt;&gt; .env      <i># 공통 파일 끝에 개행이 없어도 첫 프로파일 키가 붙지 않도록</i>
+cat "$ENV_PROFILE" &gt;&gt; .env
+chmod 600 .env</pre>
+  <p><strong>병합 순서 = 우선순위.</strong> <code>set -a; . ./.env</code> 로 소싱하므로 같은 키를 다시 정의하면 나중 값(프로파일)이 이긴다.</p>
+
+  <h3>3.3 &nbsp;Validate Environment</h3>
+  <p><code>.env</code> 소싱 후 필수 키 12개를 <code>: "${VAR:?메시지}"</code> 로 전수 검증한다.</p>
+<pre><b>공통</b>  NEXT_PUBLIC_GOOGLE_MAPS_API_KEY  GEMINI_API_KEY  GEMINI_MODEL
+       AWS_REGION  AMPLIFY_BUCKET  AWS_ACCESS_KEY_ID  AWS_SECRET_ACCESS_KEY
+       NEXT_PUBLIC_AWS_S3_BASE_URL
+<b>프로파일</b>  QSP_API_HOST  MUSBI_API_HOST  ENABLE_API_DOCS  ALLOWED_ORIGIN
+<i>미검증(선택값)</i>  REPLICATE_API_TOKEN  MUSBI_CHECK_PATH  MUSBI_RESULT_PATH  MUSBI_RESULT_HOST</pre>
+  <div class="note bad">
+    <div class="nh">놓치면 아픈 곳</div>
+    <p><strong>새 환경변수를 추가하면 이 스테이지에 검증 라인을 반드시 같이 추가한다.</strong> 빠뜨리면 값이 비어 있어도 배포가 “성공”하고, 런타임에 500(Gemini/S3) 또는 403(<code>ALLOWED_ORIGIN</code> 미설정 시 모든 POST)으로 나타난다.</p>
+  </div>
+
+  <h3>3.4 &nbsp;Verify — 두 검사의 실패 정책이 다르다</h3>
+  <p><strong>① OKF 번들 신선도 — 비차단.</strong> 문서 문제로 배포를 막지 않는다는 게 명시된 정책이다.</p>
+<pre>bash docs/okf/check.sh || echo '[okf] 경고가 있습니다 — 배포는 계속합니다.'</pre>
+  <ul>
+    <li><code>pnpm okf:check</code> 가 아니라 <code>bash</code> 로 직접 부른다 — <strong>Jenkins 에이전트에 Node 가 없고</strong>, <code>check.sh</code> 는 bash + git 만 쓴다.</li>
+    <li>bash 자체가 없으면 조용히 건너뛴다.</li>
+    <li>긴 <code>docker build</code> 로그에 묻히지 않도록 빌드보다 <strong>먼저</strong> 실행한다.</li>
+  </ul>
+  <p><strong>② 빌드 검증 — 차단.</strong></p>
+<pre>docker build <b>--target builder</b> \
+  --build-arg NEXT_PUBLIC_GOOGLE_MAPS_API_KEY="$NEXT_PUBLIC_GOOGLE_MAPS_API_KEY" \
+  --build-arg NEXT_PUBLIC_AWS_S3_BASE_URL="$NEXT_PUBLIC_AWS_S3_BASE_URL" \
+  -t "solar-pv-system:verify-${BUILD_NUMBER}" .
+docker rmi "solar-pv-system:verify-${BUILD_NUMBER}" || true</pre>
+  <p><code>builder</code> 스테이지 안에 <code>pnpm lint</code> → <code>pnpm exec tsc --noEmit</code> → <code>pnpm build</code> 가 들어 있어 <strong>린트·타입 실패가 곧 이미지 빌드 실패</strong>다. 검증용 태그는 바로 지우지만 <strong>레이어 캐시는 남아 Deploy 의 <code>compose build</code> 가 그대로 재사용</strong>하므로 이 중복 빌드는 거의 공짜다.</p>
+
+  <h3>3.5 &nbsp;Deploy</h3>
+  <div class="tw"><table>
+    <tr><th>단계</th><th>dev</th><th>prod</th></tr>
+    <tr><td>빌드</td><td><code>compose --profile dev build app-dev</code></td><td><code>compose --profile prod build app-prod-4000</code></td></tr>
+    <tr><td>태깅</td><td><code>:dev-{N}</code> → <code>:dev-latest</code></td><td><code>:prod-{N}</code> → <code>:prod-latest</code></td></tr>
+    <tr><td>기동</td><td><code>up -d --wait app-dev</code></td><td><code>up -d --wait app-prod-4000 app-prod-4001</code></td></tr>
+    <tr><td>정리</td><td colspan="2">숫자 태그 최근 <strong>2개</strong>만 보존 (<code>KEEP_VERSIONS=2</code>)</td></tr>
+  </table></div>
+  <p><strong><code>--wait</code> 가 배포 게이트다.</strong> 컨테이너 healthcheck 가 healthy 가 될 때까지 블로킹하고, unhealthy 로 끝나면 비0 종료해 스테이지를 실패시킨다.</p>
+  <p><strong>prod 의 4001 은 4000 의 이미지를 재사용한다.</strong> <code>app-prod-4001</code> 에는 <code>build:</code> 섹션이 없고 <code>image:</code> 만 있으므로 4000 을 먼저 빌드해 태그를 만들어야 뜬다 — <code>depends_on</code> 도 그래서 걸려 있다.</p>
+<pre><i># 이미지 정리 — {profile}-{숫자} 형태만 골라 역순 정렬 후 3번째부터 삭제</i>
+docker images --format '{{.Repository}}:{{.Tag}}' \
+  | grep -E "<b>^solar-pv-system:${profile}-[0-9]+$</b>" \
+  | sed "s/^solar-pv-system:${profile}-//" | sort -n -r \
+  | tail -n "+3" | sed "s/^/solar-pv-system:${profile}-/" | xargs -r docker rmi || true</pre>
+  <p>정규식이 숫자 태그만 잡으므로 <code>-latest</code> 와 다른 프로파일 이미지는 삭제되지 않는다.</p>
+
+  <h3>3.6 &nbsp;post { always }</h3>
+  <div class="note">
+    <div class="nh">.env 를 지워도 컨테이너는 멀쩡한 이유</div>
+    <p><code>env_file</code> 은 <strong>컨테이너 생성 시점에</strong> 읽혀 환경변수로 굳는다. 다만 워크스페이스에 <code>.env</code> 가 남지 않으므로, 이후 수동으로 <code>docker compose</code> 를 다시 부르려면 <code>.env</code> 를 직접 만들어야 한다.</p>
+  </div>
+</section>
+
+<section id="image">
+  <h2><span class="n">04</span>이미지 — Dockerfile 4스테이지</h2>
+<pre><b>base</b>     node:20-alpine + corepack pnpm@10
+ ├─ <b>deps</b>     package.json + pnpm-lock.yaml → pnpm install --frozen-lockfile
+ └─ <b>builder</b>  deps 의 node_modules + 소스 전체
+              ARG/ENV NEXT_PUBLIC_GOOGLE_MAPS_API_KEY, NEXT_PUBLIC_AWS_S3_BASE_URL
+              <u>RUN pnpm lint</u>
+              <u>RUN pnpm exec tsc --noEmit</u>
+              <u>RUN pnpm build</u>            → .next/standalone
+<b>runner</b>   node:20-alpine (builder 와 별개 베이스)
+          NODE_ENV=production · 비루트 nextjs(uid 1001)/nodejs(gid 1001)
+          COPY public, .next/standalone, .next/static
+          EXPOSE 3000 · PORT=3000 · HOSTNAME=0.0.0.0 · CMD ["node","server.js"]</pre>
+  <div class="tw"><table>
+    <tr><th class="num">#</th><th>포인트</th></tr>
+    <tr><td class="num">1</td><td><strong>의존성 레이어 분리</strong> — <code>deps</code> 가 락파일만 복사하므로 소스만 바뀐 빌드는 <code>pnpm install</code> 을 건너뛴다.</td></tr>
+    <tr><td class="num">2</td><td><strong>검증이 빌드 안에 있다</strong> — CI 스크립트가 아니라 Dockerfile 이 lint/tsc 를 수행한다. 로컬 <code>docker build</code> 도 같은 게이트를 통과한다.</td></tr>
+    <tr><td class="num">3</td><td><strong><code>NEXT_PUBLIC_*</code> 는 빌드타임</strong> — 클라이언트 번들에 문자열로 인라인된다. 값을 바꾸려면 재시작이 아니라 <strong>재빌드</strong>가 필요하다.</td></tr>
+    <tr><td class="num">4</td><td><strong><code>runner</code> 는 pnpm 없이 뜬다</strong> — <code>output: "standalone"</code> 산출물만 복사해 이미지가 작고 <code>node_modules</code> 가 없다.</td></tr>
+  </table></div>
+  <div class="note">
+    <div class="nh">.dockerignore</div>
+    <p><code>node_modules · .next · .git · *.md · .env · .env.local · .env*.local</code> 제외 — <strong>빌드 컨텍스트에 <code>.env</code> 가 절대 들어가지 않는다.</strong> 시크릿은 오직 <code>--build-arg</code>(빌드타임 2개)와 <code>env_file</code>(런타임)로만 들어온다.</p>
+  </div>
+</section>
+
+<section id="runtime">
+  <h2><span class="n">05</span>런타임 — docker-compose.yml</h2>
+  <div class="tw"><table>
+    <tr><th>서비스</th><th>profiles:</th><th>이미지</th><th>포트</th><th>빌드</th></tr>
+    <tr><td><code>app-dev</code></td><td><code>dev</code></td><td><code>:dev-${IMAGE_TAG:-latest}</code></td><td>4010:3000</td><td>O</td></tr>
+    <tr><td><code>app-prod-4000</code></td><td><code>prod</code></td><td><code>:prod-${IMAGE_TAG:-latest}</code></td><td>4000:3000</td><td>O</td></tr>
+    <tr><td><code>app-prod-4001</code></td><td><strong>없음</strong></td><td><code>:prod-${IMAGE_TAG:-latest}</code></td><td>4001:3000</td><td>X (4000 이미지 재사용)</td></tr>
+  </table></div>
+  <p>공통: <code>env_file: .env</code> · <code>NODE_ENV=production</code> · <code>restart: unless-stopped</code> · 공유 healthcheck 앵커.</p>
+<pre>x-app-healthcheck: &amp;app-healthcheck
+  test: ["CMD", "wget", "-q", "--spider", "<b>http://127.0.0.1:3000/</b>"]
+  interval: 5s      <i># 최대 대기 ≈ start_period 10s + 12회 × 5s</i>
+  timeout: 3s
+  retries: 12
+  start_period: 10s</pre>
+  <div class="note bad">
+    <div class="nh">헬스체크를 외부 curl 로 바꾸지 말 것</div>
+    <p>Jenkins 에이전트가 <strong>DooD(Docker-outside-of-Docker) 컨테이너라 호스트 publish 포트(4000/4010)에 닿지 못한다.</strong> 그래서 컨테이너 <em>안</em>의 busybox <code>wget</code> 으로 <code>127.0.0.1:3000</code> 을 찌른다. <code>curl localhost:4000</code> 방식으로 바꾸면 Jenkins 에서 반드시 실패한다.</p>
+  </div>
+  <div class="note warn">
+    <div class="nh">app-prod-4001 에 profiles: 키가 없다</div>
+    <p>compose 에서 프로파일이 없는 서비스는 <strong>항상 대상에 포함</strong>되므로 <code>--profile dev</code> 로 올릴 때도 딸려올 수 있다. Jenkinsfile 이 서비스명을 명시(<code>up -d --wait app-dev</code>)해서 회피하고 있다 — 즉 <strong>안전성이 compose 파일이 아니라 파이프라인 호출부에 걸려 있다.</strong> 수동으로 <code>docker compose --profile dev up -d</code> 만 치면 4001 이 같이 뜬다.</p>
+  </div>
+</section>
+
+<section id="env">
+  <h2><span class="n">06</span>환경변수가 들어가는 경로</h2>
+<pre>Jenkins Secret file (pv-common-env, pv-{profile}-env)
+        │  cat 병합
+        ▼
+     <b>.env</b>  (워크스페이스, chmod 600, post 에서 삭제)
+        ├── set -a; . ./.env    → 셸 변수 (Validate / Verify / Deploy)
+        │       ├── --build-arg NEXT_PUBLIC_*  → Dockerfile ARG → 클라이언트 번들 인라인  <b>★빌드타임</b>
+        │       └── compose build.args 의 ${NEXT_PUBLIC_*:?...} 도 같은 값을 읽음
+        └── env_file: .env      → 컨테이너 프로세스 환경변수                            <b>★런타임</b></pre>
+  <p><strong>빌드타임은 2개뿐</strong>(<code>NEXT_PUBLIC_GOOGLE_MAPS_API_KEY</code>, <code>NEXT_PUBLIC_AWS_S3_BASE_URL</code>)이며 이미지에 굳는다. 나머지는 전부 런타임이라 값 변경 후 컨테이너 재생성으로 반영된다. 키별 용도와 dev/prod 배치는 <a href="okf/system/configuration.md">okf/system/configuration.md</a> 표를 따른다.</p>
+</section>
+
+<section id="ops">
+  <h2><span class="n">07</span>운영</h2>
+
+  <h3>배포</h3>
+  <p>Jenkins → 잡 → <strong>Build with Parameters</strong> → <code>PROFILE</code> 선택 → Build. <code>dev</code> 는 <code>dev</code> 브랜치를 4010 으로, <code>prod</code> 는 <code>main</code> 브랜치를 4000/4001 로 올린다.</p>
+
+  <h3>로컬에서 파이프라인과 동일하게 재현</h3>
+<pre><i># .env 를 준비한 뒤 (공통 + 프로파일 병합본)</i>
+docker build --target builder \
+  --build-arg NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=... \
+  --build-arg NEXT_PUBLIC_AWS_S3_BASE_URL=... -t pv-verify .   <i># = Verify 스테이지</i>
+
+docker compose --profile dev up --build       <i># 포그라운드</i>
+docker compose --profile dev up --build -d    <i># 백그라운드</i>
+docker compose down</pre>
+
+  <h3>롤백 — 수동, 파이프라인에 스테이지가 없다</h3>
+  <p>이미지가 빌드번호로 태깅되고 최근 2개가 보존되므로 직전 버전으로 되돌릴 수는 있다. 다만 <strong>파이프라인에 롤백 경로가 구현돼 있지 않고</strong>, <code>post</code> 에서 <code>.env</code> 가 지워지므로 배포 호스트에서 <code>.env</code> 를 복구한 뒤 수동으로 수행해야 한다.</p>
+<pre>docker images | grep solar-pv-system          <i># 보존된 태그 확인 (최근 2개)</i>
+IMAGE_TAG=&lt;이전_빌드번호&gt; docker compose --profile prod up -d --wait app-prod-4000 app-prod-4001</pre>
+  <p><code>--build</code> 없이 <code>up</code> 하면 기존 이미지를 그대로 사용한다. <strong>실제 환경에서 검증된 절차가 아니므로 도입 전 한 번 리허설할 것.</strong></p>
+</section>
+
+<section id="limits">
+  <h2><span class="n">08</span>알려진 제약</h2>
+  <div class="tw"><table>
+    <tr><th class="num">#</th><th>제약</th><th>영향</th><th>완화 / 대안</th></tr>
+    <tr><td class="num">1</td><td>자동 트리거 없음</td><td>푸시해도 배포되지 않는다</td><td>의도된 수동 게이트. 자동화하려면 <code>pollSCM</code> / webhook 추가</td></tr>
+    <tr><td class="num">2</td><td>레지스트리 push 없음</td><td>배포 호스트 = 빌드 호스트로 고정</td><td>다중 호스트 확장 시 레지스트리 필요</td></tr>
+    <tr><td class="num">3</td><td>blue/green 아님</td><td><code>up -d</code> 재생성 중 짧은 순단</td><td>prod 2인스턴스지만 <strong>동시에 교체</strong>되므로 무중단은 아니다</td></tr>
+    <tr><td class="num">4</td><td>롤백 스테이지 없음</td><td>장애 시 수동 복구</td><td>§7 절차 + 보존 2버전</td></tr>
+    <tr><td class="num">5</td><td><code>app-prod-4001</code> 에 <code>profiles:</code> 없음</td><td>수동 compose 호출 시 의도치 않게 기동</td><td>Jenkinsfile 은 서비스명 명시로 회피</td></tr>
+    <tr><td class="num">6</td><td>테스트 프레임워크 없음</td><td>회귀 검증이 lint + tsc + 빌드 성공에 의존</td><td>현 상태에서 Verify 가 할 수 있는 최대치</td></tr>
+    <tr><td class="num">7</td><td>이미지 보존 2개</td><td>3버전 이상 되돌릴 수 없다</td><td><code>KEEP_VERSIONS</code> 상수 조정</td></tr>
+    <tr><td class="num">8</td><td>빌드 중 <code>.env</code> 평문 존재</td><td>워크스페이스 노출 창</td><td><code>chmod 600</code> + <code>post</code> 삭제 + <code>.dockerignore</code> 제외</td></tr>
+  </table></div>
+</section>
+
+<section id="checklist">
+  <h2><span class="n">09</span>체크리스트 — 새 환경변수를 추가할 때</h2>
+  <ol>
+    <li>공통 키면 <code>pv-common-env</code>, 환경별이면 <code>pv-dev-env</code> / <code>pv-prod-env</code> credential 파일에 추가.</li>
+    <li><code>NEXT_PUBLIC_*</code> 이면 추가로 — <code>Dockerfile</code> 에 <code>ARG</code>/<code>ENV</code> 2줄, <code>docker-compose.yml</code> 각 서비스 <code>build.args</code> 에 1줄, Jenkinsfile Verify 스테이지의 <code>docker build</code> 에 <code>--build-arg</code> 1줄.</li>
+    <li><strong>무조건</strong> Jenkinsfile <code>Validate Environment</code> 에 <code>: "${VAR:?...}"</code> 1줄 (전수 검증 정책).</li>
+    <li><a href="okf/system/configuration.md">okf/system/configuration.md</a> 표 갱신.</li>
+  </ol>
+  <div class="note bad">
+    <div class="nh">3번을 빠뜨리면</div>
+    <p>값이 없는 채로 배포가 성공하고, 런타임에 500 / 403 으로 나타난다.</p>
+  </div>
+</section>
+
+<footer>
+  Solar PV System · CI/CD 파이프라인 · 마크다운 버전: <a href="ci-cd-pipeline.md">docs/ci-cd-pipeline.md</a><br>
+  개념 원천: <a href="okf/system/deployment.md">okf/system/deployment.md</a> · <a href="okf/system/configuration.md">okf/system/configuration.md</a>
+</footer>
+
+</div>
+</body>
+</html>

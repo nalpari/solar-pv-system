@@ -10,7 +10,9 @@ import {
 import {
   ROOF_DETECT_SYSTEM_PROMPT,
   ROOF_DETECT_USER_PROMPT,
+  EXTERNAL_HINT_BLOCK,
 } from "@/lib/detect/prompt";
+import { fetchSamMask } from "@/lib/sam/replicate";
 
 export const runtime = "nodejs";
 
@@ -47,7 +49,7 @@ function extractJsonPayload(text: string): string | null {
 
 async function callGeminiJson<T>(
   client: GoogleGenAI,
-  image: ParsedDataUrl,
+  images: ParsedDataUrl[],
   systemPrompt: string,
   userPrompt: string,
   responseSchema: Schema,
@@ -64,20 +66,19 @@ async function callGeminiJson<T>(
   // the model will still think, just stop sooner.
   thinkingBudget: number = 4096,
 ): Promise<T> {
+  // 이미지 배열을 inlineData parts로 변환 → 마지막에 텍스트 user prompt 첨부
+  const parts = [
+    ...images.map((img) => ({
+      inlineData: { mimeType: img.mediaType, data: img.base64 },
+    })),
+    { text: userPrompt },
+  ];
   const response = await client.models.generateContent({
     model: DETECT_MODEL,
     contents: [
       {
         role: "user",
-        parts: [
-          {
-            inlineData: {
-              mimeType: image.mediaType,
-              data: image.base64,
-            },
-          },
-          { text: userPrompt },
-        ],
+        parts,
       },
     ],
     config: {
@@ -161,11 +162,26 @@ const DETECT_RESPONSE_SCHEMA: Schema = {
 async function detectRoofPolygons(
   client: GoogleGenAI,
   image: ParsedDataUrl,
+  imageDataUrl: string,
 ): Promise<DetectResponse> {
+  // [SAM PoC] Replicate Meta SAM 2로 건물 마스크 얻기. 실패 시 null → Gemini 단독 진행.
+  const samMaskDataUrl = await fetchSamMask(imageDataUrl);
+  const samMask = samMaskDataUrl ? parseDataUrl(samMaskDataUrl) : null;
+
+  const images = samMask ? [image, samMask] : [image];
+  const systemPrompt = samMask
+    ? `${ROOF_DETECT_SYSTEM_PROMPT}\n\n${EXTERNAL_HINT_BLOCK}`
+    : ROOF_DETECT_SYSTEM_PROMPT;
+
+  console.info("[detect-roof] gemini input", {
+    sam_mask_attached: samMask !== null,
+    image_count: images.length,
+  });
+
   const result = await callGeminiJson(
     client,
-    image,
-    ROOF_DETECT_SYSTEM_PROMPT,
+    images,
+    systemPrompt,
     ROOF_DETECT_USER_PROMPT,
     DETECT_RESPONSE_SCHEMA,
     (parsed) => {
@@ -181,6 +197,7 @@ async function detectRoofPolygons(
       return { success: true, data: v.data };
     },
   );
+
   if (result.polygons.length === 0) {
     console.warn("[detect-roof] 폴리곤 0개 반환");
     return { polygons: [], reason: "no_polygons" };
@@ -245,7 +262,7 @@ export async function POST(req: Request) {
   const client = new GoogleGenAI({ apiKey });
 
   try {
-    const result = await detectRoofPolygons(client, image);
+    const result = await detectRoofPolygons(client, image, body.imageDataUrl);
     return NextResponse.json(result satisfies DetectResponse);
   } catch (err) {
     if (err instanceof ApiError) return respondWithUpstreamError(err);

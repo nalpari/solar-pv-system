@@ -9,7 +9,8 @@
 - **건물 확정 (Crop)** — 지도 위에서 드래그해 대상 영역을 캡처(`html2canvas`) → 크롭 팝업 진입
 - **AI 지붕 감지** — 크롭 팝업의 **AI 分析開始 / Start AI Analysis** 버튼을 클릭하면 Gemini Vision이 위성 이미지에서 지붕면 폴리곤을 추출. 사용자가 수동으로 편집·추가 가능
 - **지붕 편집 툴바** — 크롭 이미지 위에서 폴리곤 편집
-  - `select` 선택/이동, `drawRoof` 지붕면, `drawOpening` 개구부(제외 영역), `flowSetting` 처마(흐름방향), `editRoof` 꼭짓점 편집, `deleteSelected`, `deleteAll`, `undo`
+  - `select` 선택/이동, `drawRoof` 지붕면, `drawOpening` 개구부(제외 영역), `flowSetting` 처마(흐름방향), `mergeSelected` 지붕면 병합, `editRoof` 꼭짓점 편집, `deleteSelected`, `deleteAll`, `undo`
+- **지붕면 병합** — 인접한(변을 공유하거나 근접한) 지붕면을 2개 이상 선택해 하나로 결합. AI가 하나의 지붕을 여러 조각으로 나눠 인식했을 때 사용. 병합 시 해당 면 위의 개구부와 모듈은 함께 제거되며, 병합된 면은 선택 상태로 남는다
 - **모듈 선택** — 60셀 / 72셀 / 대형 / 커스텀 프리셋 (mm 단위)
 - **자동 모듈 배치** — 패널 긴 변을 처마 기준선과 평행하게(landscape) 배치. 경사(寸) cos 보정 + 시작 위상 스캔으로 최대 충진. 정렬/치도리 선택
 - **처마 평행 배치** — `flowSetting`으로 지정한 처마 변(eave)에 평행하도록 그리드 정렬
@@ -28,6 +29,7 @@
 | @vis.gl/react-google-maps | ^1.7.1 | Google Maps 통합 |
 | html2canvas | ^1.4.1 | 지도 영역 캡처 |
 | lucide-react | ^0.577.0 | 아이콘 |
+| polygon-clipping | ^0.15.7 | 지붕면 병합용 폴리곤 boolean 연산 (union / intersection) |
 | @google/genai | ^1.0.0 | Gemini API SDK (지붕 자동 감지) |
 | zod | ^4.3.6 | Gemini 응답 스키마 검증 |
 | babel-plugin-react-compiler | 1.0.0 | React Compiler |
@@ -114,6 +116,7 @@ src/app/
 │   └── lnb/                   # 좌측 사이드바 (Lnb / LnbDesign / LnbSim / address-input-lnb)
 ├── utils/
 │   ├── i18n.ts                # 일/영 번역 사전 + `t(key, lang)` 함수
+│   ├── mergePolygons.ts       # 지붕면 병합 (인접 판정 + 폴리곤 union)
 │   └── panelPlacement.ts      # 좌표 변환 및 패널 배치 계산 엔진
 ├── types/index.ts             # 도메인 타입
 ├── globals.css                # CSS 커스텀 프로퍼티 테마
@@ -183,7 +186,8 @@ src/app/
    - `drawRoof`로 지붕면 폴리곤을 그립니다 (3점 이상 → 시작점 클릭으로 닫기)
    - `drawOpening`으로 환기구 등 개구부(제외 영역)를 그립니다
    - `flowSetting`으로 각 지붕면의 처마(흐름방향) 변을 지정하면 모듈이 그 변과 평행하게 배치됩니다
-   - `editRoof`로 꼭짓점을 드래그하거나 더블클릭으로 삭제, `undo`로 직전 작업 되돌리기
+   - `editRoof`로 꼭짓점을 드래그하거나 더블클릭으로 삭제
+   - `undo`는 지붕면·개구부를 **그리는 중** 마지막으로 찍은 점을 되돌립니다 (되돌릴 점이 있을 때만 활성화)
 4. 사이드바의 **傾斜設定 / Slope Settings**(寸 단위, 0.5 ~ 10)와 **모듈 선택**(프리셋 또는 커스텀 mm)을 설정합니다.
 5. **整列配置 / 千鳥配置 (정렬/치도리)**를 누르면 패널 긴 변을 처마와 평행하게 배치하며, 경사·시작 위상을 반영해 가장 많이 들어가는 결과가 적용됩니다.
 6. 결과 패널에서 총 패널 수와 설치 용량을 확인합니다. (PNG 저장 기능은 향후 도입 예정)

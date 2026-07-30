@@ -35,6 +35,7 @@ pnpm dev                     # http://localhost:3000
 | `pnpm build` | Production build (`output: "standalone"`) |
 | `pnpm start` | Serve production build |
 | `pnpm lint` | Run ESLint (flat config) |
+| `pnpm okf:check` | OKF 지식 번들 신선도 점검 (BROKEN/STALE/EXPIRED). git 만 사용, API 비용 0 |
 | `npx tsc --noEmit` | TypeScript type-check |
 | `docker compose up --build` | Docker build & run |
 | `docker compose up --build -d` | Docker build & run (백그라운드) |
@@ -50,6 +51,7 @@ pnpm dev                     # http://localhost:3000
 - **Google Maps** — `@vis.gl/react-google-maps` ^1.7.1 (Maps JS, Places, Geometry APIs)
 - **html2canvas** ^1.4.1 — Map tile capture for crop popup
 - **lucide-react** ^0.577.0 — Icons
+- **polygon-clipping** ^0.15.7 — 지붕면 병합용 폴리곤 boolean 연산 (union / intersection)
 - **Docker** — Multi-stage standalone build (see `Dockerfile`, `docker-compose.yml`)
 - **Gemini API** — `@google/genai` ^1.0.0 (AI 지붕 자동 감지)
 - **@aws-sdk/client-s3** ^3.1065 — 참조 이미지 S3 업로드 (`/api/image/upload`)
@@ -59,91 +61,45 @@ pnpm dev                     # http://localhost:3000
 
 ## Architecture
 
-### Directory Structure
-
 ```
 src/
-├── app/
-│   ├── api/
-│   │   ├── detect-roof/      # /api/detect-roof — Gemini Vision 호출 라우트 (서버)
-│   │   ├── image/upload/     # /api/image/upload — 참조 이미지 S3 업로드(POST)
-│   │   ├── openapi/          # /api/openapi — buildOpenApiDocument() JSON 제공
-│   │   ├── qsp/              # /api/qsp/* — QSP BFF (btc-items: 모듈 schItemTp=M / 축전지 schItemTp=B)
-│   │   └── musbi/            # /api/musbi/* — MUSBI BFF (sim-check)
-│   ├── reference/           # /reference — Scalar API Reference UI
-│   ├── components/          # UI components (all "use client")
-│   │   ├── AiDetectControls # AI 지붕 분석 트리거 (분석 시작/취소)
-│   │   ├── CropPopup        # Crop image popup with Canvas polygon editor, panel rendering
-│   │   ├── MapView          # Google Maps satellite view + crop overlay + zoom/recenter controls
-│   │   ├── RoofEditToolbar  # Floating toolbar over map (select / drawRoof / drawOpening / flowSetting / editRoof / undo / delete)
-│   │   └── lnb/             # 좌측 사이드바: Lnb(탭 컨테이너) / LnbDesign / LnbSim / address-input-lnb
-│   ├── utils/
-│   │   ├── aiDetect         # Gemini detect fetch 래퍼 + 정규화→픽셀 변환 어댑터
-│   │   ├── panelPlacement   # Computational geometry (lat/lng + pixel-based panel layout)
-│   │   └── i18n             # Japanese/English translation system
-│   ├── types/               # Domain types (LatLng, CropData, PixelPanel, NormalizedPolygon, etc.)
-│   ├── globals.css          # CSS custom properties theme
-│   ├── layout.tsx           # Root layout (Server Component, html lang="ja")
-│   └── page.tsx             # Main page (Client Component, owns all state, hosts design/simulation tabs)
-└── lib/
-    ├── detect/              # Gemini Vision 백엔드 모듈 (schema.ts / prompt.ts)
-    ├── image/               # 이미지 업로드 모듈 (schema.ts — 허용 타입/키 패턴/응답 스키마)
-    ├── qsp/                 # QSP BFF 모듈 (schema.ts / client.ts)
-    └── openapi.ts           # 기존 zod 스키마 → OpenAPI 3.1 문서 빌더 (SSOT)
+├── app/            # App Router. layout.tsx 만 서버 컴포넌트, 나머지 UI 는 전부 "use client"
+│   ├── api/        # 라우트 핸들러 — detect-roof / qsp / musbi / image / openapi
+│   ├── components/ # MapView · CropPopup · RoofEditToolbar · AiDetectControls · lnb/
+│   ├── utils/      # panelPlacement · mergePolygons · aiDetect · i18n
+│   ├── types/      # 도메인 타입 **SSOT** — 타입 질문은 이 파일을 읽는다
+│   └── page.tsx    # Home — 모든 상태를 소유하는 단일 클라이언트 컴포넌트
+└── lib/            # 서버 모듈 — detect / image / qsp 의 zod 스키마·클라이언트 + openapi.ts
 ```
 
-### API Documentation
+그 아래 세부(모듈 책임·불변식·외부 계약·도메인 규칙)는 **본 파일에 복제하지 않는다** — 전부 `docs/okf/` 에 있다.
+소스 파일을 열면 `.claude/hooks/okf-hint.py` 가 관련 문서를 자동으로 지목하므로 보통은 아래 표를 볼 일이 없다.
+미리 훑고 싶을 때만 쓴다.
 
-- 사양 SSOT: `src/lib/qsp/schema.ts`, `src/lib/detect/schema.ts`, `src/lib/image/schema.ts` 의 zod 스키마
-- 빌더: `src/lib/openapi.ts` — `createDocument({ reused: "ref" })` 로 OpenAPI 3.1 생성. `.meta({ id })` 부여된 스키마는 `components.schemas` 에 자동 등록되며 paths 에서 `$ref` 로 참조된다 (8개 컴포넌트: `DetectRequest`, `DetectResponse`, `DetectPolygon`, `ErrorEnvelope`, `BtcItem`, `SimulationInput`, `UploadImageRequest`, `UploadImageResult` + 3개 응답 envelope `BtcItemsResponse` / `SimCheckResponse` / `UploadImageResponse`)
-- 엔드포인트 (둘 다 `ENABLE_API_DOCS=true` 환경에서만 노출, 그 외에는 404 — 내부 API 명세 노출 차단. `NODE_ENV` 가드는 dev/prod 모두 production 빌드를 쓰는 배포 모델과 충돌하므로 사용하지 않음):
-  - `GET /api/openapi` — OpenAPI 3.1 JSON (모듈 스코프 lazy memoize)
-  - `GET /reference` — Scalar 기반 API Reference UI (dev: http://localhost:3000/reference)
-- 라우트 보호: `/api/qsp/*`, `/api/musbi/*`, `/api/detect-roof`, `/api/image/*` 는 `src/proxy.ts` 에서 Origin 검증(`ALLOWED_ORIGIN` 쉼표 구분 허용 목록과 비교, 미설정 시 `req.nextUrl.origin` 폴백) + per-IP rate limit (in-memory sliding window) 적용 — ⚠️ standalone 빌드의 `req.nextUrl.origin` 은 컨테이너 bind 주소(`HOSTNAME:PORT`, 예: `0.0.0.0:3000`)라 리버스 프록시 뒤에서는 브라우저 Origin 과 절대 일치하지 않아 POST 가 403 되므로 **배포 환경은 `ALLOWED_ORIGIN` 필수**. BFF(qsp/musbi)·image 는 1분 30회, 고비용 detect-roof(Gemini Vision 단일 호출이지만 thinking+output 토큰 비용이 BFF 대비 큼)는 1분 10회 별도 버킷. clientIP 는 `X-Forwarded-For` 의 오른쪽 신뢰 hop(`TRUSTED_PROXY_HOPS`, 기본 1)만 채택해 헤더 위조로 인한 한도 우회를 막는다 — 운영은 XFF 를 설정하는 리버스 프록시 뒤 배포 전제(직접 노출 시 IP 별 제한 불가). 단일 인스턴스 배포 전제, 스케일아웃 시 분산 저장소로 교체 필요. Next.js 16 의 proxy 컨벤션을 따른다 (구 `middleware` 컨벤션 deprecated)
-
-### Key Patterns
-
-- **State Management**: `page.tsx` owns all state, passes via props (Props-Down / Callbacks-Up). Sidebar tabs (`design` | `simulation`) are also held there.
-- **Styling**: CSS custom properties in `globals.css`, inline styles — NOT Tailwind utility classes
-- **i18n**: `utils/i18n.ts` with `t(key, lang)` function, `Lang` type (`"ja" | "en"`), sidebar footer toggle synced to `<html lang>` in `page.tsx`
-- **Workflow**: Address search → confirm building (drag crop on map, captured via `html2canvas`) → CropPopup polygon editor (drawRoof / drawOpening / flowSetting / editRoof) → set slope (寸: 1/3/4/6/8, 필수) and module preset (필수) → place modules (정렬/치도리, 패널 긴 변을 처마 기준선과 평행하게 landscape 고정, 경사 cos 보정·시작 위상 스캔으로 최대 충진) → 모듈 배치 완료(편집 잠금) 토글 → optional Simulation tab input
-- **Panel Placement**: Three functions in `utils/panelPlacement.ts`
-  - `placePanels` — lat/lng-based (mm internal)
-  - `placePanelsOnCanvas` — pixel-based (mm internal)
-  - `placePanelsOnCanvasCm` — pixel-based, **cm UI-facing entry** used by `page.tsx`; internally calls the mm version
-- **Eave-anchored layout**: Each install polygon's `eaveEdgeIndex` (set via `flowSetting` tool, else longest edge) drives grid orientation·앵커 방향. 패널 긴 변이 처마와 평행(landscape 고정). 경사(寸)는 cos 투영 보정으로 처마 수직 방향 압축, x·y 시작 위상을 스캔해 최대 충진 배치 채택. 오목 폴리곤·장애물은 패널 변 교차 검사로 방어.
-- **Constants**: `GAP_X_CM = 0.3`(좌우 3mm), `GAP_Y_CM = 3`(상하 30mm), `MARGIN_CM = 30`(외주 300mm) are hardcoded in `page.tsx`.
-- **설치 용량**: 모듈 수 × `wpOut`(W, QSP) / 1000 = kW. `PanelSize.watt`에 QSP wpOut 매핑.
-
-### Domain Types (`src/app/types/index.ts`)
-
-| Type | Description |
-|------|-------------|
-| `LatLng` | Latitude/longitude coordinate |
-| `PanelSize` | Panel dimensions (label, width, height in mm) |
-| `PanelOrientation` | `"portrait"` or `"landscape"` |
-| `DrawingMode` | `"install"`, `"exclude"`, or `null` |
-| `PolygonArea` | Install/exclude polygon (id, type, paths, optional `eaveEdgeIndex`) |
-| `PlacedPanel` | Placed panel (`polygonId` + 4 lat/lng corners) |
-| `CropData` | Crop result (image data URL, bounds, address, zoom, sizeMeters) |
-| `CropBounds` | SW/NE lat/lng bounds of cropped area |
-| `PixelPoint` | x/y coordinate in pixel space |
-| `PixelPolygon` | Install/exclude polygon in pixel coordinates (optional `eaveEdgeIndex`) |
-| `PixelPanel` | Placed panel (`polygonId` + 4 pixel corners) |
+| 알고 싶은 것 | 문서 |
+|---|---|
+| 앱이 무엇을 하는가 · 런타임 구성 · 스타일/i18n 현황 | `docs/okf/system/solar-pv-system.md` |
+| 상태 소유·시그널 패턴·레이스 가드 (`page.tsx`) | `docs/okf/modules/page-orchestrator.md` |
+| 배치 알고리즘 · 처마 기준변 · 좌표계와 mm/cm/m 단위 · 간격 상수 | `docs/okf/domain/index.md`, `docs/okf/modules/panel-placement.md` |
+| HTTP 엔드포인트 계약 · 응답 envelope · OpenAPI/Scalar 노출 조건 | `docs/okf/interfaces/index.md` |
+| `proxy.ts` Origin 검증 · per-IP rate limit · 알려진 한계 | `docs/okf/system/security-perimeter.md` |
+| 사용자 흐름 단계별 게이트 · 시뮬레이션 제출 3단계 | `docs/okf/workflows/index.md` |
+| 환경변수 3파일 체계 · 빌드타임/런타임 구분 | `docs/okf/system/configuration.md` |
+| Docker 멀티스테이지 빌드 · Jenkins 파이프라인 | `docs/okf/system/deployment.md` |
 
 ### Supplementary Guides
 
-코드 작업 전에 해당 영역의 룰 파일을 참고하세요. AGENTS.md 가 본 파일을 import 하므로 동일 컨텍스트로 로드됩니다.
+> **우선순위**: 도메인·아키텍처 질문은 `docs/okf/` 가 진실의 원천이다. 본 파일과 어긋나면 **okf 를 따르고 본 파일을 고친다**.
+>
+> `src/**` 를 수정한 PR 은 `grep -rl "<수정한 파일>" docs/okf/` 로 영향받는 개념을 확인하고, 내용이 어긋나면 고치거나 `status: draft` 로 내린다. 기계 점검은 `pnpm okf:check`.
 
 | 위치 | 내용 |
 |------|------|
-| `.claude/rules/components.md` | Page 구조 · 주요 컴포넌트 · 도메인 타입 요약 |
-| `.claude/rules/utils.md` | `panelPlacement.ts` 좌표 변환 / 단위 체계 / Y축 flip |
-| `.claude/rules/styles.md` | CSS 커스텀 프로퍼티 vs Tailwind 사용 원칙 |
-| `.claude/rules/docker.md` | Docker 멀티스테이지 빌드 / compose 명령 |
-| `docs/architecture.md` | 시스템 전체 아키텍처 도식 |
+| `docs/okf/` | **OKF v0.2 지식 번들** (30개 개념). 진입점 `docs/okf/index.md` — 위 표가 그 색인이다 |
+| `docs/architecture.md` / `.html` | 시스템 전체 아키텍처 — 레이어·상태 소유·BFF 계약·배치 알고리즘·좌표계·구조적 한계. `.html` 은 SVG 도식 강화판 |
+| `docs/ci-cd-pipeline.md` / `.html` | Jenkins 파이프라인 스테이지별 상세 · Docker 멀티스테이지 · 환경변수 주입 경로 · 운영/롤백 절차 |
 | `docs/sequence-diagrams.md` | App init / i18n toggle / area calc 시퀀스 다이어그램 |
-| `docs/context-manage.md` | AI 에이전트 컨텍스트 관리 사례 노트 |
+| `docs/context-manage.md` | 에이전트 컨텍스트 관리 — 세션 상시 로딩 vs Skill/훅 지연 로딩의 실제 동작 |
 | `docs/graphify-setup.md` | graphify 도입·운영 세팅 가이드 |
 | `docs/codemap-playground.html` | 인터랙티브 코드맵 (브라우저 열람용) |
 | `docs/plans/` | UX 개선·기능 도입 계획 문서 |
@@ -162,41 +118,14 @@ src/
 
 ## Environment Variables
 
-`.env` 는 세 파일로 분리되어 운영됩니다:
+`.env`(공통) / `.env.dev` / `.env.prod` 3파일로 운영된다. Jenkins 가 `cat 공통 + 선택된 프로파일 > .env` 로
+병합하므로 **같은 키는 프로파일이 이긴다**. `NEXT_PUBLIC_*` 두 개만 빌드타임 ARG 라 값을 바꾸려면 컨테이너
+재시작이 아니라 이미지 재빌드가 필요하다.
 
-| 파일 | 역할 | Jenkins credential |
-|------|------|---------------------|
-| `.env` | 공통 키 (dev/prod 모두 동일) | `pv-common-env` (file) |
-| `.env.dev` | dev 배포 전용 오버라이드 | `pv-dev-env` (file) |
-| `.env.prod` | prod 배포 전용 오버라이드 | `pv-prod-env` (file) |
+전체 키 목록 · 새 키 추가 절차 · `.env.development` 라는 이름을 쓰지 않는 이유 → **`docs/okf/system/configuration.md`**
 
-Jenkinsfile 의 `Load Env Credential` 스테이지에서 `cat common + 선택된 profile > .env` 로 병합되며, 같은 키가 양쪽에 있으면 **profile 파일이 공통을 오버라이드** 합니다. docker-compose 는 `env_file: .env` 로 통째 마운트해 컨테이너에 주입합니다.
-
-> ⚠️ 파일명에 `.env.development` / `.env.production` 을 쓰지 않는 이유 — Next.js 가 `NODE_ENV` 에 따라 해당 파일을 자동 로드하기 때문. 배포는 dev/prod 모두 `NODE_ENV=production` 으로 빌드되므로 의미 충돌을 피하기 위해 `.env.dev` / `.env.prod` 로 명명합니다.
-
-| Variable | 위치 | 빌드/런타임 | 설명 |
-|----------|------|-------------|------|
-| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | `.env` (공통) | **빌드타임 ARG** (클라이언트 번들 인라인) | Google Maps API key (Maps JS, Places, Geometry APIs) |
-| `NEXT_PUBLIC_AWS_S3_BASE_URL` | `.env` (공통) | **빌드타임 ARG** (클라이언트 번들 인라인) | S3 기준 이미지 베이스 URL |
-| `GEMINI_API_KEY` | `.env` (공통) | 런타임 | Gemini API key. Server route only |
-| `GEMINI_MODEL` | `.env` (공통) | 런타임 | Gemini model identifier (예: `"gemini-3.1-pro-preview"`). 미설정 시 `/api/detect-roof`는 500 응답 |
-| `AWS_REGION` | `.env` (공통) | 런타임 | S3 리전 (예: `ap-northeast-1`) |
-| `AMPLIFY_BUCKET` | `.env` (공통) | 런타임 | S3 버킷명 (참조 이미지 업로드용 — `/api/image/upload` 가 `pvmap/` 프리픽스에 기록) |
-| `AWS_ACCESS_KEY_ID` | `.env` (공통) | 런타임 | S3 업로드 IAM 자격 |
-| `AWS_SECRET_ACCESS_KEY` | `.env` (공통) | 런타임 | S3 업로드 IAM 자격 |
-| `QSP_API_HOST` | `.env.dev` / `.env.prod` | 런타임 | QSalesPlatform 마스터 데이터 API 호스트. 환경별로 다름 |
-| `MUSBI_API_HOST` | `.env.dev` / `.env.prod` | 런타임 | MUSBI 시뮬레이션 API 호스트. 환경별로 다름 |
-| `MUSBI_CHECK_PATH` | `.env.dev` / `.env.prod` (선택) | 런타임 | 발전시뮬 검증(sim-check) API 패스. 미설정 시 `/qm/pwrgnSimulation/checkCalcResults`(개발 기본값) 사용 — 환경별로 다르면 설정 |
-| `MUSBI_RESULT_PATH` | `.env.dev` / `.env.prod` (선택) | 런타임 | 발전시뮬 결과 페이지 리다이렉트 패스. 미설정 시 `/qm/pwrgnSimulation/calcResults`(개발 기본값) 사용 — 환경별로 다르면 설정 |
-| `MUSBI_RESULT_HOST` | `.env.prod` (선택) | 런타임 | 발전시뮬 결과 페이지 호스트. 미설정 시 `MUSBI_API_HOST` 상속(개발은 검증과 동일 호스트). 운영은 공식사이트(`https://www.q-cells.jp`)로 분리 |
-| `ENABLE_API_DOCS` | `.env.dev` / `.env.prod` | 런타임 | `"true"` 일 때만 `/api/openapi` 와 `/reference` 노출. dev=true / prod=false 권장 |
-| `ALLOWED_ORIGIN` | `.env.dev` / `.env.prod` | 런타임 | 프록시 CSRF Origin 허용 목록(쉼표 구분 가능). 공개 도메인 명시(예: `https://pvmap-dev.q-cells.jp`). 미설정 시 `req.nextUrl.origin` 폴백 → standalone+프록시 환경에선 POST 가 403 되므로 **배포 필수** |
-
-새 키 추가 워크플로:
-- **공통 키**: Jenkins UI 의 `pv-common-env` credential 파일에 추가
-- **환경별 키**: `pv-dev-env` / `pv-prod-env` credential 파일에 추가
-- **`NEXT_PUBLIC_*` 키**: 위 + Dockerfile 에 `ARG`/`ENV` 2줄 + docker-compose.yml 각 서비스 `build.args` 에 1줄 추가
-- **모든 키**: Jenkinsfile `Validate Environment` 스테이지의 `: "${VAR:?...}"` 검증 라인 추가 (전수 검증 정책)
+⚠️ 새 키를 추가하면 Jenkinsfile `Validate Environment` 스테이지에 `: "${VAR:?...}"` 검증 라인을 반드시
+같이 추가한다 (전수 검증 정책). 빠뜨리면 값이 없는 채로 배포가 성공하고 런타임 500/403 으로 나타난다.
 
 ## Testing
 
@@ -209,8 +138,7 @@ Currently no test framework configured. Verify changes via:
 
 - `AGENTS.md` 는 본 파일(`CLAUDE.md`)을 그대로 import 하는 shim 입니다 — 모든 가이드는 여기에서 관리합니다
 - See `README.md` for the user-facing feature list, screenshots, and step-by-step usage
-- The app defaults to Japanese UI (`<html lang="ja">`) with English toggle available in the sidebar footer
-- 발전 시뮬레이션 입력값(방위·축전지·월평균 전기요금)을 수집한다. 축전지 목록은 QSP btc-items(`schItemTp=B`)로 조회한다. 결과 조회는 musbi sim-check(파라미터 검증) 200 통과 시 합성 레이아웃 이미지를 S3 저장 후, 동일 파라미터로 musbi 결과 페이지(calcResults)로 리다이렉트한다 (calcResults 는 API 가 아닌 페이지 리다이렉트)
+- UI 는 일본어 고정(`<html lang="ja">`)이다. `utils/i18n.ts` 에 영어 번역문이 다 있지만 **전환 UI 가 연결돼 있지 않다** — `docs/okf/system/solar-pv-system.md` 의 i18n 절 참조
 
 ## graphify
 

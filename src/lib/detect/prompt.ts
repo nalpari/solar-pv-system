@@ -99,3 +99,27 @@ OUTPUT REQUIREMENTS:
 
 export const ROOF_DETECT_USER_PROMPT =
   "Identify every distinct roof face in this cropped satellite image and trace each as its own polygon, following the JSON schema exactly.";
+
+/**
+ * [SAM PoC] 외부 segmentation 모델(SAM)이 추출한 건물 마스크를 두 번째 이미지로 동봉할 때
+ * 시스템 프롬프트 끝에 추가하는 블록. SAM 호출 실패 시(마스크 없을 때) 첨부하지 않는다.
+ *
+ * 설계 (LLM 처리 특성 반영):
+ * - 중간 신뢰도: 맹신(오류 전파)도 무시(정보 낭비)도 아닌 참고 가중치
+ * - 자기 추론 우선: 원본이 권위, 모델 자신의 외곽 판단이 최종 결정 → 마스크는 교차검증용
+ * - 마스크 범위 명시: 마스크에는 중앙 건물 외 옆건물·차량·그림자도 섞여 있음을 경고
+ * - 저신뢰 재활용: 외곽이 틀려도 장애물·그림자·면분리 단서로는 약하게 활용
+ */
+export const EXTERNAL_HINT_BLOCK = `EXTERNAL HINT (a MEDIUM-confidence auxiliary reference):
+The second image is a building mask from a separate segmentation model (SAM). It is auxiliary — NOT ground truth. The first image is always the authoritative source, and YOUR OWN visual analysis of it is the final decision.
+
+WHAT THE MASK CONTAINS:
+- The mask was produced from the full captured image, so it may include regions that are NOT the central building — a neighboring building, a shed, a vehicle, a tree, or a shadow area.
+- ONLY the mask region overlapping the CENTRAL building (closest to image center) is relevant. A neighboring building's mask is NOT part of the central roof, and a mask edge that follows a shadow is NOT a roof edge.
+
+HOW TO USE IT (treat as MEDIUM confidence — neither trust blindly nor ignore):
+- Compare the mask against the central-building roof outline YOU identify from the first image (per the steps above).
+- Where the mask AGREES with your outline, treat it as confirmation — you may nudge your vertices toward the mask edge for sub-pixel precision.
+- Where the mask DISAGREES, keep your own outline as primary — but treat the disagreement as a "look again" signal, not proof either way.
+- Even where the mask's outline is imperfect, its shape may weakly hint at sub-features to double-check: a possible obstacle, a shadow boundary, or a face-splitting edge. Use such hints ONLY as weak clues to re-examine the first image, never as decisions on their own.
+- DO NOT mention the mask in your response. Only output face polygons as usual.`;
