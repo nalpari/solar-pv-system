@@ -65,13 +65,15 @@ provider 인터페이스를 두지 않고 **완전 교체**했다: 호출부 1�
 
 | 설정 | 값 | 이유 |
 |------|-----|------|
-| 모델 | `process.env.OPENROUTER_MODEL` | 기본값 없음. 미설정이면 500. 1차값은 `google/gemini-3.1-pro-preview` — 전환 전과 **동일 모델**이라 transport 교체의 영향만 분리된다 |
+| 모델 | `process.env.OPENROUTER_MODEL` | 기본값 없음. 미설정이면 500. **현행값은 `openai/gpt-5.6-sol`** — 계획서 D3 가 잡았던 `google/gemini-3.1-pro-preview`(동일 모델 유지로 transport 영향만 분리)와 다르다. 즉 **transport 와 모델이 같이 바뀌었고**, 전환 전후 차이를 두 요인으로 분리할 수 없다 |
 | 키 | `process.env.OPENROUTER_API_KEY` | `Authorization: Bearer`. 미설정이면 500 |
-| `response_format` | `json_schema`, `strict: true` | 1차 계약. **zod 가 최종 SSOT** — strict 가 hint 로만 처리돼도 응답 보증은 zod 가 지킨다 |
+| `response_format` | `{ type: "json_schema", json_schema: { name, strict: true, schema } }` | 1차 계약. `strict` 는 **`json_schema` 안** (`response_format` 바로 아래에 두면 400). **zod 가 최종 SSOT** — strict 가 hint 로만 처리돼도 응답 보증은 zod 가 지킨다 |
 | `max_tokens` | 32768 | **reasoning + output 합산** 예산. 작게 잡으면 reasoning 이 예산을 먹고 `finish_reason:"length"` + 빈 content → 502 |
 | `reasoning` | `{ effort: "low", exclude: true }` | 생략하면 기본 thinking(high)으로 돌아 지연이 전환 전보다 악화된다. `exclude` 는 reasoning 텍스트가 `extractJsonPayload` 를 오염시키지 않게 한다. `effort` 와 `reasoning.max_tokens` 를 **동시 지정하지 않는다** |
-| `provider` | `{ require_parameters: true }` | structured output / vision 미지원 엔드포인트를 배제한다. `order` pin 과 `allow_fallbacks:false` 는 채택하지 않았다 — 이 슬러그의 서빙 엔드포인트가 전부 Google 이라 결정성 이득이 없는데 장애 시 우회로를 스스로 막는다 |
+| `provider` | `{ require_parameters: true }` | structured output / vision 미지원 엔드포인트를 배제한다. `order` pin 과 `allow_fallbacks:false` 는 채택하지 않았다 — 엔드포인트 장애 시 우회로를 스스로 막는 쪽의 손해가 더 크다 |
+| `usage` | `{ include: true }` | **없으면 `usage.cost` 와 `reasoning_tokens` 가 응답에 실리지 않는다.** 아래 계측 표의 두 항목이 통째로 undefined 가 되므로 계측을 쓰려면 필수다 |
 | 타임아웃 | `AbortController` · `UPSTREAM_TIMEOUT_MS = 180_000` | SDK 를 버리며 잃은 유일한 안전장치를 명시적으로 복구했다. 초과 시 업스트림 408 로 취급 → 클라이언트 502. **재시도는 없다** — 고비용 비멱등 호출 |
+| 취소 전파 | `AbortSignal.any([req.signal, controller.signal])` | 클라이언트가 재크롭으로 fetch 를 끊으면(`utils/aiDetect.ts`) 상류 생성도 함께 끊는다. 연결하지 않으면 아무도 읽지 않을 응답을 최대 180초까지 만들며 **과금된다**. 두 신호는 로그에서 `controller.signal.aborted` 로 구분한다(`timeout after …` vs `client aborted`) |
 
 content 배열은 **이미지 → 텍스트** 순서로 전환 전 `inlineData` parts 배치를 그대로 재현한다.
 계약은 이미지끼리의 상대 순서뿐이고 텍스트 위치는 계약이 아니다.
@@ -85,7 +87,7 @@ content 배열은 **이미지 → 텍스트** 순서로 전환 전 `inlineData` 
 |------|------|
 | `finishReason` · `nativeFinishReason` | `choices[0]`. 프로바이더 원본 사유를 함께 남긴다 (예: `MAX_TOKENS`) |
 | `promptTokens` · `completionTokens` · `reasoningTokens` · `totalTokens` | `usage` / `usage.completion_tokens_details`. **뺄셈하지 않고 원값으로** 남긴다 — `completionTokens` 가 reasoning 을 포함하는지 미확정 |
-| `cost` | **신규** — `usage.cost`, 호출당 실비. 402(크레딧 소진) 대비 운영 지표 |
+| `cost` | **신규** — `usage.cost`, 호출당 실비. 402(크레딧 소진) 대비 운영 지표. 요청의 `usage.include` 에 의존한다 |
 | `resolvedModel` | **신규** — 응답 top-level `model`. 요청 슬러그와 실제 응답 모델이 갈리는지 본다 |
 | `generationId` · `provider` | **신규** — 응답 top-level `id`(generation id)와 `provider`(옵셔널). fallback 을 살려두는 대신 **사후에** `GET /api/v1/generation?id=<generationId>` 로 실제 서빙 프로바이더를 조회한다 |
 | `elapsedMs` | **신규** — wall-clock. 지연 진단 문서가 지적한 "측정 부재" 공백을 닫는다 |

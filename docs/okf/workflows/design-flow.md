@@ -5,6 +5,7 @@ description: 주소 검색 → 건물 크롭 → 지붕면 편집 → 경사·�
 resource: src/app/page.tsx
 tags: [workflow, ux]
 generated: { by: claude-code/opus-5, at: 2026-07-27T04:26:32Z }
+verified: { by: claude-code/opus-5, at: 2026-07-31T00:00:00Z }
 status: stable
 sources:
   - id: page

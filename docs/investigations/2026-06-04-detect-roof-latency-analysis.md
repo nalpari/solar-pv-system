@@ -29,7 +29,7 @@
 
 ### 여전히 유효한 부분
 
-- **§3 #1 — thinking 계열 모델이 지연을 지배한다.** 1차 전환은 같은 모델(`google/gemini-3.1-pro-preview`)을 쓴다.
+- **§3 #1 — thinking 계열 모델이 지연을 지배한다.** 다만 **모델이 바뀌었다** — 현행 `OPENROUTER_MODEL` 은 `openai/gpt-5.6-sol` 이다. 결론의 방향(사고 토큰이 TTFT 를 지배)은 유지되지만, 아래 §3·§5 의 Gemini 특정 수치·제약(`thinkingBudget=0` 거부, thinkingLevel 규칙, Artificial Analysis 측정치)은 **현행 모델에 적용되지 않는다**.
 - **§3 #3 — 전송 전 다운스케일 부재.** 큰 base64 이미지를 그대로 올린다(원본 5MB + SAM 마스크).
 - **비스트리밍** — 전체 JSON 생성이 끝나야 첫 바이트가 나간다.
 - **§3 #4 — 클라이언트 진행 피드백이 binary.** `detectStatus` 는 여전히 `"idle" | "detecting"` 2상태다.

@@ -53,7 +53,7 @@ pnpm dev                     # http://localhost:3000
 - **lucide-react** ^0.577.0 — Icons
 - **polygon-clipping** ^0.15.7 — 지붕면 병합용 폴리곤 boolean 연산 (union / intersection)
 - **Docker** — Multi-stage standalone build (see `Dockerfile`, `docker-compose.yml`)
-- **OpenRouter** — AI 지붕 자동 감지 추론. Chat Completions 를 **순수 `fetch`** 로 호출하며 전용 SDK 의존성이 없다 (모델은 `OPENROUTER_MODEL`, 1차 `google/gemini-3.1-pro-preview`)
+- **OpenRouter** — AI 지붕 자동 감지 추론. Chat Completions 를 **순수 `fetch`** 로 호출하며 전용 SDK 의존성이 없다 (모델은 `OPENROUTER_MODEL`, 현행 `openai/gpt-5.6-sol`)
 - **@aws-sdk/client-s3** ^3.1065 — 참조 이미지 S3 업로드 (`/api/image/upload`)
 - **zod** ^4.3.6 — API 응답 스키마 검증
 - **zod-openapi** ^5.4 — 기존 zod 스키마 → OpenAPI 3.1 문서 생성

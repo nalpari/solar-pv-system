@@ -82,7 +82,7 @@ Content-Type: application/json
 ## 업스트림 계약 (OpenRouter)
 
 `POST https://openrouter.ai/api/v1/chat/completions` — Chat Completions. 전용 SDK 없이 `fetch` 로 호출한다.
-구조화 출력은 `response_format: { type: "json_schema", strict: true }` 를 1차 계약으로 요구하지만
+구조화 출력은 `response_format: { type: "json_schema", json_schema: { name, strict: true, schema } }` 를 1차 계약으로 요구하지만 (`strict` 는 `json_schema` 안에 둔다 — `response_format` 바로 아래에 두면 400)
 **최종 SSOT 는 zod** 다 — 프로바이더가 strict 를 hint 로만 처리해도 응답 형태 보증은 깨지지 않는다.
 
 | 업스트림 status | 클라이언트 | 비고 |

@@ -55,7 +55,7 @@ pnpm install
 ```
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_api_key_here
 OPENROUTER_API_KEY=your_openrouter_api_key_here
-OPENROUTER_MODEL=google/gemini-3.1-pro-preview
+OPENROUTER_MODEL=openai/gpt-5.6-sol
 ```
 
 QSP/MUSBI BFF API(모듈 목록 조회 등)와 API 문서(`/reference`)를 로컬에서 호출하려면 dev 전용 키(`QSP_API_HOST`, `MUSBI_API_HOST`, `ENABLE_API_DOCS`)도 필요합니다. 이 키들은 `.env.dev`에 있지만 **`next dev`는 `.env.dev` 파일명을 자동 로드하지 않습니다** — Next.js가 자동 로드하는 파일은 `.env` · `.env.local` · `.env.development` 등으로 한정되며, `.env.dev`/`.env.prod`는 배포 시 Jenkins가 `.env`로 병합하는 용도입니다. 따라서 로컬에서는 `.env.dev`를 `.env.local`로 복사해 사용합니다:
@@ -100,7 +100,7 @@ docker compose down             # 중지
 docker build --build-arg NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_api_key_here -t solar-pv-system .
 docker run -p 3000:3000 \
   -e OPENROUTER_API_KEY=your_openrouter_api_key_here \
-  -e OPENROUTER_MODEL=google/gemini-3.1-pro-preview \
+  -e OPENROUTER_MODEL=openai/gpt-5.6-sol \
   solar-pv-system
 ```
 
@@ -212,7 +212,7 @@ src/app/
 |------|------|------|
 | `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | ✅ | Google Maps API 키 (Maps JS / Places / Geometry) |
 | `OPENROUTER_API_KEY` | ✅ | OpenRouter API 키 (지붕 자동 감지). 서버 라우트에서만 사용하므로 `NEXT_PUBLIC_` 접두사 금지. 미설정 시 detect-roof 가 500 |
-| `OPENROUTER_MODEL` | ✅ | 추론 모델 슬러그 (예: `google/gemini-3.1-pro-preview`). **기본값이 없어** 미설정 시 detect-roof 가 500 |
+| `OPENROUTER_MODEL` | ✅ | 추론 모델 슬러그 (현행 `openai/gpt-5.6-sol`). **기본값이 없어** 미설정 시 detect-roof 가 500 |
 | `GEMINI_API_KEY` / `GEMINI_MODEL` | — | OpenRouter 전환 후 **미사용**. 안정화 관측 기간 롤백 대비로 남겨둔 잔존 키 |
 
 ## 추가 문서
