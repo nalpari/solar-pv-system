@@ -125,6 +125,7 @@ async function callOpenRouterJson<T>(
   validate: (parsed: unknown) =>
     | { success: true; data: T }
     | { success: false; error: string },
+  clientSignal: AbortSignal,
   // NOTE: OpenRouter 의 max_tokens 는 **reasoning + output 합산** 예산이다.
   // Multi-face polygons + thinking 이 복잡한 지붕에서 10~15K 토큰을 태울 수 있다.
   // 작게 잡으면 reasoning 이 예산을 소진해 finish_reason="length" + 빈 content 로 전멸한다.
@@ -157,8 +158,11 @@ async function callOpenRouterJson<T>(
       json_schema: { name: "roof_faces", strict: true, schema: responseSchema },
     },
     // structured output / vision 미지원 엔드포인트를 배제. order·allow_fallbacks 는 지정하지 않는다
-    // (종착지가 Google 뿐이라 결정성 이득이 없는데 엔드포인트 장애 시 우회로를 막는다).
+    // (엔드포인트 장애 시 우회로를 스스로 막는 쪽의 손해가 더 크다).
     provider: { require_parameters: true },
+    // usage 회계 필드(cost · completion_tokens_details.reasoning_tokens)는 이 플래그가
+    // 있어야 채워진다 — 없으면 아래 로그에 전부 undefined 로 찍힌다.
+    usage: { include: true },
   };
 
   const controller = new AbortController();
@@ -177,7 +181,9 @@ async function callOpenRouterJson<T>(
         "Content-Type": "application/json",
       },
       body: JSON.stringify(body),
-      signal: controller.signal,
+      // 클라이언트가 재크롭 등으로 요청을 끊으면 상류 생성도 함께 끊는다 — 연결하지 않으면
+      // 아무도 읽지 않을 응답을 최대 180초까지 만들며 과금된다.
+      signal: AbortSignal.any([clientSignal, controller.signal]),
       cache: "no-store",
     });
     if (!res.ok) {
@@ -188,8 +194,12 @@ async function callOpenRouterJson<T>(
     // !res.ok 로 이미 status 를 담아 던진 에러는 그대로 통과시킨다.
     if (err instanceof UpstreamError) throw err;
     if (isAbortError(err)) {
-      console.warn(`[detect-roof] upstream timeout after ${UPSTREAM_TIMEOUT_MS}ms`);
-      throw new UpstreamError(408, `timeout after ${UPSTREAM_TIMEOUT_MS}ms`);
+      // 타임아웃과 클라이언트 취소는 둘 다 AbortError 로 온다 — 어느 쪽이 끊었는지 구분해 남긴다.
+      const reason = controller.signal.aborted
+        ? `timeout after ${UPSTREAM_TIMEOUT_MS}ms`
+        : "client aborted";
+      console.warn(`[detect-roof] upstream aborted — ${reason}`);
+      throw new UpstreamError(408, reason);
     }
     const cause =
       err instanceof Error && err.cause ? ` | cause=${String(err.cause)}` : "";
@@ -296,6 +306,7 @@ async function detectRoofPolygons(
   apiKey: string,
   image: ParsedDataUrl,
   imageDataUrl: string,
+  clientSignal: AbortSignal,
 ): Promise<DetectResponse> {
   // [SAM PoC] Replicate Meta SAM 2로 건물 마스크 얻기. 실패 시 null → 원본 단독 진행.
   const samMaskDataUrl = await fetchSamMask(imageDataUrl);
@@ -329,6 +340,7 @@ async function detectRoofPolygons(
       }
       return { success: true, data: v.data };
     },
+    clientSignal,
   );
 
   if (result.polygons.length === 0) {
@@ -393,7 +405,12 @@ export async function POST(req: Request) {
   }
 
   try {
-    const result = await detectRoofPolygons(apiKey, image, body.imageDataUrl);
+    const result = await detectRoofPolygons(
+      apiKey,
+      image,
+      body.imageDataUrl,
+      req.signal,
+    );
     return NextResponse.json(result satisfies DetectResponse);
   } catch (err) {
     if (err instanceof UpstreamError) return respondWithUpstreamError(err);
