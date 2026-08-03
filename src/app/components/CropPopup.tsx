@@ -1318,30 +1318,6 @@ export default function CropPopup({
           </div>
         )}
 
-        {/* 지붕 편집 모드 조작 힌트 — Alt 드래그는 화면에 드러나지 않아 안내가 없으면 발견되지 않는다 */}
-        {roofEditTool === "editRoof" && !editLocked && (
-          <div
-            style={{
-              position: "absolute",
-              left: 12,
-              bottom: 12,
-              zIndex: 10,
-              maxWidth: "min(420px, calc(100% - 24px))",
-              padding: "7px 11px",
-              border: "1px solid var(--border-primary)",
-              background: "rgba(255, 255, 255, 0.9)",
-              color: "var(--text-secondary)",
-              borderRadius: "var(--radius-md)",
-              fontSize: 12,
-              lineHeight: 1.5,
-              backdropFilter: "blur(8px)",
-              pointerEvents: "none", // 캔버스 조작을 가리지 않는다
-            }}
-          >
-            {t("hintVertexDragAlt", lang)}
-          </div>
-        )}
-
         {/* Top-right Close button (편집 종료 — 동일 동작이 RoofEditToolbar X 에도 연결됨) */}
         <button
           onClick={onClose}

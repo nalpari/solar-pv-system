@@ -48,10 +48,6 @@ const translations = {
     ja: "※本ツールは複数種類のパネルの混合配置には対応いたしません. あらかじめご了承ください.",
     en: "※This tool does not support mixing multiple panel types. Please note.",
   },
-  hintVertexDragAlt: {
-    ja: "重なった頂点は個別に移動します. Alt（Option）を押しながらドラッグすると重なった頂点を一緒に動かせます.",
-    en: "Overlapping vertices move individually. Hold Alt (Option) while dragging to move them together.",
-  },
 
   // Lnb sim tab — azimuth guide split into two lines (pv-pub layout)
   azimuthGuideLine1: {
@@ -99,8 +95,8 @@ const translations = {
   },
   retEditRoof: { ja: "屋根の編集", en: "Edit Roof" },
   retEditRoofGuide: {
-    ja: "頂点をドラッグして屋根の形状を調整してください｜点をダブルクリックで削除",
-    en: "Drag vertices to adjust roof shape | Double-click a point to delete",
+    ja: "頂点をドラッグして屋根の形状を調整してください｜点をダブルクリックで削除｜Alt + ドラッグで重なった頂点をまとめて移動",
+    en: "Drag vertices to adjust roof shape | Double-click a point to delete | Alt + drag to move overlapping vertices together",
   },
   retMergeSelected: { ja: "屋根面結合", en: "Merge Selected Roofs" },
   retMergeSelectedGuide: {
