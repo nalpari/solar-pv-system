@@ -11,10 +11,13 @@ import { normalizedToPixelPolygons } from "../utils/aiDetect";
 import { t } from "../utils/i18n";
 import { isPointInPolygon } from "../utils/panelPlacement";
 import { mergeAreaPolygons } from "../utils/mergePolygons";
+import { getRoofFaceColor, getRoofFaceFill } from "../utils/roofColors";
 
 /** Canvas 렌더링 시 getComputedStyle 호출을 피하기 위해 CSS 변수 값을 상수로 정의 */
+// install 폴리곤은 더 이상 단색이 아니다 — 지붕면마다 ROOF_FACE_COLORS 팔레트 색을 쓴다.
+// 아래 두 상수는 소속 지붕면을 찾지 못한 모듈의 폴백 색으로만 남는다 (구 --accent-blue).
+// (면 자체의 fill 로 쓰던 COLOR_INSTALL_FILL 은 팔레트로 완전히 대체되어 삭제했다.)
 const COLOR_INSTALL = "#3366AA"; // --accent-blue
-const COLOR_INSTALL_FILL = "rgba(51, 102, 170, 0.2)";
 const COLOR_INSTALL_PANEL = "rgba(51, 102, 170, 0.5)";
 const COLOR_EXCLUDE = "#CF2E2E"; // --accent-red
 const COLOR_EXCLUDE_FILL = "rgba(207, 46, 46, 0.3)";
@@ -74,19 +77,29 @@ interface AreaEntry {
 const SNAP_RADIUS = 10;
 
 /**
+ * 꼭짓점이 "같은 자리에 겹쳐 있다"고 볼 거리(px).
+ * 핸들 시각 반지름(`HANDLE_VISUAL_RADIUS`)과 같은 값이라, **눈에 겹쳐 보이면 함께 잡힌다**.
+ * 스냅으로 붙은 꼭짓점은 좌표가 정확히 같지만 병합·AI 감지 결과는 미세하게 어긋날 수 있어 여유를 둔다.
+ */
+const VERTEX_LINK_RADIUS = 6;
+
+/** 드래그로 함께 움직일 꼭짓점 한 개 — 폴리곤 id 와 그 안에서의 인덱스 */
+type VertexRef = { id: string; idx: number };
+
+/**
  * 주어진 위치에서 SNAP_RADIUS 내 가장 가까운 install 폴리곤 꼭짓점 반환
- * @param excludeId 제외할 폴리곤 id (꼭짓점 편집 중 자기 자신 제외용)
+ * @param excludeIds 제외할 폴리곤 id 집합 (꼭짓점 편집 중 함께 끌리는 폴리곤 제외용)
  */
 function findNearestSnapVertex(
   pt: PixelPoint,
   areas: AreaEntry[],
-  excludeId?: string,
+  excludeIds?: ReadonlySet<string>,
 ): PixelPoint | null {
   let best: PixelPoint | null = null;
   let bestDist = SNAP_RADIUS;
   for (const area of areas) {
     if (area.type !== "install") continue;
-    if (area.id === excludeId) continue;
+    if (excludeIds?.has(area.id)) continue;
     for (const vertex of area.points) {
       const d = Math.hypot(pt.x - vertex.x, pt.y - vertex.y);
       if (d <= bestDist) {
@@ -96,6 +109,41 @@ function findNearestSnapVertex(
     }
   }
   return best;
+}
+
+/**
+ * `origin` 에 겹쳐 있는 install 폴리곤 꼭짓점을 전부 모은다 — 시작 꼭짓점 자신을 항상 첫 원소로 포함한다.
+ *
+ * 인접한 지붕면은 스냅(`SNAP_RADIUS`)으로 꼭짓점을 공유하게 되므로, 하나만 끌면 맞닿아 있던 면 사이가
+ * 벌어진다. 겹친 것들을 한 덩어리로 묶어 같이 끌어야 지붕면이 계속 맞물린다.
+ *
+ * 개구(exclude)는 지붕면 위에 얹힌 별개 요소라 딸려오지 않는다 — 스냅 대상도 install 뿐이라
+ * 개구 꼭짓점이 겹치는 것은 우연이고, 지붕면을 끌 때 개구까지 따라오면 예측을 벗어난다.
+ * 폴리곤마다 가장 가까운 꼭짓점 하나만 잡아, 한 면 안에서 두 꼭짓점이 붙어 있어도 같이 끌리지 않게 한다.
+ */
+function collectCoincidentVertices(
+  origin: PixelPoint,
+  areas: AreaEntry[],
+  originId: string,
+  originIdx: number,
+): VertexRef[] {
+  const group: VertexRef[] = [{ id: originId, idx: originIdx }];
+  for (const area of areas) {
+    if (area.id === originId) continue;
+    if (area.type !== "install") continue;
+    if (area.points.length < 3) continue;
+    let bestIdx = -1;
+    let bestDist = VERTEX_LINK_RADIUS;
+    for (let i = 0; i < area.points.length; i++) {
+      const d = Math.hypot(origin.x - area.points[i].x, origin.y - area.points[i].y);
+      if (d <= bestDist) {
+        bestDist = d;
+        bestIdx = i;
+      }
+    }
+    if (bestIdx >= 0) group.push({ id: area.id, idx: bestIdx });
+  }
+  return group;
 }
 
 /** inner 폴리곤이 outer 폴리곤 안에 완전히 포함되는지 — inner의 모든 꼭짓점이 outer 내부 */
@@ -270,6 +318,13 @@ export default function CropPopup({
   // 꼭짓점 드래그/삽입/삭제 중인 폴리곤 id — editRoof가 모든 폴리곤을 대상으로 하므로
   // 선택 상태(selectedPolygonIds)와 무관하게 별도 ref로 편집 대상 폴리곤을 추적한다.
   const editingPolygonIdRef = useRef<string | null>(null);
+  // 이번 드래그로 함께 움직일 수 있는 꼭짓점 묶음 — 겹쳐 있던 인접 지붕면들의 꼭짓점이 여기 들어온다.
+  // 첫 원소가 사용자가 실제로 집은 꼭짓점(= editingPolygonIdRef 의 것)이다.
+  // Alt 를 누르고 끌면 첫 원소만 움직이지만, 묶음 자체는 그대로 둔다 — 스냅 제외 대상이기도 하기 때문이다.
+  const vertexDragGroupRef = useRef<VertexRef[] | null>(null);
+  // 이번 드래그에서 실제로 좌표가 바뀐 폴리곤 id — Alt 를 눌렀다 뗐다 해도 정확히 추적하려고 누적한다.
+  // 드래그 종료 시 여기 담긴 면만 처마 기준선을 리셋하고 그 위 모듈을 지운다.
+  const vertexMovedIdsRef = useRef<Set<string>>(new Set());
 
   // Debounce rapid clicks in drawing mode (prevents double-click adding 2 points)
   const lastPointTimeRef = useRef<number>(0);
@@ -325,6 +380,8 @@ export default function CropPopup({
       dragCandidateIdRef.current = null;
       didDragRef.current = false;
       editingPolygonIdRef.current = null;
+      vertexDragGroupRef.current = null;
+      vertexMovedIdsRef.current.clear();
     }
   }, [drawingMode, roofEditTool]);
 
@@ -428,11 +485,22 @@ export default function CropPopup({
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    // 지붕면 색 인덱스는 상태로 저장하지 않고 areas 에서 **파생**한다 —
+    // install 만 필터링한 등장 순서(0,1,2,…)가 곧 팔레트 인덱스다.
+    // 그리기/삭제/병합/undo/AI 재감지 어느 경로로 areas 가 바뀌어도 자동으로 일관되고,
+    // install 이 30개 이하인 동안에는 색 중복이 구조적으로 발생하지 않는다.
+    // 매 폴리곤마다 indexOf 로 훑지 않도록 여기서 Map 을 한 번만 만든다.
+    const installColorIndex = new Map<string, number>();
+    for (const area of areas) {
+      if (area.type === "install") installColorIndex.set(area.id, installColorIndex.size);
+    }
+
     // Draw completed polygons
     for (const area of areas) {
       if (area.points.length < 3) continue;
       const isInstall = area.type === "install";
       const isSelected = selectedPolygonIds.has(area.id);
+      const colorIndex = installColorIndex.get(area.id) ?? 0;
       ctx.beginPath();
       ctx.moveTo(area.points[0].x, area.points[0].y);
       for (let i = 1; i < area.points.length; i++) {
@@ -440,10 +508,12 @@ export default function CropPopup({
       }
       ctx.closePath();
       ctx.fillStyle = isInstall
-        ? COLOR_INSTALL_FILL
+        ? getRoofFaceFill(colorIndex)
         : COLOR_EXCLUDE_FILL;
       ctx.fill();
-      ctx.strokeStyle = isSelected ? COLOR_SELECTED : (isInstall ? COLOR_INSTALL : COLOR_EXCLUDE);
+      ctx.strokeStyle = isSelected
+        ? COLOR_SELECTED
+        : (isInstall ? getRoofFaceColor(colorIndex) : COLOR_EXCLUDE);
       ctx.lineWidth = isSelected ? 4 : 2;
       ctx.stroke();
 
@@ -468,6 +538,11 @@ export default function CropPopup({
     if (roofEditTool === "editRoof") {
       for (const area of areas) {
         if (area.points.length < 3) continue;
+        // 핸들도 소속 면의 색을 그대로 쓴다 — 면이 여러 개일 때 어느 면의 핸들인지 색으로 읽힌다.
+        // install 은 팔레트 색, exclude(개구)는 자기 색인 빨강.
+        const handleColor = area.type === "install"
+          ? getRoofFaceColor(installColorIndex.get(area.id) ?? 0)
+          : COLOR_EXCLUDE;
         // Draw edge midpoint handles with + sign
         for (let i = 0; i < area.points.length; i++) {
           const p1 = area.points[i];
@@ -478,7 +553,7 @@ export default function CropPopup({
           ctx.arc(mx, my, HANDLE_VISUAL_RADIUS, 0, Math.PI * 2);
           ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
           ctx.fill();
-          ctx.strokeStyle = COLOR_SELECTED;
+          ctx.strokeStyle = handleColor;
           ctx.lineWidth = 1.5;
           ctx.stroke();
           // + sign
@@ -488,15 +563,15 @@ export default function CropPopup({
           ctx.lineTo(mx + s, my);
           ctx.moveTo(mx, my - s);
           ctx.lineTo(mx, my + s);
-          ctx.strokeStyle = COLOR_SELECTED;
+          ctx.strokeStyle = handleColor;
           ctx.lineWidth = 1.5;
           ctx.stroke();
         }
-        // Draw vertex handles (gold)
+        // Draw vertex handles — 면 색으로 채우고 흰 테두리로 배경에서 띄운다
         for (const pt of area.points) {
           ctx.beginPath();
           ctx.arc(pt.x, pt.y, HANDLE_VISUAL_RADIUS, 0, Math.PI * 2);
-          ctx.fillStyle = COLOR_SELECTED;
+          ctx.fillStyle = handleColor;
           ctx.fill();
           ctx.strokeStyle = "#fff";
           ctx.lineWidth = 1.5;
@@ -508,7 +583,10 @@ export default function CropPopup({
     // Draw in-progress polygon
     if (currentPoints.length > 0) {
       const isInstall = drawingMode === "install";
-      const strokeColor = isInstall ? COLOR_INSTALL : COLOR_EXCLUDE;
+      // 그리는 중인 지붕면은 **완성되면 배정받을 색**(= 현재 install 개수 인덱스)으로 미리 그린다
+      const strokeColor = isInstall
+        ? getRoofFaceColor(installColorIndex.size)
+        : COLOR_EXCLUDE;
 
       ctx.beginPath();
       ctx.moveTo(currentPoints[0].x, currentPoints[0].y);
@@ -548,16 +626,22 @@ export default function CropPopup({
       }
     }
 
-    // Draw placed panels
+    // Draw placed panels — 소속 지붕면(polygonId)의 팔레트 색을 따라간다.
+    // 소속 면을 찾지 못하면(고아 참조 방어) 기존 파랑으로 폴백한다.
     for (const panel of placedPanels) {
+      const panelColorIndex = installColorIndex.get(panel.polygonId);
       ctx.beginPath();
       ctx.moveTo(panel.corners[0].x, panel.corners[0].y);
       for (let i = 1; i < 4; i++) {
         ctx.lineTo(panel.corners[i].x, panel.corners[i].y);
       }
       ctx.closePath();
-      ctx.fillStyle = COLOR_INSTALL_PANEL;
-      ctx.strokeStyle = COLOR_INSTALL;
+      ctx.fillStyle = panelColorIndex === undefined
+        ? COLOR_INSTALL_PANEL
+        : getRoofFaceFill(panelColorIndex, 0.5);
+      ctx.strokeStyle = panelColorIndex === undefined
+        ? COLOR_INSTALL
+        : getRoofFaceColor(panelColorIndex);
       ctx.lineWidth = 1;
       ctx.fill();
       ctx.stroke();
@@ -672,6 +756,14 @@ export default function CropPopup({
             const vp = area.points[i];
             if (Math.hypot(pt.x - vp.x, pt.y - vp.y) <= HANDLE_RADIUS) {
               editingPolygonIdRef.current = area.id;
+              // 포인터 위치가 아니라 집은 꼭짓점의 실제 좌표를 기준으로 겹친 것들을 모은다.
+              // 개구를 집은 경우는 단독 이동 — 지붕면끼리만 묶는다.
+              // Alt 여부는 여기서 보지 않는다. 묶음은 드래그 도중 Alt 를 눌렀다 뗄 수 있도록 항상 모아 두고,
+              // 실제로 몇 개를 옮길지는 handlePointerMove 가 그때그때 정한다.
+              vertexDragGroupRef.current = area.type === "install"
+                ? collectCoincidentVertices(vp, areas, area.id, i)
+                : [{ id: area.id, idx: i }];
+              vertexMovedIdsRef.current.clear();
               setDraggingVertexIdx(i);
               vertexDragStartRef.current = pt;
               didVertexDragRef.current = false;
@@ -705,6 +797,10 @@ export default function CropPopup({
               );
               setAreas(updated);
               editingPolygonIdRef.current = area.id;
+              // 변 중점에서 새로 삽입한 점은 아직 어디에도 겹쳐 있지 않다 — 단독으로 끈다.
+              // 끌다가 다른 면 꼭짓점에 스냅되면 그때부터 겹치고, 다음 드래그에서 묶인다.
+              vertexDragGroupRef.current = [{ id: area.id, idx: insertIdx }];
+              vertexMovedIdsRef.current.clear();
               setDraggingVertexIdx(insertIdx);
               vertexDragStartRef.current = pt;
               // 변 중점 클릭은 점 삽입 자체가 변경 — finalize가 미이동이어도 마무리되도록 true로 시작
@@ -802,6 +898,8 @@ export default function CropPopup({
       dragCandidateIdRef.current = null;
       didDragRef.current = false;
       editingPolygonIdRef.current = null;
+      vertexDragGroupRef.current = null;
+      vertexMovedIdsRef.current.clear();
     }
   }, [clearSignal]);
 
@@ -962,20 +1060,30 @@ export default function CropPopup({
 
     // Vertex dragging (editRoof 모드)
     const editingId = editingPolygonIdRef.current;
-    if (drawingMode === null && roofEditTool === "editRoof" && draggingVertexIdx !== null && editingId) {
+    const dragGroup = vertexDragGroupRef.current;
+    if (drawingMode === null && roofEditTool === "editRoof" && draggingVertexIdx !== null && editingId && dragGroup) {
       // 임계값 미만 이동은 무시 — 꼭짓점 탭만으로 모양 변경/모듈 삭제 방지 (변 중점 삽입 경로는 시작 시 true라 영향 없음)
       if (!didVertexDragRef.current) {
         const start = vertexDragStartRef.current;
         if (start && Math.hypot(px - start.x, py - start.y) < DRAG_THRESHOLD) return;
         didVertexDragRef.current = true;
       }
-      // 스냅: 다른 install 폴리곤의 꼭짓점에 흡착 (자기 폴리곤은 제외)
-      const snapped = findNearestSnapVertex({ x: px, y: py }, areasRef.current, editingId) ?? { x: px, y: py };
+      // 스냅: 다른 install 폴리곤의 꼭짓점에 흡착.
+      // 묶음에 든 폴리곤은 **전부** 제외한다 — 그냥 끌어 하나만 뗄 때 남겨둔 꼭짓점에 도로 붙어버리면
+      // SNAP_RADIUS 안에서 영영 뗄 수 없고, Alt 로 함께 끌 때는 서로에게 흡착돼 제자리에 고정되기 때문이다.
+      const groupIds = new Set(dragGroup.map((v) => v.id));
+      const snapped = findNearestSnapVertex({ x: px, y: py }, areasRef.current, groupIds) ?? { x: px, y: py };
+      // 기본은 집은 꼭짓점 하나만 움직인다 — 붙어 있던 면을 떼어내는 쪽이 손에 익는다는 판단.
+      // Alt(Option) 를 누른 채 끌면 겹쳐 있던 꼭짓점이 같은 좌표로 함께 따라와 지붕면들이 계속 맞물린다.
+      // 드래그 도중에 눌렀다 떼도 다음 move 부터 바로 반영된다.
+      const targets = e.altKey ? dragGroup : dragGroup.slice(0, 1);
+      for (const v of targets) vertexMovedIdsRef.current.add(v.id);
       setAreas((prev) =>
         prev.map((a) => {
-          if (a.id !== editingId) return a;
+          const ref = targets.find((v) => v.id === a.id);
+          if (!ref || ref.idx >= a.points.length) return a;
           const newPoints = [...a.points];
-          newPoints[draggingVertexIdx] = snapped;
+          newPoints[ref.idx] = snapped;
           return { ...a, points: newPoints };
         }),
       );
@@ -1048,21 +1156,29 @@ export default function CropPopup({
    */
   function finalizeVertexDrag() {
     setDraggingVertexIdx(null);
-    const movedId = editingPolygonIdRef.current;
+    // 실제로 좌표가 바뀐 폴리곤 전부가 모양 변경 대상이다 — 함께 끌렸는데 하나만 마무리하면
+    // 나머지 면의 처마 기준선이 옛 모양 기준으로 남고 그 위 모듈도 그대로 살아남는다.
+    // Alt 로 하나만 옮겼다면 여기에도 그 하나만 담겨 있어, 건드리지 않은 면은 그대로 보존된다.
+    const editedId = editingPolygonIdRef.current;
+    const moved = vertexMovedIdsRef.current;
+    // 변 중점 삽입 후 한 번도 움직이지 않고 놓은 경우: 삽입 자체가 모양 변경이므로 집은 면을 대상으로 삼는다.
+    const movedIds = moved.size > 0 ? new Set(moved) : new Set(editedId ? [editedId] : []);
+    moved.clear();
     editingPolygonIdRef.current = null;
+    vertexDragGroupRef.current = null;
     const didMove = didVertexDragRef.current;
     didVertexDragRef.current = false;
     vertexDragStartRef.current = null;
     // 실제 이동(또는 점 삽입)이 일어난 경우만 모양 변경 마무리 — 단순 탭으로 모듈이 삭제되는 것 방지
     if (!didMove) return;
     const resetAreas = areasRef.current.map((a) =>
-      a.id === movedId && a.type === "install"
+      movedIds.has(a.id) && a.type === "install"
         ? { ...a, eaveEdgeIndex: findLongestEdgeIndex(a.points) }
         : a,
     );
     setAreas(resetAreas);
     notifyParent(resetAreas);
-    if (movedId) onEaveChange?.(movedId);
+    for (const id of movedIds) onEaveChange?.(id);
   }
 
   /** 포인터 캡처가 강제 해제될 때 드래그 상태를 정리한다 */
@@ -1091,6 +1207,9 @@ export default function CropPopup({
       // Delete entire polygon
       updated = currentAreas.filter((a) => a.id !== targetId);
       editingPolygonIdRef.current = null;
+      // 폴리곤이 통째로 사라졌으니 드래그 묶음에 죽은 id 가 남지 않게 비운다
+      vertexDragGroupRef.current = null;
+      vertexMovedIdsRef.current.clear();
     } else {
       const newPoints = selArea.points.filter((_, i) => i !== vertexIdx);
       updated = currentAreas.map((a) =>
@@ -1196,6 +1315,30 @@ export default function CropPopup({
               }}
               aria-hidden="true"
             />
+          </div>
+        )}
+
+        {/* 지붕 편집 모드 조작 힌트 — Alt 드래그는 화면에 드러나지 않아 안내가 없으면 발견되지 않는다 */}
+        {roofEditTool === "editRoof" && !editLocked && (
+          <div
+            style={{
+              position: "absolute",
+              left: 12,
+              bottom: 12,
+              zIndex: 10,
+              maxWidth: "min(420px, calc(100% - 24px))",
+              padding: "7px 11px",
+              border: "1px solid var(--border-primary)",
+              background: "rgba(255, 255, 255, 0.9)",
+              color: "var(--text-secondary)",
+              borderRadius: "var(--radius-md)",
+              fontSize: 12,
+              lineHeight: 1.5,
+              backdropFilter: "blur(8px)",
+              pointerEvents: "none", // 캔버스 조작을 가리지 않는다
+            }}
+          >
+            {t("hintVertexDragAlt", lang)}
           </div>
         )}
 

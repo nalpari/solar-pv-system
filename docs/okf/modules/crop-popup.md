@@ -5,6 +5,7 @@ description: 크롭 이미지 위의 Canvas 폴리곤 에디터. 지붕면 편�
 resource: src/app/components/CropPopup.tsx
 tags: [module, canvas, editor, ui]
 generated: { by: claude-code/opus-5, at: 2026-07-27T04:26:32Z }
+verified: { by: claude-code/opus-5, at: 2026-08-03T00:00:00Z }
 status: stable
 sources:
   - id: croppopup
@@ -20,6 +21,8 @@ sources:
 크롭된 위성 이미지를 배경으로 깔고 그 위 캔버스에서:
 
 - 지붕면(install) / 개구(exclude) 폴리곤 그리기·선택·이동·꼭짓점 편집
+  (겹쳐 있던 꼭짓점은 기본적으로 첫 원소만 움직이고, Alt 를 누르면 `vertexDragGroupRef` 묶음 전체가 따라온다
+  → [`domain/roof-face.md`](/domain/roof-face.md))
 - 처마 기준변 지정(`flowSetting`)
 - 인접 면 병합 호출 → [`merge-polygons`](merge-polygons.md)
 - 배치된 모듈 렌더
@@ -56,12 +59,33 @@ sources:
 
 | 상수 | 값 | 대응 |
 |------|-----|------|
-| `COLOR_INSTALL` | `#3366AA` | `--accent-blue` |
-| `COLOR_EXCLUDE` | `#CF2E2E` | `--accent-red` |
-| `COLOR_SELECTED` | `#FFD700` | (팔레트 밖 gold) |
-| `COLOR_EAVE` | `#FF8A00` | 처마 강조 |
+| `COLOR_EXCLUDE` / `COLOR_EXCLUDE_FILL` | `#CF2E2E` | `--accent-red` — 개구 |
+| `COLOR_SELECTED` | `#FFD700` | (팔레트 밖 gold) — 선택 강조, lineWidth 4 |
+| `COLOR_EAVE` | `#FF8A00` | 처마 기준변 강조, lineWidth 4 |
+| `COLOR_INSTALL` / `COLOR_INSTALL_PANEL` | `#3366AA` | 구 `--accent-blue` — **폴백 전용** (아래) |
 
 ⚠️ `globals.css` 의 값이 바뀌면 여기도 손으로 맞춰야 한다. 자동 동기화가 없다.
+
+## 설치면은 단색이 아니다
+
+install 폴리곤은 `COLOR_INSTALL` 을 쓰지 않는다. 지붕면마다 `getRoofFaceColor` / `getRoofFaceFill`
+(`src/app/utils/roofColors.ts` · `ROOF_FACE_COLORS` 30색)에서 색을 받는다.
+
+draw effect 는 시작할 때 `areas` 를 한 번 훑어 `install id → 색 인덱스` **Map 을 파생 생성**하고(등장 순서 0,1,2,…)
+그 Map 을 네 곳에 쓴다 — 완성된 면의 stroke/fill, 그리는 중인 폴리곤(= 다음에 배정될 색),
+배치된 모듈(`panel.polygonId` 조회), 그리고 `roofEditTool === "editRoof"` 일 때의 꼭짓점·중점 핸들.
+인덱스를 상태로 들고 있지 않으므로 `areas` 가 바뀌면 색이 따라 재배정된다.
+배정 규칙·색 이동 트레이드오프·31개 초과 시 순환은 [`domain/roof-face.md`](/domain/roof-face.md) 참조.
+
+`COLOR_INSTALL` / `COLOR_INSTALL_PANEL` 은 **모듈의 `polygonId` 가 살아있는 install 면과 매칭되지 않을 때의 방어적 폴백**으로만 남았다.
+면 자체의 fill 로 쓰이던 `COLOR_INSTALL_FILL` 은 팔레트로 완전히 대체되어 삭제했다.
+
+⚠️ 상태색이 팔레트를 이긴다 — 선택된 면은 gold, 처마 변은 orange 가 팔레트 색 위에 덮인다. 이 우선순위를 팔레트가 바꾸지 않는다.
+
+**편집 핸들은 예외다.** 지붕 편집 모드(`editRoof`)의 꼭짓점·중점 핸들은 gold 가 아니라 **소속 면 색**으로 그린다(개구는 빨강).
+꼭짓점은 면 색으로 채우고 흰 테두리로 배경에서 띄우며, 중점(`+`)은 흰 채움에 면 색 테두리·기호다.
+면이 여러 개일 때 어느 면의 핸들을 잡고 있는지 색으로 읽히게 하려는 것이다.
+합성 PNG(`getLayoutBlob`)는 이 오버레이 캔버스를 그대로 `drawImage` 하므로 팔레트가 자동 반영된다 — 별도 그리기 경로가 없다.
 
 # 상태 게이트
 

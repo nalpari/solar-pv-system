@@ -10,16 +10,24 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 /* ─────────────────────────────────────────────────────────────
-   팔레트는 앱의 캔버스 상수에서 그대로 가져왔다 (CropPopup.tsx).
-   install=#3366AA  exclude=#CF2E2E  eave=#FF8A00  selected=#FFD700
-   문서의 레이어 색 코딩이 곧 제품의 범례다.
+   상태색은 앱의 캔버스 상수에서 그대로 가져왔다 (CropPopup.tsx).
+   exclude=#CF2E2E  eave=#FF8A00  selected=#FFD700 — 이 셋은 제품의 범례 그대로다.
+
+   ⚠️ install(설치면)은 단색이 아니다. 지붕면마다 30색 팔레트에서 색을 받는다
+   (src/app/utils/roofColors.ts · ROOF_FACE_COLORS). 배정 인덱스는 areas 에서
+   install 만 필터링한 등장 순서로 매번 파생되며, 그 면 위의 모듈도 같은 색을 따른다.
+   아래 --roof-0..3 이 팔레트 앞 4색이고, 도식에서 "지붕면 하나"를 그릴 때는 --roof-0 을 쓴다.
+
+   --install(#5b93d6)은 **문서 전용 액센트**다 — 설치면·클라이언트 레이어·지리 좌표축처럼
+   문서가 개념을 묶는 데 쓸 뿐, 제품이 지붕면을 칠하는 색이 아니다. 혼동하지 말 것.
    ───────────────────────────────────────────────────────────── */
 :root{
   --ink:#08090d; --ink-2:#0b0d12; --panel:#12151d; --panel-2:#161a24;
   --line:rgba(255,255,255,.085); --line-2:rgba(255,255,255,.16);
   --text:#e8e6e0; --body:#d3d1c9; --muted:#969aa5; --faint:#666b77;
 
-  --install:#5b93d6;  --install-raw:#3366AA;
+  --install:#5b93d6;  /* 문서 액센트 전용 — 제품의 지붕면 색이 아니다 */
+  --roof-0:#B6E250; --roof-1:#27A6BE; --roof-2:#E68EE4; --roof-3:#50E2A6;
   --exclude:#e5544c;  --exclude-raw:#CF2E2E;
   --eave:#ff8a00;     --eave-soft:#ffb23e;
   --select:#ffd700;
@@ -334,8 +342,9 @@ footer .fm{font-family:var(--f-mono); font-size:11.5px; margin-top:10px; color:v
       <div class="frame">
         <img src="assets/architecture-hero.webp" alt="지붕면 폴리곤과 개구가 표시된 위성 크롭 이미지">
         <svg class="plan" viewBox="0 0 1536 1024" preserveAspectRatio="none" aria-hidden="true">
+          <!-- 지붕면 하나 — 팔레트 0번색. 면이 여러 개면 1,2,3…번색이 순서대로 붙는다 -->
           <polygon class="draw" points="462,96 1352,505 1078,878 133,518"
-            fill="rgba(51,102,170,.11)" stroke="#5b93d6" stroke-width="5" stroke-linejoin="round"/>
+            fill="rgba(182,226,80,.13)" stroke="#B6E250" stroke-width="5" stroke-linejoin="round"/>
           <!-- 처마 기준변 — 지붕의 아래쪽 긴 변. 배치 격자의 방향과 앵커를 결정한다 -->
           <line class="draw" x1="133" y1="518" x2="1078" y2="878" stroke="#ff8a00" stroke-width="9" stroke-linecap="round"/>
           <!-- exclude(천창) -->
@@ -350,7 +359,7 @@ footer .fm{font-family:var(--f-mono); font-size:11.5px; margin-top:10px; color:v
         </svg>
       </div>
       <figcaption class="pf">
-        <span><i style="background:#5b93d6"></i>install</span>
+        <span><i style="background:linear-gradient(135deg,#B6E250 0 25%,#27A6BE 25% 50%,#E68EE4 50% 75%,#50E2A6 75% 100%)"></i>install — 면마다 팔레트 색(30색 순환)</span>
         <span><i style="background:#e5544c"></i>exclude</span>
         <span><i style="background:#ff8a00"></i>eave</span>
         <span><i style="background:#ffd700"></i>selected</span>
@@ -745,18 +754,18 @@ BFF 가 POST/JSON 으로 받더라도 여기서 GET 으로 바꿔 부른다 — 
       <g font-size="10.5">
         <!-- ① 인셋 -->
         <text x="40" y="34" fill="#ff8a00" font-size="11">① margin 인셋 · 개구는 확장</text>
-        <polygon points="52,60 236,60 264,168 40,196" fill="rgba(51,102,170,.10)" stroke="#5b93d6" stroke-width="2.5"/>
-        <polygon points="72,80 216,80 240,156 62,176" fill="none" stroke="#5b93d6" stroke-width="1.4" stroke-dasharray="5 4"/>
+        <polygon points="52,60 236,60 264,168 40,196" fill="rgba(182,226,80,.10)" stroke="#B6E250" stroke-width="2.5"/>
+        <polygon points="72,80 216,80 240,156 62,176" fill="none" stroke="#B6E250" stroke-width="1.4" stroke-dasharray="5 4"/>
         <rect x="140" y="104" width="42" height="34" fill="rgba(207,46,46,.16)" stroke="#e5544c" stroke-width="2"/>
         <rect x="128" y="94" width="66" height="54" fill="none" stroke="#e5544c" stroke-width="1.3" stroke-dasharray="5 4"/>
         <line x1="52" y1="60" x2="236" y2="60" stroke="#ff8a00" stroke-width="4" stroke-linecap="round"/>
-        <text x="40" y="228" fill="#969aa5">설치면은 <tspan fill="#5b93d6">안쪽</tspan>으로 300mm</text>
+        <text x="40" y="228" fill="#969aa5">설치면은 <tspan fill="#B6E250">안쪽</tspan>으로 300mm</text>
         <text x="40" y="246" fill="#969aa5">개구는 <tspan fill="#e5544c">바깥</tspan>으로 300mm</text>
         <text x="40" y="264" fill="#666b77">자기교차 시 이 면은 배치 0장</text>
 
         <!-- ② 회전 -->
         <text x="330" y="34" fill="#ff8a00" font-size="11">② 처마를 수평으로 회전</text>
-        <polygon points="330,66 560,66 542,176 348,190" fill="rgba(51,102,170,.08)" stroke="#5b93d6" stroke-width="2"/>
+        <polygon points="330,66 560,66 542,176 348,190" fill="rgba(182,226,80,.08)" stroke="#B6E250" stroke-width="2"/>
         <line x1="330" y1="66" x2="560" y2="66" stroke="#ff8a00" stroke-width="4" stroke-linecap="round"/>
         <line x1="318" y1="66" x2="318" y2="196" stroke="#666b77" stroke-width="1" stroke-dasharray="3 4"/>
         <text x="344" y="92" fill="#666b77">y — 처마 수직 (cosθ 압축)</text>
@@ -766,7 +775,7 @@ BFF 가 POST/JSON 으로 받더라도 여기서 GET 으로 바꿔 부른다 — 
 
         <!-- ③ 위상 스캔 -->
         <text x="620" y="34" fill="#ff8a00" font-size="11">③ 위상 스캔 10×10</text>
-        <g stroke="#5b93d6" stroke-width="1" fill="rgba(91,147,214,.14)">
+        <g stroke="#B6E250" stroke-width="1" fill="rgba(182,226,80,.20)">
           <rect x="622" y="60" width="52" height="26"/><rect x="678" y="60" width="52" height="26"/>
           <rect x="734" y="60" width="52" height="26"/><rect x="790" y="60" width="52" height="26"/>
           <rect x="622" y="92" width="52" height="26"/><rect x="678" y="92" width="52" height="26"/>
