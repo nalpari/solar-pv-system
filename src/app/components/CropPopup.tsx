@@ -1069,14 +1069,14 @@ export default function CropPopup({
         didVertexDragRef.current = true;
       }
       // 스냅: 다른 install 폴리곤의 꼭짓점에 흡착.
-      // 묶음에 든 폴리곤은 **전부** 제외한다 — 같이 움직이던 멤버에 도로 흡착돼 제자리에 고정되는 것을 막고,
-      // Alt 로 하나만 뗄 때도 남겨둔 꼭짓점에 다시 붙어버리면 SNAP_RADIUS 안에서 영영 뗄 수 없기 때문이다.
+      // 묶음에 든 폴리곤은 **전부** 제외한다 — 그냥 끌어 하나만 뗄 때 남겨둔 꼭짓점에 도로 붙어버리면
+      // SNAP_RADIUS 안에서 영영 뗄 수 없고, Alt 로 함께 끌 때는 서로에게 흡착돼 제자리에 고정되기 때문이다.
       const groupIds = new Set(dragGroup.map((v) => v.id));
       const snapped = findNearestSnapVertex({ x: px, y: py }, areasRef.current, groupIds) ?? { x: px, y: py };
-      // Alt(Option) 를 누른 채 끌면 집은 꼭짓점 하나만 움직인다 — 겹쳐 있던 면을 떼어낼 때 쓴다.
-      // 누르지 않으면 겹쳐 있던 꼭짓점이 같은 좌표로 함께 따라와 지붕면들이 계속 맞물린다.
+      // 기본은 집은 꼭짓점 하나만 움직인다 — 붙어 있던 면을 떼어내는 쪽이 손에 익는다는 판단.
+      // Alt(Option) 를 누른 채 끌면 겹쳐 있던 꼭짓점이 같은 좌표로 함께 따라와 지붕면들이 계속 맞물린다.
       // 드래그 도중에 눌렀다 떼도 다음 move 부터 바로 반영된다.
-      const targets = e.altKey ? dragGroup.slice(0, 1) : dragGroup;
+      const targets = e.altKey ? dragGroup : dragGroup.slice(0, 1);
       for (const v of targets) vertexMovedIdsRef.current.add(v.id);
       setAreas((prev) =>
         prev.map((a) => {
