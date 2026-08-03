@@ -135,7 +135,7 @@ footer{border-top:1px solid var(--line); padding:26px 0 60px; margin-top:20px;
   <div class="kicker"><span class="sun"></span><span>CI / CD Pipeline</span><span class="ks"></span><span>Jenkins · Docker</span></div>
   <h1>Solar PV System<br><span>배포 파이프라인</span></h1>
   <p class="lead">Jenkins Declarative Pipeline 하나가 <strong>브랜치 선택 → 시크릿 병합 → 환경변수 전수 검증 → 컨테이너 안 lint·타입·빌드 → compose 배포</strong>까지 수행한다. GitHub Actions 는 사용하지 않는다.</p>
-  <p class="srcline">근거: Jenkinsfile · Dockerfile · docker-compose.yml · .dockerignore &nbsp;/&nbsp; 대상 커밋 761cc1f (2026-07-27)</p>
+  <p class="srcline">근거: Jenkinsfile · Dockerfile · docker-compose.yml · .dockerignore &nbsp;/&nbsp; 대상 커밋 761cc1f (2026-07-27) + 2026-07-30 OpenRouter 전환 반영</p>
 </header>
 
 <nav class="toc">
@@ -230,7 +230,7 @@ checkout([$class:'GitSCM', branches:[[name:"*/${targetBranch}"]],
   <h3>3.2 &nbsp;Load Env Credential</h3>
   <div class="tw"><table>
     <tr><th>Credential ID</th><th>종류</th><th>역할</th></tr>
-    <tr><td><code>pv-common-env</code></td><td>Secret file</td><td>dev/prod 공통 — Maps · Gemini · AWS S3</td></tr>
+    <tr><td><code>pv-common-env</code></td><td>Secret file</td><td>dev/prod 공통 — Maps · OpenRouter · AWS S3</td></tr>
     <tr><td><code>pv-dev-env</code></td><td>Secret file</td><td>dev 전용 — QSP/MUSBI 호스트, 문서 노출 플래그, Origin 허용목록</td></tr>
     <tr><td><code>pv-prod-env</code></td><td>Secret file</td><td>prod 전용 — 동일 키의 운영 값</td></tr>
   </table></div>
@@ -242,14 +242,16 @@ chmod 600 .env</pre>
 
   <h3>3.3 &nbsp;Validate Environment</h3>
   <p><code>.env</code> 소싱 후 필수 키 12개를 <code>: "${VAR:?메시지}"</code> 로 전수 검증한다.</p>
-<pre><b>공통</b>  NEXT_PUBLIC_GOOGLE_MAPS_API_KEY  GEMINI_API_KEY  GEMINI_MODEL
+<pre><b>공통</b>  NEXT_PUBLIC_GOOGLE_MAPS_API_KEY  OPENROUTER_API_KEY  OPENROUTER_MODEL
        AWS_REGION  AMPLIFY_BUCKET  AWS_ACCESS_KEY_ID  AWS_SECRET_ACCESS_KEY
        NEXT_PUBLIC_AWS_S3_BASE_URL
 <b>프로파일</b>  QSP_API_HOST  MUSBI_API_HOST  ENABLE_API_DOCS  ALLOWED_ORIGIN
-<i>미검증(선택값)</i>  REPLICATE_API_TOKEN  MUSBI_CHECK_PATH  MUSBI_RESULT_PATH  MUSBI_RESULT_HOST</pre>
+<i>미검증(선택값)</i>  REPLICATE_API_TOKEN  MUSBI_CHECK_PATH  MUSBI_RESULT_PATH  MUSBI_RESULT_HOST
+<i>미검증(잔존)</i>    GEMINI_API_KEY  GEMINI_MODEL   <b>← 미사용. 롤백 대비로 남겨둔 여분 키</b></pre>
   <div class="note bad">
     <div class="nh">놓치면 아픈 곳</div>
-    <p><strong>새 환경변수를 추가하면 이 스테이지에 검증 라인을 반드시 같이 추가한다.</strong> 빠뜨리면 값이 비어 있어도 배포가 “성공”하고, 런타임에 500(Gemini/S3) 또는 403(<code>ALLOWED_ORIGIN</code> 미설정 시 모든 POST)으로 나타난다.</p>
+    <p><strong>새 환경변수를 추가하면 이 스테이지에 검증 라인을 반드시 같이 추가한다.</strong> 빠뜨리면 값이 비어 있어도 배포가 “성공”하고, 런타임에 500(추론/S3) 또는 403(<code>ALLOWED_ORIGIN</code> 미설정 시 모든 POST)으로 나타난다.</p>
+    <p>2026-07-30 OpenRouter 전환으로 <code>GEMINI_API_KEY</code> · <code>GEMINI_MODEL</code> 검증 2줄이 <code>OPENROUTER_*</code> 로 교체됐다. 검증하지 않는 여분 키는 파이프라인을 실패시키지 않으므로 잔존 <code>GEMINI_*</code> 는 무해하다.</p>
   </div>
 
   <h3>3.4 &nbsp;Verify — 두 검사의 실패 정책이 다르다</h3>

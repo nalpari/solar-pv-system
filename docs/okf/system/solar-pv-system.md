@@ -4,20 +4,20 @@ title: Solar PV System
 description: Google Maps 위성영상 위에 지붕 태양광 모듈 배치를 설계하고 외부 발전 시뮬레이션으로 넘기는 단일 페이지 Next.js 앱.
 resource: src/app/page.tsx
 tags: [system, nextjs, overview]
-generated: { by: claude-code/opus-5, at: 2026-07-27T04:26:32Z }
+generated: { by: claude-code/opus-5, at: 2026-07-30T06:37:15Z }
 status: stable
 sources:
   - id: claude-md
     resource: CLAUDE.md
     title: 프로젝트 에이전트 가이드
-    last_modified: 2026-07-23
+    last_modified: 2026-07-30
   - id: page
     resource: src/app/page.tsx
     title: Home — 최상위 클라이언트 컴포넌트
   - id: pkg
     resource: package.json
-    title: 의존성 목록
-    last_modified: 2026-07-23
+    title: 의존성 목록 (2026-07-30 `@google/genai` 제거, 신규 의존성 0)
+    last_modified: 2026-07-30
 ---
 
 # 무엇을 하는 시스템인가
@@ -44,7 +44,7 @@ sources:
 
 - **클라이언트가 직접 부르는 외부 서비스는 Google Maps 뿐이다** — Maps JS / Places / Geometry / Geocoder.
   API 키가 `NEXT_PUBLIC_*` 로 번들에 인라인되므로 키 제한은 Google Cloud 콘솔의 리퍼러 제한에 의존한다.
-- **그 외 외부 호출은 전부 BFF 경유** — Gemini · Replicate · QSP · MUSBI · S3 는 서버 라우트가 호출하고
+- **그 외 외부 호출은 전부 BFF 경유** — OpenRouter · Replicate · QSP · MUSBI · S3 는 서버 라우트가 호출하고
   자격증명은 클라이언트에 노출되지 않는다. [interfaces](/interfaces/index.md) 참조.
 - 그 BFF 들은 [`security-perimeter.md`](security-perimeter.md) 의 Origin 검증 + rate limit 뒤에 있다.
 
@@ -67,5 +67,6 @@ const [lang] = useState<Lang>("ja");
 
 - 구조 도식: `docs/architecture.md` · 시퀀스: `docs/sequence-diagrams.md`
 - 보안 리뷰: `docs/security-review-2026-06-02.md`
-- 지연 진단: `docs/investigations/2026-06-04-detect-roof-latency-analysis.md`
+- 지연 진단: `docs/investigations/2026-06-04-detect-roof-latency-analysis.md` (맨 앞 **정정 블록** 먼저 읽을 것)
+- OpenRouter 전환 설계: `docs/plans/2026-07-27-gemini-to-openrouter-migration.md`
 - 지식 그래프: `graphify-out/` (git 미추적 — `graphify update .` 로 재생성)
