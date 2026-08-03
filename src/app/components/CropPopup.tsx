@@ -77,19 +77,29 @@ interface AreaEntry {
 const SNAP_RADIUS = 10;
 
 /**
+ * 꼭짓점이 "같은 자리에 겹쳐 있다"고 볼 거리(px).
+ * 핸들 시각 반지름(`HANDLE_VISUAL_RADIUS`)과 같은 값이라, **눈에 겹쳐 보이면 함께 잡힌다**.
+ * 스냅으로 붙은 꼭짓점은 좌표가 정확히 같지만 병합·AI 감지 결과는 미세하게 어긋날 수 있어 여유를 둔다.
+ */
+const VERTEX_LINK_RADIUS = 6;
+
+/** 드래그로 함께 움직일 꼭짓점 한 개 — 폴리곤 id 와 그 안에서의 인덱스 */
+type VertexRef = { id: string; idx: number };
+
+/**
  * 주어진 위치에서 SNAP_RADIUS 내 가장 가까운 install 폴리곤 꼭짓점 반환
- * @param excludeId 제외할 폴리곤 id (꼭짓점 편집 중 자기 자신 제외용)
+ * @param excludeIds 제외할 폴리곤 id 집합 (꼭짓점 편집 중 함께 끌리는 폴리곤 제외용)
  */
 function findNearestSnapVertex(
   pt: PixelPoint,
   areas: AreaEntry[],
-  excludeId?: string,
+  excludeIds?: ReadonlySet<string>,
 ): PixelPoint | null {
   let best: PixelPoint | null = null;
   let bestDist = SNAP_RADIUS;
   for (const area of areas) {
     if (area.type !== "install") continue;
-    if (area.id === excludeId) continue;
+    if (excludeIds?.has(area.id)) continue;
     for (const vertex of area.points) {
       const d = Math.hypot(pt.x - vertex.x, pt.y - vertex.y);
       if (d <= bestDist) {
@@ -99,6 +109,41 @@ function findNearestSnapVertex(
     }
   }
   return best;
+}
+
+/**
+ * `origin` 에 겹쳐 있는 install 폴리곤 꼭짓점을 전부 모은다 — 시작 꼭짓점 자신을 항상 첫 원소로 포함한다.
+ *
+ * 인접한 지붕면은 스냅(`SNAP_RADIUS`)으로 꼭짓점을 공유하게 되므로, 하나만 끌면 맞닿아 있던 면 사이가
+ * 벌어진다. 겹친 것들을 한 덩어리로 묶어 같이 끌어야 지붕면이 계속 맞물린다.
+ *
+ * 개구(exclude)는 지붕면 위에 얹힌 별개 요소라 딸려오지 않는다 — 스냅 대상도 install 뿐이라
+ * 개구 꼭짓점이 겹치는 것은 우연이고, 지붕면을 끌 때 개구까지 따라오면 예측을 벗어난다.
+ * 폴리곤마다 가장 가까운 꼭짓점 하나만 잡아, 한 면 안에서 두 꼭짓점이 붙어 있어도 같이 끌리지 않게 한다.
+ */
+function collectCoincidentVertices(
+  origin: PixelPoint,
+  areas: AreaEntry[],
+  originId: string,
+  originIdx: number,
+): VertexRef[] {
+  const group: VertexRef[] = [{ id: originId, idx: originIdx }];
+  for (const area of areas) {
+    if (area.id === originId) continue;
+    if (area.type !== "install") continue;
+    if (area.points.length < 3) continue;
+    let bestIdx = -1;
+    let bestDist = VERTEX_LINK_RADIUS;
+    for (let i = 0; i < area.points.length; i++) {
+      const d = Math.hypot(origin.x - area.points[i].x, origin.y - area.points[i].y);
+      if (d <= bestDist) {
+        bestDist = d;
+        bestIdx = i;
+      }
+    }
+    if (bestIdx >= 0) group.push({ id: area.id, idx: bestIdx });
+  }
+  return group;
 }
 
 /** inner 폴리곤이 outer 폴리곤 안에 완전히 포함되는지 — inner의 모든 꼭짓점이 outer 내부 */
@@ -273,6 +318,9 @@ export default function CropPopup({
   // 꼭짓점 드래그/삽입/삭제 중인 폴리곤 id — editRoof가 모든 폴리곤을 대상으로 하므로
   // 선택 상태(selectedPolygonIds)와 무관하게 별도 ref로 편집 대상 폴리곤을 추적한다.
   const editingPolygonIdRef = useRef<string | null>(null);
+  // 이번 드래그로 함께 움직일 꼭짓점 묶음 — 겹쳐 있던 인접 지붕면들의 꼭짓점이 여기 들어온다.
+  // 첫 원소가 사용자가 실제로 집은 꼭짓점(= editingPolygonIdRef 의 것)이다.
+  const vertexDragGroupRef = useRef<VertexRef[] | null>(null);
 
   // Debounce rapid clicks in drawing mode (prevents double-click adding 2 points)
   const lastPointTimeRef = useRef<number>(0);
@@ -328,6 +376,7 @@ export default function CropPopup({
       dragCandidateIdRef.current = null;
       didDragRef.current = false;
       editingPolygonIdRef.current = null;
+      vertexDragGroupRef.current = null;
     }
   }, [drawingMode, roofEditTool]);
 
@@ -702,6 +751,11 @@ export default function CropPopup({
             const vp = area.points[i];
             if (Math.hypot(pt.x - vp.x, pt.y - vp.y) <= HANDLE_RADIUS) {
               editingPolygonIdRef.current = area.id;
+              // 포인터 위치가 아니라 집은 꼭짓점의 실제 좌표를 기준으로 겹친 것들을 모은다.
+              // 개구를 집은 경우는 단독 이동 — 지붕면끼리만 묶는다.
+              vertexDragGroupRef.current = area.type === "install"
+                ? collectCoincidentVertices(vp, areas, area.id, i)
+                : [{ id: area.id, idx: i }];
               setDraggingVertexIdx(i);
               vertexDragStartRef.current = pt;
               didVertexDragRef.current = false;
@@ -735,6 +789,9 @@ export default function CropPopup({
               );
               setAreas(updated);
               editingPolygonIdRef.current = area.id;
+              // 변 중점에서 새로 삽입한 점은 아직 어디에도 겹쳐 있지 않다 — 단독으로 끈다.
+              // 끌다가 다른 면 꼭짓점에 스냅되면 그때부터 겹치고, 다음 드래그에서 묶인다.
+              vertexDragGroupRef.current = [{ id: area.id, idx: insertIdx }];
               setDraggingVertexIdx(insertIdx);
               vertexDragStartRef.current = pt;
               // 변 중점 클릭은 점 삽입 자체가 변경 — finalize가 미이동이어도 마무리되도록 true로 시작
@@ -832,6 +889,7 @@ export default function CropPopup({
       dragCandidateIdRef.current = null;
       didDragRef.current = false;
       editingPolygonIdRef.current = null;
+      vertexDragGroupRef.current = null;
     }
   }, [clearSignal]);
 
@@ -992,20 +1050,25 @@ export default function CropPopup({
 
     // Vertex dragging (editRoof 모드)
     const editingId = editingPolygonIdRef.current;
-    if (drawingMode === null && roofEditTool === "editRoof" && draggingVertexIdx !== null && editingId) {
+    const dragGroup = vertexDragGroupRef.current;
+    if (drawingMode === null && roofEditTool === "editRoof" && draggingVertexIdx !== null && editingId && dragGroup) {
       // 임계값 미만 이동은 무시 — 꼭짓점 탭만으로 모양 변경/모듈 삭제 방지 (변 중점 삽입 경로는 시작 시 true라 영향 없음)
       if (!didVertexDragRef.current) {
         const start = vertexDragStartRef.current;
         if (start && Math.hypot(px - start.x, py - start.y) < DRAG_THRESHOLD) return;
         didVertexDragRef.current = true;
       }
-      // 스냅: 다른 install 폴리곤의 꼭짓점에 흡착 (자기 폴리곤은 제외)
-      const snapped = findNearestSnapVertex({ x: px, y: py }, areasRef.current, editingId) ?? { x: px, y: py };
+      // 스냅: 다른 install 폴리곤의 꼭짓점에 흡착.
+      // 함께 끌리는 폴리곤은 **전부** 제외한다 — 안 그러면 같이 움직이던 묶음 멤버에 도로 흡착돼 제자리에 고정된다.
+      const groupIds = new Set(dragGroup.map((v) => v.id));
+      const snapped = findNearestSnapVertex({ x: px, y: py }, areasRef.current, groupIds) ?? { x: px, y: py };
+      // 겹쳐 있던 꼭짓점들을 같은 좌표로 함께 옮긴다 — 맞닿아 있던 지붕면들이 계속 맞물린다.
       setAreas((prev) =>
         prev.map((a) => {
-          if (a.id !== editingId) return a;
+          const ref = dragGroup.find((v) => v.id === a.id);
+          if (!ref || ref.idx >= a.points.length) return a;
           const newPoints = [...a.points];
-          newPoints[draggingVertexIdx] = snapped;
+          newPoints[ref.idx] = snapped;
           return { ...a, points: newPoints };
         }),
       );
@@ -1078,21 +1141,26 @@ export default function CropPopup({
    */
   function finalizeVertexDrag() {
     setDraggingVertexIdx(null);
-    const movedId = editingPolygonIdRef.current;
+    // 겹쳐 있어 함께 끌린 폴리곤 전부가 모양 변경 대상이다 — 하나만 마무리하면
+    // 나머지 면의 처마 기준선이 옛 모양 기준으로 남고 그 위 모듈도 그대로 살아남는다.
+    const group = vertexDragGroupRef.current;
+    const editedId = editingPolygonIdRef.current;
+    const movedIds = new Set(group ? group.map((v) => v.id) : editedId ? [editedId] : []);
     editingPolygonIdRef.current = null;
+    vertexDragGroupRef.current = null;
     const didMove = didVertexDragRef.current;
     didVertexDragRef.current = false;
     vertexDragStartRef.current = null;
     // 실제 이동(또는 점 삽입)이 일어난 경우만 모양 변경 마무리 — 단순 탭으로 모듈이 삭제되는 것 방지
     if (!didMove) return;
     const resetAreas = areasRef.current.map((a) =>
-      a.id === movedId && a.type === "install"
+      movedIds.has(a.id) && a.type === "install"
         ? { ...a, eaveEdgeIndex: findLongestEdgeIndex(a.points) }
         : a,
     );
     setAreas(resetAreas);
     notifyParent(resetAreas);
-    if (movedId) onEaveChange?.(movedId);
+    for (const id of movedIds) onEaveChange?.(id);
   }
 
   /** 포인터 캡처가 강제 해제될 때 드래그 상태를 정리한다 */
@@ -1121,6 +1189,8 @@ export default function CropPopup({
       // Delete entire polygon
       updated = currentAreas.filter((a) => a.id !== targetId);
       editingPolygonIdRef.current = null;
+      // 폴리곤이 통째로 사라졌으니 드래그 묶음에 죽은 id 가 남지 않게 비운다
+      vertexDragGroupRef.current = null;
     } else {
       const newPoints = selArea.points.filter((_, i) => i !== vertexIdx);
       updated = currentAreas.map((a) =>
