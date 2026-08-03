@@ -11,10 +11,13 @@ import { normalizedToPixelPolygons } from "../utils/aiDetect";
 import { t } from "../utils/i18n";
 import { isPointInPolygon } from "../utils/panelPlacement";
 import { mergeAreaPolygons } from "../utils/mergePolygons";
+import { getRoofFaceColor, getRoofFaceFill } from "../utils/roofColors";
 
 /** Canvas 렌더링 시 getComputedStyle 호출을 피하기 위해 CSS 변수 값을 상수로 정의 */
+// install 폴리곤은 더 이상 단색이 아니다 — 지붕면마다 ROOF_FACE_COLORS 팔레트 색을 쓴다.
+// 아래 두 상수는 소속 지붕면을 찾지 못한 모듈의 폴백 색으로만 남는다 (구 --accent-blue).
+// (면 자체의 fill 로 쓰던 COLOR_INSTALL_FILL 은 팔레트로 완전히 대체되어 삭제했다.)
 const COLOR_INSTALL = "#3366AA"; // --accent-blue
-const COLOR_INSTALL_FILL = "rgba(51, 102, 170, 0.2)";
 const COLOR_INSTALL_PANEL = "rgba(51, 102, 170, 0.5)";
 const COLOR_EXCLUDE = "#CF2E2E"; // --accent-red
 const COLOR_EXCLUDE_FILL = "rgba(207, 46, 46, 0.3)";
@@ -428,11 +431,22 @@ export default function CropPopup({
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    // 지붕면 색 인덱스는 상태로 저장하지 않고 areas 에서 **파생**한다 —
+    // install 만 필터링한 등장 순서(0,1,2,…)가 곧 팔레트 인덱스다.
+    // 그리기/삭제/병합/undo/AI 재감지 어느 경로로 areas 가 바뀌어도 자동으로 일관되고,
+    // install 이 30개 이하인 동안에는 색 중복이 구조적으로 발생하지 않는다.
+    // 매 폴리곤마다 indexOf 로 훑지 않도록 여기서 Map 을 한 번만 만든다.
+    const installColorIndex = new Map<string, number>();
+    for (const area of areas) {
+      if (area.type === "install") installColorIndex.set(area.id, installColorIndex.size);
+    }
+
     // Draw completed polygons
     for (const area of areas) {
       if (area.points.length < 3) continue;
       const isInstall = area.type === "install";
       const isSelected = selectedPolygonIds.has(area.id);
+      const colorIndex = installColorIndex.get(area.id) ?? 0;
       ctx.beginPath();
       ctx.moveTo(area.points[0].x, area.points[0].y);
       for (let i = 1; i < area.points.length; i++) {
@@ -440,10 +454,12 @@ export default function CropPopup({
       }
       ctx.closePath();
       ctx.fillStyle = isInstall
-        ? COLOR_INSTALL_FILL
+        ? getRoofFaceFill(colorIndex)
         : COLOR_EXCLUDE_FILL;
       ctx.fill();
-      ctx.strokeStyle = isSelected ? COLOR_SELECTED : (isInstall ? COLOR_INSTALL : COLOR_EXCLUDE);
+      ctx.strokeStyle = isSelected
+        ? COLOR_SELECTED
+        : (isInstall ? getRoofFaceColor(colorIndex) : COLOR_EXCLUDE);
       ctx.lineWidth = isSelected ? 4 : 2;
       ctx.stroke();
 
@@ -508,7 +524,10 @@ export default function CropPopup({
     // Draw in-progress polygon
     if (currentPoints.length > 0) {
       const isInstall = drawingMode === "install";
-      const strokeColor = isInstall ? COLOR_INSTALL : COLOR_EXCLUDE;
+      // 그리는 중인 지붕면은 **완성되면 배정받을 색**(= 현재 install 개수 인덱스)으로 미리 그린다
+      const strokeColor = isInstall
+        ? getRoofFaceColor(installColorIndex.size)
+        : COLOR_EXCLUDE;
 
       ctx.beginPath();
       ctx.moveTo(currentPoints[0].x, currentPoints[0].y);
@@ -548,16 +567,22 @@ export default function CropPopup({
       }
     }
 
-    // Draw placed panels
+    // Draw placed panels — 소속 지붕면(polygonId)의 팔레트 색을 따라간다.
+    // 소속 면을 찾지 못하면(고아 참조 방어) 기존 파랑으로 폴백한다.
     for (const panel of placedPanels) {
+      const panelColorIndex = installColorIndex.get(panel.polygonId);
       ctx.beginPath();
       ctx.moveTo(panel.corners[0].x, panel.corners[0].y);
       for (let i = 1; i < 4; i++) {
         ctx.lineTo(panel.corners[i].x, panel.corners[i].y);
       }
       ctx.closePath();
-      ctx.fillStyle = COLOR_INSTALL_PANEL;
-      ctx.strokeStyle = COLOR_INSTALL;
+      ctx.fillStyle = panelColorIndex === undefined
+        ? COLOR_INSTALL_PANEL
+        : getRoofFaceFill(panelColorIndex, 0.5);
+      ctx.strokeStyle = panelColorIndex === undefined
+        ? COLOR_INSTALL
+        : getRoofFaceColor(panelColorIndex);
       ctx.lineWidth = 1;
       ctx.fill();
       ctx.stroke();
