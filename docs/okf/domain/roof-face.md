@@ -5,6 +5,7 @@ description: 모듈을 놓을 설치면(install)과 놓지 않을 개구(exclude
 resource: src/app/types/index.ts
 tags: [domain, polygon, geometry]
 generated: { by: claude-code/opus-5, at: 2026-07-27T04:26:32Z }
+verified: { by: claude-code/opus-5, at: 2026-08-03T00:00:00Z }
 status: stable
 sources:
   - id: types
@@ -19,10 +20,24 @@ sources:
 
 | 종류 | `type` | 의미 | 렌더 색 |
 |------|--------|------|---------|
-| 설치면 | `"install"` | 모듈을 배치할 지붕면 | 파랑 `#3366AA` |
-| 개구 | `"exclude"` | 천창·굴뚝·설비 등 배치 금지 영역 | 빨강 `#CF2E2E` |
+| 설치면 | `"install"` | 모듈을 배치할 지붕면 | **면마다 다름** — 30색 팔레트 순환 (아래) |
+| 개구 | `"exclude"` | 천창·굴뚝·설비 등 배치 금지 영역 | 빨강 `#CF2E2E` (단색 고정) |
 
 AI 자동 감지 결과는 **전부 `install` 로 매핑**된다(`normalizedToPixelPolygons`). 개구는 사용자가 직접 그린다.
+
+# 설치면 색 배정
+
+여러 면을 한눈에 구분하려고 설치면은 `ROOF_FACE_COLORS`(30색, `src/app/utils/roofColors.ts`)에서 색을 받는다.
+
+- **인덱스는 상태가 아니라 파생값이다.** `areas` 에서 `type === "install"` 인 것만 필터링한 **등장 순서**(0,1,2,…)가 곧 팔레트 인덱스다.
+  `PixelPolygon` / `PolygonArea` 에 `color` 나 `colorIndex` 필드는 **없다** — 캔버스 draw 시점에 `id → 인덱스` Map 을 매번 새로 만든다.
+- 그래서 그리기·삭제·병합·undo·AI 재감지 어느 경로로 `areas` 가 바뀌어도 색 배정이 자동으로 일관된다.
+  대신 **색이 이동한다**: 면을 삭제하면 그 뒤 면들의 색이 한 칸씩 당겨지고, 병합하면 새 면이 배열 끝에 붙어 마지막 색을 받는다. 의도된 트레이드오프다.
+- 설치면이 31개를 넘으면 인덱스가 순환해 0번색부터 재사용된다 — 30개 이하인 동안에는 색 중복이 구조적으로 불가능하다.
+- **그 면 위의 모듈도 같은 색을 따른다.** `PlacedPanel.polygonId` 로 소속 면의 인덱스를 찾아 같은 색의 반투명 fill + 실색 stroke 로 그린다.
+  소속 면을 찾지 못하면 구 파랑 `#3366AA` 로 폴백한다.
+- 팔레트는 상태색 — 선택 `#FFD700`(gold) · 처마 `#FF8A00`(orange) · 개구 `#CF2E2E`(red) — 의 색역을 배제하고 골랐다.
+  **상태 표시가 면 색을 항상 이긴다**: 선택된 면은 gold 테두리, 처마 기준변은 orange 하이라이트가 팔레트 색 위에 덮인다.
 
 # 두 좌표계, 하나의 도형
 
