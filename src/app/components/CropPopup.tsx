@@ -484,6 +484,11 @@ export default function CropPopup({
     if (roofEditTool === "editRoof") {
       for (const area of areas) {
         if (area.points.length < 3) continue;
+        // 핸들도 소속 면의 색을 그대로 쓴다 — 면이 여러 개일 때 어느 면의 핸들인지 색으로 읽힌다.
+        // install 은 팔레트 색, exclude(개구)는 자기 색인 빨강.
+        const handleColor = area.type === "install"
+          ? getRoofFaceColor(installColorIndex.get(area.id) ?? 0)
+          : COLOR_EXCLUDE;
         // Draw edge midpoint handles with + sign
         for (let i = 0; i < area.points.length; i++) {
           const p1 = area.points[i];
@@ -494,7 +499,7 @@ export default function CropPopup({
           ctx.arc(mx, my, HANDLE_VISUAL_RADIUS, 0, Math.PI * 2);
           ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
           ctx.fill();
-          ctx.strokeStyle = COLOR_SELECTED;
+          ctx.strokeStyle = handleColor;
           ctx.lineWidth = 1.5;
           ctx.stroke();
           // + sign
@@ -504,15 +509,15 @@ export default function CropPopup({
           ctx.lineTo(mx + s, my);
           ctx.moveTo(mx, my - s);
           ctx.lineTo(mx, my + s);
-          ctx.strokeStyle = COLOR_SELECTED;
+          ctx.strokeStyle = handleColor;
           ctx.lineWidth = 1.5;
           ctx.stroke();
         }
-        // Draw vertex handles (gold)
+        // Draw vertex handles — 면 색으로 채우고 흰 테두리로 배경에서 띄운다
         for (const pt of area.points) {
           ctx.beginPath();
           ctx.arc(pt.x, pt.y, HANDLE_VISUAL_RADIUS, 0, Math.PI * 2);
-          ctx.fillStyle = COLOR_SELECTED;
+          ctx.fillStyle = handleColor;
           ctx.fill();
           ctx.strokeStyle = "#fff";
           ctx.lineWidth = 1.5;

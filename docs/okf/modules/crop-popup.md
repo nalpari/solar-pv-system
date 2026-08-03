@@ -70,7 +70,8 @@ install 폴리곤은 `COLOR_INSTALL` 을 쓰지 않는다. 지붕면마다 `getR
 (`src/app/utils/roofColors.ts` · `ROOF_FACE_COLORS` 30색)에서 색을 받는다.
 
 draw effect 는 시작할 때 `areas` 를 한 번 훑어 `install id → 색 인덱스` **Map 을 파생 생성**하고(등장 순서 0,1,2,…)
-그 Map 을 세 곳에 쓴다 — 완성된 면의 stroke/fill, 그리는 중인 폴리곤(= 다음에 배정될 색), 배치된 모듈(`panel.polygonId` 조회).
+그 Map 을 네 곳에 쓴다 — 완성된 면의 stroke/fill, 그리는 중인 폴리곤(= 다음에 배정될 색),
+배치된 모듈(`panel.polygonId` 조회), 그리고 `roofEditTool === "editRoof"` 일 때의 꼭짓점·중점 핸들.
 인덱스를 상태로 들고 있지 않으므로 `areas` 가 바뀌면 색이 따라 재배정된다.
 배정 규칙·색 이동 트레이드오프·31개 초과 시 순환은 [`domain/roof-face.md`](/domain/roof-face.md) 참조.
 
@@ -78,6 +79,10 @@ draw effect 는 시작할 때 `areas` 를 한 번 훑어 `install id → 색 인
 면 자체의 fill 로 쓰이던 `COLOR_INSTALL_FILL` 은 팔레트로 완전히 대체되어 삭제했다.
 
 ⚠️ 상태색이 팔레트를 이긴다 — 선택된 면은 gold, 처마 변은 orange 가 팔레트 색 위에 덮인다. 이 우선순위를 팔레트가 바꾸지 않는다.
+
+**편집 핸들은 예외다.** 지붕 편집 모드(`editRoof`)의 꼭짓점·중점 핸들은 gold 가 아니라 **소속 면 색**으로 그린다(개구는 빨강).
+꼭짓점은 면 색으로 채우고 흰 테두리로 배경에서 띄우며, 중점(`+`)은 흰 채움에 면 색 테두리·기호다.
+면이 여러 개일 때 어느 면의 핸들을 잡고 있는지 색으로 읽히게 하려는 것이다.
 합성 PNG(`getLayoutBlob`)는 이 오버레이 캔버스를 그대로 `drawImage` 하므로 팔레트가 자동 반영된다 — 별도 그리기 경로가 없다.
 
 # 상태 게이트
