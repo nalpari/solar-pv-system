@@ -71,7 +71,7 @@ const RegisteredPolygonSchema = PolygonSchema.meta({
 
 const RegisteredDetectResponseSchema = DetectResponseSchema.meta({
   id: "DetectResponse",
-  description: "Gemini Vision 지붕 폴리곤 추론 결과",
+  description: "AI vision 지붕 폴리곤 추론 결과",
 });
 
 const RegisteredBtcItemSchema = BtcItemSchema.meta({
@@ -142,7 +142,7 @@ export function buildOpenApiDocument() {
       version: "0.1.0",
       description:
         "Solar PV 옥상 패널 레이아웃 플래너의 내부 API. " +
-        "지붕 자동 감지(Gemini Vision)와 QSP/MUSBI BFF를 노출한다.",
+        "지붕 자동 감지(AI vision)와 QSP/MUSBI BFF를 노출한다.",
     },
     servers: [
       { url: "http://localhost:3000", description: "Local dev" },
@@ -164,7 +164,7 @@ export function buildOpenApiDocument() {
           tags: ["detect"],
           summary: "지붕 폴리곤 자동 감지",
           description:
-            "위성 이미지(data URL)를 받아 Gemini Vision 으로 지붕 폴리곤 후보를 반환한다.",
+            "위성 이미지(data URL)를 받아 AI vision 으로 지붕 폴리곤 후보를 반환한다.",
           requestBody: {
             required: true,
             content: jsonContent(DetectRequestSchema),
@@ -178,7 +178,7 @@ export function buildOpenApiDocument() {
             "413": { description: "요청 본문 초과", content: errorContent },
             "429": { description: "Rate limit (upstream)", content: errorContent },
             "500": { description: "서버 설정 오류 (API 키/모델 미설정)", content: errorContent },
-            "502": { description: "Upstream(Gemini) 오류", content: errorContent },
+            "502": { description: "upstream inference 오류", content: errorContent },
             "504": { description: "Upstream 타임아웃 (인프라 레벨)", content: errorContent },
           },
         },

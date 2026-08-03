@@ -5,7 +5,7 @@ description: Docker 멀티스테이지 standalone 이미지를 Jenkins 파이프
 resource: Jenkinsfile
 tags: [deployment, docker, jenkins, ci]
 generated: { by: claude-code/opus-5, at: 2026-07-27T04:26:32Z }
-verified: { by: claude-code/opus-5, at: 2026-07-27T05:09:59Z }
+verified: { by: claude-code/opus-5, at: 2026-07-31T00:00:00Z }
 status: stable
 sources:
   - id: dockerfile

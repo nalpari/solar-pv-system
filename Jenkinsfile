@@ -59,8 +59,8 @@ pipeline {
           set -eu
           set -a; . ./.env; set +a
           : "${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:?credential pv-common-env에 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY가 정의되어 있어야 합니다.}"
-          : "${GEMINI_API_KEY:?credential pv-common-env에 GEMINI_API_KEY가 정의되어 있어야 합니다.}"
-          : "${GEMINI_MODEL:?credential pv-common-env에 GEMINI_MODEL이 정의되어 있어야 합니다. (AI 지붕 감지 기능 필수)}"
+          : "${OPENROUTER_API_KEY:?credential pv-common-env에 OPENROUTER_API_KEY가 정의되어 있어야 합니다.}"
+          : "${OPENROUTER_MODEL:?credential pv-common-env에 OPENROUTER_MODEL이 정의되어 있어야 합니다. (AI 지붕 감지 기능 필수)}"
           : "${AWS_REGION:?credential pv-common-env에 AWS_REGION이 정의되어 있어야 합니다.}"
           : "${AMPLIFY_BUCKET:?credential pv-common-env에 AMPLIFY_BUCKET이 정의되어 있어야 합니다.}"
           : "${AWS_ACCESS_KEY_ID:?credential pv-common-env에 AWS_ACCESS_KEY_ID가 정의되어 있어야 합니다.}"

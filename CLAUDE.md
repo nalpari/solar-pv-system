@@ -53,7 +53,7 @@ pnpm dev                     # http://localhost:3000
 - **lucide-react** ^0.577.0 — Icons
 - **polygon-clipping** ^0.15.7 — 지붕면 병합용 폴리곤 boolean 연산 (union / intersection)
 - **Docker** — Multi-stage standalone build (see `Dockerfile`, `docker-compose.yml`)
-- **Gemini API** — `@google/genai` ^1.0.0 (AI 지붕 자동 감지)
+- **OpenRouter** — AI 지붕 자동 감지 추론. Chat Completions 를 **순수 `fetch`** 로 호출하며 전용 SDK 의존성이 없다 (모델은 `OPENROUTER_MODEL`, 현행 `openai/gpt-5.6-sol`)
 - **@aws-sdk/client-s3** ^3.1065 — 참조 이미지 S3 업로드 (`/api/image/upload`)
 - **zod** ^4.3.6 — API 응답 스키마 검증
 - **zod-openapi** ^5.4 — 기존 zod 스키마 → OpenAPI 3.1 문서 생성
@@ -104,7 +104,8 @@ src/
 | `docs/codemap-playground.html` | 인터랙티브 코드맵 (브라우저 열람용) |
 | `docs/plans/` | UX 개선·기능 도입 계획 문서 |
 | `docs/security-review-2026-06-02.md` | 멀티에이전트 보안 코드리뷰 결과 (BFF/detect 공격면·심각도별 발견·완화책) |
-| `docs/investigations/2026-06-04-detect-roof-latency-analysis.md` | detect-roof Gemini 지연 진단 (근본원인 랭킹·해결책 우선순위·측정 공백) |
+| `docs/investigations/2026-06-04-detect-roof-latency-analysis.md` | detect-roof 지연 진단 (근본원인 랭킹·해결책 우선순위·측정 공백). ⚠️ 문서 맨 앞의 **정정 블록을 먼저 읽어라** — 2단계 직렬 호출 전제와 라인 참조는 무효다 |
+| `docs/plans/2026-07-27-gemini-to-openrouter-migration.md` | Gemini 직접 호출 → OpenRouter 전환 설계. 미검증 항목 10건이 §9 에 정리돼 있다 |
 
 ## Coding Conventions
 
