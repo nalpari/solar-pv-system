@@ -318,9 +318,13 @@ export default function CropPopup({
   // 꼭짓점 드래그/삽입/삭제 중인 폴리곤 id — editRoof가 모든 폴리곤을 대상으로 하므로
   // 선택 상태(selectedPolygonIds)와 무관하게 별도 ref로 편집 대상 폴리곤을 추적한다.
   const editingPolygonIdRef = useRef<string | null>(null);
-  // 이번 드래그로 함께 움직일 꼭짓점 묶음 — 겹쳐 있던 인접 지붕면들의 꼭짓점이 여기 들어온다.
+  // 이번 드래그로 함께 움직일 수 있는 꼭짓점 묶음 — 겹쳐 있던 인접 지붕면들의 꼭짓점이 여기 들어온다.
   // 첫 원소가 사용자가 실제로 집은 꼭짓점(= editingPolygonIdRef 의 것)이다.
+  // Alt 를 누르고 끌면 첫 원소만 움직이지만, 묶음 자체는 그대로 둔다 — 스냅 제외 대상이기도 하기 때문이다.
   const vertexDragGroupRef = useRef<VertexRef[] | null>(null);
+  // 이번 드래그에서 실제로 좌표가 바뀐 폴리곤 id — Alt 를 눌렀다 뗐다 해도 정확히 추적하려고 누적한다.
+  // 드래그 종료 시 여기 담긴 면만 처마 기준선을 리셋하고 그 위 모듈을 지운다.
+  const vertexMovedIdsRef = useRef<Set<string>>(new Set());
 
   // Debounce rapid clicks in drawing mode (prevents double-click adding 2 points)
   const lastPointTimeRef = useRef<number>(0);
@@ -377,6 +381,7 @@ export default function CropPopup({
       didDragRef.current = false;
       editingPolygonIdRef.current = null;
       vertexDragGroupRef.current = null;
+      vertexMovedIdsRef.current.clear();
     }
   }, [drawingMode, roofEditTool]);
 
@@ -753,9 +758,12 @@ export default function CropPopup({
               editingPolygonIdRef.current = area.id;
               // 포인터 위치가 아니라 집은 꼭짓점의 실제 좌표를 기준으로 겹친 것들을 모은다.
               // 개구를 집은 경우는 단독 이동 — 지붕면끼리만 묶는다.
+              // Alt 여부는 여기서 보지 않는다. 묶음은 드래그 도중 Alt 를 눌렀다 뗄 수 있도록 항상 모아 두고,
+              // 실제로 몇 개를 옮길지는 handlePointerMove 가 그때그때 정한다.
               vertexDragGroupRef.current = area.type === "install"
                 ? collectCoincidentVertices(vp, areas, area.id, i)
                 : [{ id: area.id, idx: i }];
+              vertexMovedIdsRef.current.clear();
               setDraggingVertexIdx(i);
               vertexDragStartRef.current = pt;
               didVertexDragRef.current = false;
@@ -792,6 +800,7 @@ export default function CropPopup({
               // 변 중점에서 새로 삽입한 점은 아직 어디에도 겹쳐 있지 않다 — 단독으로 끈다.
               // 끌다가 다른 면 꼭짓점에 스냅되면 그때부터 겹치고, 다음 드래그에서 묶인다.
               vertexDragGroupRef.current = [{ id: area.id, idx: insertIdx }];
+              vertexMovedIdsRef.current.clear();
               setDraggingVertexIdx(insertIdx);
               vertexDragStartRef.current = pt;
               // 변 중점 클릭은 점 삽입 자체가 변경 — finalize가 미이동이어도 마무리되도록 true로 시작
@@ -890,6 +899,7 @@ export default function CropPopup({
       didDragRef.current = false;
       editingPolygonIdRef.current = null;
       vertexDragGroupRef.current = null;
+      vertexMovedIdsRef.current.clear();
     }
   }, [clearSignal]);
 
@@ -1059,13 +1069,18 @@ export default function CropPopup({
         didVertexDragRef.current = true;
       }
       // 스냅: 다른 install 폴리곤의 꼭짓점에 흡착.
-      // 함께 끌리는 폴리곤은 **전부** 제외한다 — 안 그러면 같이 움직이던 묶음 멤버에 도로 흡착돼 제자리에 고정된다.
+      // 묶음에 든 폴리곤은 **전부** 제외한다 — 같이 움직이던 멤버에 도로 흡착돼 제자리에 고정되는 것을 막고,
+      // Alt 로 하나만 뗄 때도 남겨둔 꼭짓점에 다시 붙어버리면 SNAP_RADIUS 안에서 영영 뗄 수 없기 때문이다.
       const groupIds = new Set(dragGroup.map((v) => v.id));
       const snapped = findNearestSnapVertex({ x: px, y: py }, areasRef.current, groupIds) ?? { x: px, y: py };
-      // 겹쳐 있던 꼭짓점들을 같은 좌표로 함께 옮긴다 — 맞닿아 있던 지붕면들이 계속 맞물린다.
+      // Alt(Option) 를 누른 채 끌면 집은 꼭짓점 하나만 움직인다 — 겹쳐 있던 면을 떼어낼 때 쓴다.
+      // 누르지 않으면 겹쳐 있던 꼭짓점이 같은 좌표로 함께 따라와 지붕면들이 계속 맞물린다.
+      // 드래그 도중에 눌렀다 떼도 다음 move 부터 바로 반영된다.
+      const targets = e.altKey ? dragGroup.slice(0, 1) : dragGroup;
+      for (const v of targets) vertexMovedIdsRef.current.add(v.id);
       setAreas((prev) =>
         prev.map((a) => {
-          const ref = dragGroup.find((v) => v.id === a.id);
+          const ref = targets.find((v) => v.id === a.id);
           if (!ref || ref.idx >= a.points.length) return a;
           const newPoints = [...a.points];
           newPoints[ref.idx] = snapped;
@@ -1141,11 +1156,14 @@ export default function CropPopup({
    */
   function finalizeVertexDrag() {
     setDraggingVertexIdx(null);
-    // 겹쳐 있어 함께 끌린 폴리곤 전부가 모양 변경 대상이다 — 하나만 마무리하면
+    // 실제로 좌표가 바뀐 폴리곤 전부가 모양 변경 대상이다 — 함께 끌렸는데 하나만 마무리하면
     // 나머지 면의 처마 기준선이 옛 모양 기준으로 남고 그 위 모듈도 그대로 살아남는다.
-    const group = vertexDragGroupRef.current;
+    // Alt 로 하나만 옮겼다면 여기에도 그 하나만 담겨 있어, 건드리지 않은 면은 그대로 보존된다.
     const editedId = editingPolygonIdRef.current;
-    const movedIds = new Set(group ? group.map((v) => v.id) : editedId ? [editedId] : []);
+    const moved = vertexMovedIdsRef.current;
+    // 변 중점 삽입 후 한 번도 움직이지 않고 놓은 경우: 삽입 자체가 모양 변경이므로 집은 면을 대상으로 삼는다.
+    const movedIds = moved.size > 0 ? new Set(moved) : new Set(editedId ? [editedId] : []);
+    moved.clear();
     editingPolygonIdRef.current = null;
     vertexDragGroupRef.current = null;
     const didMove = didVertexDragRef.current;
@@ -1191,6 +1209,7 @@ export default function CropPopup({
       editingPolygonIdRef.current = null;
       // 폴리곤이 통째로 사라졌으니 드래그 묶음에 죽은 id 가 남지 않게 비운다
       vertexDragGroupRef.current = null;
+      vertexMovedIdsRef.current.clear();
     } else {
       const newPoints = selArea.points.filter((_, i) => i !== vertexIdx);
       updated = currentAreas.map((a) =>
@@ -1296,6 +1315,30 @@ export default function CropPopup({
               }}
               aria-hidden="true"
             />
+          </div>
+        )}
+
+        {/* 지붕 편집 모드 조작 힌트 — Alt 드래그는 화면에 드러나지 않아 안내가 없으면 발견되지 않는다 */}
+        {roofEditTool === "editRoof" && !editLocked && (
+          <div
+            style={{
+              position: "absolute",
+              left: 12,
+              bottom: 12,
+              zIndex: 10,
+              maxWidth: "min(420px, calc(100% - 24px))",
+              padding: "7px 11px",
+              border: "1px solid var(--border-primary)",
+              background: "rgba(255, 255, 255, 0.9)",
+              color: "var(--text-secondary)",
+              borderRadius: "var(--radius-md)",
+              fontSize: 12,
+              lineHeight: 1.5,
+              backdropFilter: "blur(8px)",
+              pointerEvents: "none", // 캔버스 조작을 가리지 않는다
+            }}
+          >
+            {t("hintVertexDragAlt", lang)}
           </div>
         )}
 

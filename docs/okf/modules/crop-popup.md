@@ -21,7 +21,8 @@ sources:
 크롭된 위성 이미지를 배경으로 깔고 그 위 캔버스에서:
 
 - 지붕면(install) / 개구(exclude) 폴리곤 그리기·선택·이동·꼭짓점 편집
-  (겹쳐 있던 꼭짓점은 `vertexDragGroupRef` 묶음으로 함께 끌린다 → [`domain/roof-face.md`](/domain/roof-face.md))
+  (겹쳐 있던 꼭짓점은 `vertexDragGroupRef` 묶음으로 함께 끌리고, Alt 를 누르면 첫 원소만 움직인다
+  → [`domain/roof-face.md`](/domain/roof-face.md))
 - 처마 기준변 지정(`flowSetting`)
 - 인접 면 병합 호출 → [`merge-polygons`](merge-polygons.md)
 - 배치된 모듈 렌더

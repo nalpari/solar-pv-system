@@ -48,6 +48,10 @@ const translations = {
     ja: "※本ツールは複数種類のパネルの混合配置には対応いたしません. あらかじめご了承ください.",
     en: "※This tool does not support mixing multiple panel types. Please note.",
   },
+  hintVertexDragAlt: {
+    ja: "重なった頂点は一緒に移動します. Alt（Option）を押しながらドラッグすると1つだけ動かせます.",
+    en: "Overlapping vertices move together. Hold Alt (Option) while dragging to move just one.",
+  },
 
   // Lnb sim tab — azimuth guide split into two lines (pv-pub layout)
   azimuthGuideLine1: {
