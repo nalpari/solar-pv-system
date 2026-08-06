@@ -95,8 +95,8 @@ const translations = {
   },
   retEditRoof: { ja: "屋根の編集", en: "Edit Roof" },
   retEditRoofGuide: {
-    ja: "頂点をドラッグして屋根の形状を調整してください｜点をダブルクリックで削除",
-    en: "Drag vertices to adjust roof shape | Double-click a point to delete",
+    ja: "頂点をドラッグして屋根の形状を調整してください｜点をダブルクリックで削除｜Alt + ドラッグで重なった頂点をまとめて移動",
+    en: "Drag vertices to adjust roof shape | Double-click a point to delete | Alt + drag to move overlapping vertices together",
   },
   retMergeSelected: { ja: "屋根面結合", en: "Merge Selected Roofs" },
   retMergeSelectedGuide: {

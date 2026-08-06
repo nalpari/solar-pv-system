@@ -3,7 +3,10 @@
 > **대상**: `POST /api/detect-roof` (`src/app/api/detect-roof/route.ts`, 293줄)
 > **목표**: 추론 호출 계층만 OpenRouter API 로 교체. **모델 교체가 핵심이며 그 외 비즈니스 로직은 변경하지 않는다**
 > **작성 방식**: Opus 5(lead) + Claude Fable 5 + GPT-5.6-Sol 3자 멀티에이전트 설계 토론 후 lead 종합. OpenRouter 공식 문서 + 공개 endpoints 메타 API 실측 + 저장소 grep 검증 기반
-> **상태**: 설계 확정 / 구현 미착수
+> **상태**: 설계 확정 / **1차 전환(transport 교체) 구현 완료 — 2026-07-30**. 코드·`Jenkinsfile`·문서 반영됨.
+> 남은 것: §8 1단계 검증(1.2 canary · 1.3~1.7 골든셋 A/B·로그 실측) 미실시, §9 미검증 항목 10건 미해소.
+> **⚠️ D3 무효** — 실제 배포 `OPENROUTER_MODEL` 은 `openai/gpt-5.6-sol` 이다. D3 가 전제한 "현행과 동일 모델(`google/gemini-3.1-pro-preview`)" 이 아니므로 **transport 교체의 영향만 분리한다는 1단계의 목적 자체가 성립하지 않는다.** 결과적으로 §8 2단계(모델 교체)가 1단계에 섞여 이미 일어났다. Gemini 모델 특성에 기댄 §6·§9 의 판단(서빙 프로바이더가 전부 Google · Flash 후보 슬러그 · thinking 예산 환산)은 재검토 대상이다.
+> 아래 본문은 **설계 기록**이므로 갱신하지 않는다 — 구현 결과와 어긋나는 곳이 생기면 `docs/okf/` 를 진실의 원천으로 삼는다.
 
 ---
 
@@ -218,6 +221,7 @@ Sol 이 설계한 30장 × 3회 정량 게이트를 적용한다. 샘플 구성:
 | 8 | OpenRouter 홉의 실측 추가 지연 (공식 수치 없음) | `elapsedMs` 로깅으로 자동 해소. 일반적으로 수십 ms 급이라 thinking TTFT 대비 노이즈 수준으로 추정 |
 | 9 | Flash 후보 슬러그 (Fable `google/gemini-3-flash-preview` vs Sol `google/gemini-3.5-flash`) | 2단계 진입 시 models API 로 실재·vision·structured_outputs 재확인. **1단계 결정에 영향 없음** |
 | 10 | Gemini 슬러그의 서빙 프로바이더가 향후 Google 외로 확장될 가능성 | 비Google 엔드포인트 등장 또는 비Google 모델 채택 시 `provider` 정책 옵션 추가를 **조건부 규칙**으로 유지 |
+| ~~11~~ | ~~`X-OpenRouter-Metadata: enabled` 로 실제 서빙 엔드포인트를 응답에서 받는다 (§3 요청 헤더 · §5 표 마지막 행 · §6-① 판정 마지막 문장 · §8 1.2 의 "엔드포인트 메타 확인")~~ | **해소 — 그런 메커니즘은 애초에 없었다** (2026-07-30 공식 문서 실측). 문서화된 요청 헤더는 `HTTP-Referer` / `X-OpenRouter-Title` / `X-OpenRouter-Categories` **3개뿐**이고, 비스트리밍 응답 top-level 은 `id` / `choices` / `created` / `model` / `object` / `system_fingerprint` / `usage` 로 **`openrouter_metadata` 필드가 없다.** 구현은 응답 `id`(generation id) + 옵셔널 `provider` 를 로깅하고 실제 서빙 프로바이더는 **사후** `GET /api/v1/generation?id=<id>` 로 조회하는 방식으로 교체됐다. §6-① 의 "fallback 을 살려두는 대신 서빙 엔드포인트를 로그에 남긴다"는 판정 근거 자체는 유지되지만 **획득 시점이 즉시 → 사후로 바뀐다.** §5 의 `usage.cost` 와 `usage.completion_tokens_details.reasoning_tokens` 는 실재하므로 무영향 |
 
 ---
 

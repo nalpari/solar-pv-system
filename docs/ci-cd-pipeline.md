@@ -1,6 +1,6 @@
 # CI/CD 파이프라인
 
-> 대상 커밋: `761cc1f` (2026-07-27) · 근거 파일: `Jenkinsfile`, `Dockerfile`, `docker-compose.yml`, `.dockerignore`
+> 대상 커밋: `761cc1f` (2026-07-27) + 2026-07-30 OpenRouter 전환 반영 · 근거 파일: `Jenkinsfile`, `Dockerfile`, `docker-compose.yml`, `.dockerignore`
 > 도메인 개념의 진실의 원천은 [`docs/okf/system/deployment.md`](okf/system/deployment.md) · [`docs/okf/system/configuration.md`](okf/system/configuration.md) 이다.
 > 본 문서는 그 두 개념을 파이프라인 운영자 관점에서 한 곳에 펼쳐 놓은 것이다.
 
@@ -85,7 +85,7 @@ Jenkins **Secret file** credential 3종을 `cat` 으로 이어붙여 워크스�
 
 | credential ID | 역할 |
 |---------------|------|
-| `pv-common-env` | dev/prod 공통 키 (Maps, Gemini, AWS S3) |
+| `pv-common-env` | dev/prod 공통 키 (Maps, OpenRouter, AWS S3) |
 | `pv-dev-env` | dev 전용 (QSP/MUSBI 호스트, 문서 노출 플래그, Origin 허용목록) |
 | `pv-prod-env` | prod 전용 |
 
@@ -102,14 +102,16 @@ chmod 600 .env
 
 `.env` 를 소싱한 뒤 필수 키를 `: "${VAR:?메시지}"` 로 전수 검증한다. 검증 대상 12개:
 
-`NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` · `GEMINI_API_KEY` · `GEMINI_MODEL` · `AWS_REGION` · `AMPLIFY_BUCKET` ·
+`NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` · `OPENROUTER_API_KEY` · `OPENROUTER_MODEL` · `AWS_REGION` · `AMPLIFY_BUCKET` ·
 `AWS_ACCESS_KEY_ID` · `AWS_SECRET_ACCESS_KEY` · `NEXT_PUBLIC_AWS_S3_BASE_URL` · `QSP_API_HOST` ·
 `MUSBI_API_HOST` · `ENABLE_API_DOCS` · `ALLOWED_ORIGIN`
 
 > ⚠️ **새 환경변수를 추가하면 이 스테이지에 검증 라인을 반드시 같이 추가한다.**
-> 빠뜨리면 값이 비어 있어도 배포가 "성공"하고, 런타임에 500(Gemini/S3) 또는 403(`ALLOWED_ORIGIN` 미설정 시 모든 POST)으로 나타난다.
+> 빠뜨리면 값이 비어 있어도 배포가 "성공"하고, 런타임에 500(추론/S3) 또는 403(`ALLOWED_ORIGIN` 미설정 시 모든 POST)으로 나타난다.
 
 `REPLICATE_API_TOKEN`, `MUSBI_*_PATH`, `MUSBI_RESULT_HOST` 는 선택값이라 검증하지 않는다.
+2026-07-30 OpenRouter 전환으로 `GEMINI_API_KEY` · `GEMINI_MODEL` 검증 2줄이 `OPENROUTER_*` 로 교체됐다.
+`pv-common-env` 에 남아 있는 `GEMINI_*` 는 **검증하지 않는 여분 키**라 파이프라인을 실패시키지 않는다 — 롤백 대비로 의도적으로 남겨둔 것이다.
 마지막 `docker compose version` 은 에이전트에 compose v2 가 있는지 확인하는 스모크 체크다.
 
 ### 3.4 Verify

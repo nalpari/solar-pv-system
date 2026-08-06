@@ -30,6 +30,12 @@
       "skillPath": "skills/engineering/improve-codebase-architecture/SKILL.md",
       "computedHash": "ef32aea0a8fab9b365ff9e08a95f8d353e20ca21ea46ec2e73587c86dd341351"
     },
+    "ip-commit-push": {
+      "source": "nalpari/interplug-team-agent-skills",
+      "sourceType": "github",
+      "skillPath": "ip-commit-push/SKILL.md",
+      "computedHash": "34a1034840293dab8485ac05292ffd893599486e957e5b8a4512d012d2537310"
+    },
     "next-best-practices": {
       "source": "vercel-labs/next-skills",
       "sourceType": "github",
