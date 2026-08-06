@@ -25,6 +25,10 @@ sources:
 | `WheelZoomController` | 휠 줌 기준점을 커서가 아닌 **지도 중심**으로 바꾼다. 델타를 누적해 임계치(50)에서 한 단계 |
 | `CropOverlay` | 드래그로 사각형 영역을 그리고 리사이즈·이동. `hitTest` 로 8방향 핸들 판정 |
 
+여기에 더해 `markerPosition`(주소 검색으로 선택된 좌표)이 있으면 `Marker` 를 하나 얹는다.
+**크롭모드에서는 렌더하지 않는다** — `html2canvas` 가 지도 컨테이너를 통째로 캡처하므로
+핀이 이미지에 박혀 [AI 감지](ai-roof-detection.md) 입력이 오염된다.
+
 # 크롭 확정 — `handleConfirm`
 
 핵심 산출물은 [`CropData`](/domain/roof-face.md) 하나다.
