@@ -149,6 +149,28 @@ function simplifyRing(ring: PixelPoint[], eps: number): PixelPoint[] {
 }
 
 /**
+ * 지붕면들의 합집합 외곽 링 목록 — 치수 표기용.
+ * 붙어 있는 면은 하나의 링으로, 떨어진 면은 각각 별개 링으로 나온다.
+ * 구멍(중정)은 버린다 — 바깥 실루엣만 필요하다.
+ * `mergeAreaPolygons` 와 달리 인접 판정·필러가 없다: 미세한 틈은 메우지 않고 그대로 두 링이 된다.
+ */
+export function outerRings(polys: PixelPoint[][]): PixelPoint[][] {
+  const valid = polys.filter((p) => p.length >= 3 && ringArea(p) > 0);
+  if (valid.length === 0) return [];
+  let result: MultiPolygon;
+  try {
+    result = unionAll(valid.map(toGeom));
+  } catch {
+    return valid; // union 실패 시 원본 면 외곽을 그대로 쓴다
+  }
+  return result
+    .map((poly) =>
+      simplifyRing(poly[0].slice(0, -1).map(([x, y]) => ({ x, y })), SIMPLIFY_EPS),
+    )
+    .filter((r) => r.length >= 3);
+}
+
+/**
  * 선택 지붕면들을 병합해 단일 외곽 링을 반환. 병합 불가면 null.
  * 버튼 활성 판정(null 여부)과 실제 병합이 이 함수를 공유한다.
  * - 두 면이 area로 포개지면(쌍의 작은 면 대비 OVERLAP_RATIO 초과) 인접이 아니므로 거부.

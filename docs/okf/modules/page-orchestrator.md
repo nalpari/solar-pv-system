@@ -24,7 +24,7 @@ sources:
 
 | 그룹 | 대표 상태 |
 |------|-----------|
-| 지도 | `center`, `viewport`, `address`, `cropMode`, `cropData` |
+| 지도 | `center`, `viewport`, `markerPosition`, `address`, `cropMode`, `cropData` |
 | 지붕면 | `areas`(lat/lng), `pixelAreas`(픽셀), `selectedRoofIds`, `canMergeSelected`, `canUndoPoint` |
 | 배치 | `slope`, `panelSize`, `moduleId`, `placedPanelsList`, `placedPixelPanels`, `placementError` |
 | 흐름 | `activeTab`, `isPlacementDone`, `isSubmitting`, `detectStatus` |

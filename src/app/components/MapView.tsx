@@ -1,16 +1,18 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Map, useMap } from "@vis.gl/react-google-maps";
+import { Map, Marker, useMap } from "@vis.gl/react-google-maps";
 import { X } from "lucide-react";
 import html2canvas from "html2canvas";
 import { t } from "../utils/i18n";
 import type { Lang } from "../utils/i18n";
-import type { CropData } from "../types";
+import type { CropData, LatLng } from "../types";
 
 interface MapViewProps {
   center: { lat: number; lng: number };
   viewport?: google.maps.LatLngBounds | null;
+  /** 주소 검색으로 선택된 위치. null이면 마커를 표시하지 않는다 */
+  markerPosition?: LatLng | null;
   cropMode: boolean;
   locked: boolean;
   onCropComplete: (cropData: CropData) => void;
@@ -522,6 +524,7 @@ function CropOverlay({
 export default function MapView({
   center,
   viewport,
+  markerPosition,
   cropMode,
   locked,
   onCropComplete,
@@ -544,6 +547,8 @@ export default function MapView({
         style={{ width: "100%", height: "100%" }}
       >
         <ViewUpdater center={center} viewport={viewport} />
+        {/* 크롭모드에서는 숨긴다 — html2canvas 캡처에 핀이 찍혀 AI 지붕감지 입력이 오염된다 */}
+        {markerPosition && !cropMode && <Marker position={markerPosition} clickable={false} />}
         {!locked && !cropMode && <WheelZoomController />}
       </Map>
 
