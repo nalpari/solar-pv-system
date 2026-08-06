@@ -21,6 +21,7 @@ import type {
   PanelOrientation,
   DrawingMode,
   CropData,
+  LatLng,
   PolygonArea,
   PlacedPanel,
   PixelPanel,
@@ -161,6 +162,8 @@ export default function Home() {
     };
   }, []);
   const [viewport, setViewport] = useState<google.maps.LatLngBounds | null>(null);
+  // 주소 검색으로 선택한 위치 — 지도 마커 표시용. geolocation 이동에는 세팅하지 않는다
+  const [markerPosition, setMarkerPosition] = useState<LatLng | null>(null);
   const [cropMode, setCropMode] = useState(false);
   // 좌측 사이드바 건물확정 버튼 재클릭(2차) 시 증가 — MapView/CropOverlay가 watch해서 그려진 영역으로 확정
   const [confirmCropSignal, setConfirmCropSignal] = useState(0);
@@ -204,6 +207,7 @@ export default function Home() {
   }) {
     userOverrodeRef.current = true; // 사용자가 명시적으로 위치 선택 — 늦게 도착한 geolocation 응답 무시
     setCenter({ lat: location.lat, lng: location.lng });
+    setMarkerPosition({ lat: location.lat, lng: location.lng });
     setAddress(location.address);
     setViewport(location.viewport ?? null);
   }
@@ -648,6 +652,7 @@ export default function Home() {
             <MapView
               center={center}
               viewport={viewport}
+              markerPosition={markerPosition}
               cropMode={cropMode}
               locked={cropData !== null}
               onCropComplete={handleCropComplete}

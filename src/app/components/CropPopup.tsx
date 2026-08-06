@@ -10,7 +10,7 @@ import type { NormalizedPolygon } from "../utils/aiDetect";
 import { normalizedToPixelPolygons } from "../utils/aiDetect";
 import { t } from "../utils/i18n";
 import { isPointInPolygon } from "../utils/panelPlacement";
-import { mergeAreaPolygons } from "../utils/mergePolygons";
+import { mergeAreaPolygons, outerRings } from "../utils/mergePolygons";
 import { getRoofFaceColor, getRoofFaceFill } from "../utils/roofColors";
 
 /** Canvas 렌더링 시 getComputedStyle 호출을 피하기 위해 CSS 변수 값을 상수로 정의 */
@@ -259,6 +259,11 @@ function convertToPixelPolygons(entries: AreaEntry[]): PixelPolygon[] {
       eaveEdgeIndex: area.eaveEdgeIndex,
     }));
 }
+
+/** 외곽 치수 표기 — 위성 이미지 위 정보량이 많아 작게 유지한다 */
+const DIM_FONT = "12px ui-monospace, SFMono-Regular, monospace";
+const DIM_LABEL_OFFSET = 11; // 변에서 바깥으로 띄우는 거리(px) — 글자 반높이보다 커야 선에 닿지 않는다
+const DIM_MIN_EDGE_PX = 8; // 이보다 짧은 변은 라벨 생략
 
 const HANDLE_RADIUS = 12;
 const HANDLE_VISUAL_RADIUS = 6;
@@ -647,7 +652,46 @@ export default function CropPopup({
       ctx.stroke();
     }
 
-  }, [areas, currentPoints, mousePos, drawingMode, placedPanels, selectedPolygonIds, roofEditTool]);
+    // 지붕 외곽 치수 — install 면들을 합친 실루엣의 각 변에 길이(m)를 표기한다.
+    // 면·모듈 위에 마지막으로 얹어 가려지지 않게 하고, 폰트를 작게 잡아 시야를 덜 어지럽힌다.
+    const mpp = canvas.width > 0 ? cropData.sizeMeters.width / canvas.width : 0;
+    if (mpp > 0) {
+      const rings = outerRings(
+        areas.filter((a) => a.type === "install" && a.points.length >= 3).map((a) => a.points),
+      );
+      ctx.font = DIM_FONT;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.lineJoin = "round";
+      for (const ring of rings) {
+        for (let i = 0; i < ring.length; i++) {
+          const p1 = ring[i];
+          const p2 = ring[(i + 1) % ring.length];
+          const dx = p2.x - p1.x;
+          const dy = p2.y - p1.y;
+          const len = Math.hypot(dx, dy);
+          // 너무 짧은 변은 라벨이 서로 겹쳐 읽히지 않는다 — 표기를 건너뛴다
+          if (len < DIM_MIN_EDGE_PX) continue;
+          const mx = (p1.x + p2.x) / 2;
+          const my = (p1.y + p2.y) / 2;
+          // 변의 법선 두 방향 중 링 바깥쪽에 라벨을 둔다 (오목한 지붕에서도 안쪽으로 파고들지 않는다)
+          let ox = (-dy / len) * DIM_LABEL_OFFSET;
+          let oy = (dx / len) * DIM_LABEL_OFFSET;
+          if (isPointInPolygon({ x: mx + ox, y: my + oy }, ring)) {
+            ox = -ox;
+            oy = -oy;
+          }
+          const label = `${(len * mpp).toFixed(1)}m`;
+          ctx.strokeStyle = "rgba(0, 0, 0, 0.75)";
+          ctx.lineWidth = 3;
+          ctx.strokeText(label, mx + ox, my + oy);
+          ctx.fillStyle = "#fff";
+          ctx.fillText(label, mx + ox, my + oy);
+        }
+      }
+    }
+
+  }, [areas, currentPoints, mousePos, drawingMode, placedPanels, selectedPolygonIds, roofEditTool, cropData.sizeMeters.width]);
 
   /** 포인터 이벤트에서 캔버스 로컬 좌표를 추출한다 */
   function getCanvasCoords(e: React.PointerEvent<HTMLCanvasElement>): PixelPoint {
@@ -1297,12 +1341,13 @@ export default function CropPopup({
               inset: 0,
               background: "rgba(0,0,0,0.4)",
               display: "flex",
+              flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
+              gap: 16,
               zIndex: 50,
             }}
           >
-            {/* F-1: 텍스트 제거 — 버튼 "AI 分析中"이 충분한 안내, 오버레이는 차단 목적만 */}
             <span
               style={{
                 width: 40,
@@ -1315,6 +1360,9 @@ export default function CropPopup({
               }}
               aria-hidden="true"
             />
+            <span style={{ color: "#fff", fontSize: 14, textShadow: "0 1px 3px rgba(0,0,0,0.6)" }}>
+              {t("aiDetectOverlayMessage", lang)}
+            </span>
           </div>
         )}
 

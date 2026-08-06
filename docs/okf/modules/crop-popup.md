@@ -26,6 +26,8 @@ sources:
 - 처마 기준변 지정(`flowSetting`)
 - 인접 면 병합 호출 → [`merge-polygons`](merge-polygons.md)
 - 배치된 모듈 렌더
+- 지붕 외곽 치수 표기 — install 면들의 union 외곽 링([`outerRings`](merge-polygons.md)) 각 변에 길이(m)를
+  12px 로 얹는다. 개별 면의 변이 아니라 **합쳐진 실루엣**의 변이므로 면끼리 맞닿은 내부 변에는 숫자가 붙지 않는다.
 - **배경 + 모듈 오버레이 합성 PNG 산출** (`getLayoutBlob`)
 
 # 부모와의 프로토콜

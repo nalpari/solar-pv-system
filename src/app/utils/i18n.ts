@@ -173,6 +173,10 @@ const translations = {
     ja: "AI 分析中",
     en: "AI Analyzing...",
   },
+  aiDetectOverlayMessage: {
+    ja: "AIが屋根面を作成しています。しばらくお待ちください。",
+    en: "AI is creating roof faces. Please wait a moment.",
+  },
   // 비활성 요소 호버 안내문구 (UX 보완) — 다음에 해야 할 동작을 안내
   uxNeedRoofArea: {
     ja: "屋根面を作成してください。",
