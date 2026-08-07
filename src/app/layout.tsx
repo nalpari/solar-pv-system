@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Solar PV Planner - 屋上パネルレイアウト設計ツール",
+  title: "PVMap - PV Simulation",
   description:
     "衛星画像を使用して建物の屋上にソーラーパネルのレイアウトを設計します。パネル数の計算と発電量の見積もりが可能です。",
 };
