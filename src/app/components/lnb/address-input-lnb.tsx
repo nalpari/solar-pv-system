@@ -65,7 +65,9 @@ export function AddressInputLnb({ lang, disabled = false, onPlaceSelect }: Addre
         setPredictions(results);
         setIsOpen(true);
       } else {
+        // 결과 0건·조회 실패 모두 드롭다운을 열어 "특정 불가" 안내를 보여준다
         setPredictions([]);
+        setIsOpen(true);
         if (status !== google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
           console.error("Places autocomplete failed:", status);
         }
@@ -119,20 +121,26 @@ export function AddressInputLnb({ lang, disabled = false, onPlaceSelect }: Addre
         withSearchIcon
         onSearchClick={disabled ? undefined : handleSearchClick}
       />
-      {isOpen && predictions.length > 0 && (
+      {isOpen && (
         <ul className="absolute top-[calc(100%+4px)] left-0 right-0 z-50 bg-white border border-[#eff4f8] rounded-[4px] shadow-md list-none p-1 max-h-60 overflow-y-auto">
-          {predictions.map((p) => (
-            <li key={p.place_id}>
-              <button
-                type="button"
-                onClick={() => handleSelect(p)}
-                className="w-full flex items-start gap-2 px-2 py-2 rounded-[3px] bg-transparent border-none text-[13px] leading-snug text-[#333] text-left hover:bg-[#f5f7fb] cursor-pointer"
-              >
-                <MapPin size={14} className="shrink-0 mt-0.5 text-[#999]" />
-                <span>{p.description}</span>
-              </button>
+          {predictions.length === 0 ? (
+            <li className="px-2 py-2 text-[13px] leading-snug text-[#999]">
+              {t("addressNotFound", lang)}
             </li>
-          ))}
+          ) : (
+            predictions.map((p) => (
+              <li key={p.place_id}>
+                <button
+                  type="button"
+                  onClick={() => handleSelect(p)}
+                  className="w-full flex items-start gap-2 px-2 py-2 rounded-[3px] bg-transparent border-none text-[13px] leading-snug text-[#333] text-left hover:bg-[#f5f7fb] cursor-pointer"
+                >
+                  <MapPin size={14} className="shrink-0 mt-0.5 text-[#999]" />
+                  <span>{p.description}</span>
+                </button>
+              </li>
+            ))
+          )}
         </ul>
       )}
     </div>
