@@ -125,9 +125,6 @@ export function LnbSim({
             iconWidth={18}
             iconHeight={12}
           >
-            <p className="text-[12px] leading-[1.5] text-[#999]">
-              {t("batteryUnitDescription", lang)}
-            </p>
             <div className="flex gap-6">
               <Radio
                 name="battery"
@@ -142,6 +139,9 @@ export function LnbSim({
                 label={t("batteryNo", lang)}
               />
             </div>
+            <p className="text-[12px] leading-[1.5] text-[#999]">
+              {t("batterySelfConsumptionNote", lang)}
+            </p>
             {hasBattery && (
               <SelectBox
                 value={batteryModel}

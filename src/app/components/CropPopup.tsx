@@ -15,10 +15,8 @@ import { getRoofFaceColor, getRoofFaceFill } from "../utils/roofColors";
 
 /** Canvas 렌더링 시 getComputedStyle 호출을 피하기 위해 CSS 변수 값을 상수로 정의 */
 // install 폴리곤은 더 이상 단색이 아니다 — 지붕면마다 ROOF_FACE_COLORS 팔레트 색을 쓴다.
-// 아래 두 상수는 소속 지붕면을 찾지 못한 모듈의 폴백 색으로만 남는다 (구 --accent-blue).
-// (면 자체의 fill 로 쓰던 COLOR_INSTALL_FILL 은 팔레트로 완전히 대체되어 삭제했다.)
-const COLOR_INSTALL = "#3366AA"; // --accent-blue
-const COLOR_INSTALL_PANEL = "rgba(51, 102, 170, 0.5)";
+// 반면 그 위에 올라가는 모듈은 면 색과 무관하게 아래 단색으로 통일한다 (테두리는 흰색).
+const COLOR_PANEL_FILL = "rgba(13, 13, 13, 0.5)"; // #0D0D0D
 const COLOR_EXCLUDE = "#CF2E2E"; // --accent-red
 const COLOR_EXCLUDE_FILL = "rgba(207, 46, 46, 0.3)";
 const COLOR_SELECTED = "#FFD700"; // 선택 강조용 gold (VI 팔레트 --accent-yellow와 별도)
@@ -631,22 +629,16 @@ export default function CropPopup({
       }
     }
 
-    // Draw placed panels — 소속 지붕면(polygonId)의 팔레트 색을 따라간다.
-    // 소속 면을 찾지 못하면(고아 참조 방어) 기존 파랑으로 폴백한다.
+    // Draw placed panels — 지붕면 색과 무관하게 모듈은 단일 다크 톤으로 통일한다.
     for (const panel of placedPanels) {
-      const panelColorIndex = installColorIndex.get(panel.polygonId);
       ctx.beginPath();
       ctx.moveTo(panel.corners[0].x, panel.corners[0].y);
       for (let i = 1; i < 4; i++) {
         ctx.lineTo(panel.corners[i].x, panel.corners[i].y);
       }
       ctx.closePath();
-      ctx.fillStyle = panelColorIndex === undefined
-        ? COLOR_INSTALL_PANEL
-        : getRoofFaceFill(panelColorIndex, 0.5);
-      ctx.strokeStyle = panelColorIndex === undefined
-        ? COLOR_INSTALL
-        : getRoofFaceColor(panelColorIndex);
+      ctx.fillStyle = COLOR_PANEL_FILL;
+      ctx.strokeStyle = "#fff";
       ctx.lineWidth = 1;
       ctx.fill();
       ctx.stroke();
@@ -1360,7 +1352,15 @@ export default function CropPopup({
               }}
               aria-hidden="true"
             />
-            <span style={{ color: "#fff", fontSize: 14, textShadow: "0 1px 3px rgba(0,0,0,0.6)" }}>
+            <span
+              style={{
+                color: "#fff",
+                fontSize: 14,
+                textShadow: "0 1px 3px rgba(0,0,0,0.6)",
+                whiteSpace: "pre-line",
+                textAlign: "center",
+              }}
+            >
               {t("aiDetectOverlayMessage", lang)}
             </span>
           </div>
