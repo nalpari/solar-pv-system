@@ -1360,7 +1360,15 @@ export default function CropPopup({
               }}
               aria-hidden="true"
             />
-            <span style={{ color: "#fff", fontSize: 14, textShadow: "0 1px 3px rgba(0,0,0,0.6)" }}>
+            <span
+              style={{
+                color: "#fff",
+                fontSize: 14,
+                textShadow: "0 1px 3px rgba(0,0,0,0.6)",
+                whiteSpace: "pre-line",
+                textAlign: "center",
+              }}
+            >
               {t("aiDetectOverlayMessage", lang)}
             </span>
           </div>

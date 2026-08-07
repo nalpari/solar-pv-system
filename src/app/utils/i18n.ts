@@ -174,8 +174,8 @@ const translations = {
     en: "AI Analyzing...",
   },
   aiDetectOverlayMessage: {
-    ja: "AIが屋根面を作成しています。しばらくお待ちください。",
-    en: "AI is creating roof faces. Please wait a moment.",
+    ja: "住宅屋根イメージをAI分析中です。しばらくお待ちください。\n分析結果は実際の屋根の形状と異なる場合があります。",
+    en: "AI is analyzing the rooftop image. Please wait a moment.\nThe result may differ from the actual roof shape.",
   },
   // 비활성 요소 호버 안내문구 (UX 보완) — 다음에 해야 할 동작을 안내
   uxNeedRoofArea: {
