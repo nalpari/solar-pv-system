@@ -444,16 +444,23 @@ export default function Home() {
     return null;
   }
 
-  // 결과조회 제출 — 우편번호 결정 → 정합성 검증 → 이미지 저장 → calcResults 리다이렉트
+  // 결과조회 제출 — 우편번호 결정 → 정합성 검증 → 이미지 저장 → calcResults 를 새 창으로
   async function handleSimSubmit() {
     if (isSubmitting) return; // 중복 클릭 방지
     setIsSubmitting(true);
+    // 결과 창은 클릭 시점에 미리 연다 — await 이후의 window.open 은 사용자 제스처가
+    // 끊겨 팝업 차단에 걸린다. URL 은 검증이 끝난 뒤 이 창에 주입한다.
+    const resultWindow = window.open("", "_blank");
+    const fail = (message: string) => {
+      alert(message);
+      resultWindow?.close();
+      setIsSubmitting(false);
+    };
     try {
       // 우편번호: 항상 최종 크롭중심을 reverse geocode (크롭 이동 시 검색 우편 재사용은 위치 불일치 유발)
       const postCd = await geocodePostalCode(center);
       if (!postCd) {
-        alert(t("postCdMissing", lang));
-        setIsSubmitting(false);
+        fail(t("postCdMissing", lang));
         return;
       }
       const input = buildSimulationInput({
@@ -475,30 +482,30 @@ export default function Home() {
       });
       const json = await res.json();
       if (!json.success) {
-        alert(json.error?.message ?? t("simCheckFailed", lang));
-        setIsSubmitting(false);
+        fail(json.error?.message ?? t("simCheckFailed", lang));
         return;
       }
       if (!json.data?.redirectUrl) {
-        alert(t("submitFailed", lang));
-        setIsSubmitting(false);
+        fail(t("submitFailed", lang));
         return;
       }
       // ② 합성 이미지 S3 업로드 (4xx 즉시중단·5xx 재시도)
       const fileName = await uploadLayoutImage();
       if (!fileName) {
-        alert(t("imageUploadFailed", lang));
-        setIsSubmitting(false);
+        fail(t("imageUploadFailed", lang));
         return;
       }
-      // ③ calcResults 페이지로 리다이렉트 (roofImgSrc 부착) — 성공 시 페이지를 떠남
+      // ③ calcResults 를 새 창에 띄운다 (roofImgSrc 부착). 팝업이 차단돼 창을
+      //    확보하지 못했으면 기존 동작대로 현재 탭을 이동시킨다.
       const roofImgName = fileName.replace(/^pvmap\//, "");
-      window.location.href = `${json.data.redirectUrl}&roofImgSrc=${encodeURIComponent(roofImgName)}`;
+      const target = `${json.data.redirectUrl}&roofImgSrc=${encodeURIComponent(roofImgName)}`;
+      if (resultWindow) resultWindow.location.href = target;
+      else window.location.href = target;
+      setIsSubmitting(false);
     } catch (err) {
       // 네트워크 단절 등 예외 — 진단 로그 + 사용자 피드백 후 로딩 해제
       console.error("[sim-submit] 결과조회 실패:", err);
-      alert(t("submitFailed", lang));
-      setIsSubmitting(false);
+      fail(t("submitFailed", lang));
     }
   }
 
