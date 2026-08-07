@@ -3,6 +3,10 @@ export type Lang = "ja" | "en";
 const translations = {
   // Lnb design tab — 건물확정·경사·모듈·용량
   addressPlaceholder: { ja: "建物の住所を入力...", en: "Enter building address..." },
+  addressNotFound: {
+    ja: "住所が特定できませんでした。画面上から住宅を選択または住所を入力しなおしてください。",
+    en: "The address could not be identified. Please select the building on the map or re-enter the address.",
+  },
   confirmBuilding: { ja: "建物確定", en: "Confirm Building" },
   sectionAddressSearch: { ja: "住所検索", en: "Address Search" },
   sectionModulePlacement: { ja: "モジュール配置", en: "Module Placement" },
