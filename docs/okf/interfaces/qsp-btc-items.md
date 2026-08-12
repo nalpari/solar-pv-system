@@ -53,7 +53,8 @@ GET /api/qsp/btc-items?schItemTp=M
 | 호출자 | 파라미터 | 용도 |
 |--------|----------|------|
 | `lnb-design.tsx` | `schItemTp=M` | 모듈 셀렉트. `wpOut > 0` 인 항목만 남기고 `shortAxis→width` / `longAxis→height` / `wpOut→watt` 로 매핑 |
-| `lnb-sim.tsx` | `schItemTp=B` | 축전지 셀렉트 |
+
+현재 클라이언트에서 `schItemTp=B` 호출자는 없다. 엔드포인트 계약은 축전지 목록 조회를 계속 지원한다.
 
 출력값이 없는 모듈이 목록에서 사라지는 규칙은 [`domain/installation-capacity.md`](/domain/installation-capacity.md) 참조.
 
