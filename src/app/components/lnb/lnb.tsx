@@ -22,10 +22,10 @@ export function Lnb({ tab, lang, design, sim }: LnbProps) {
     >
       <header className="flex items-center justify-center pt-[10px] pb-[20px] shrink-0">
         <Image
-          src="/assets/images/common/pv_logo.svg"
+          src="/assets/images/common/pv_new_logo.svg"
           alt={t("pvLogoAlt", lang)}
           width={254}
-          height={30}
+          height={52}
           priority
         />
       </header>
