@@ -38,7 +38,6 @@ const DEFAULT_PANEL_SIZE: PanelSize | null = null; // 모듈 미선택 상태로
 const DEFAULT_SIM_FORM: SimulationFormState = {
   azimuth: "",
   hasBattery: true,
-  batteryModel: "",
   monthlyElecCost: "",
 };
 
@@ -90,7 +89,6 @@ function buildSimulationInput(args: {
   slope: number | null;
   monthlyElecCost: string;
   hasBattery: boolean;
-  batteryModel: string;
 }): SimulationInput {
   return {
     pvSimulationYn: "Y",
@@ -101,7 +99,7 @@ function buildSimulationInput(args: {
     roofLocCd: ROOF_LOC_CD[args.azimuth] ?? 0,
     roofSlopeCd: sunToDegree(args.slope ?? 0),
     avrgMnthElctBill: Number(args.monthlyElecCost) || 0,
-    batteryItemId: args.hasBattery ? args.batteryModel : "",
+    batteryItemId: "",
     storageBatteryYn: args.hasBattery ? "Y" : "N",
     storageBatterySelectYn: args.hasBattery ? "Y" : "N",
   };
@@ -472,7 +470,6 @@ export default function Home() {
         slope,
         monthlyElecCost: simForm.monthlyElecCost,
         hasBattery: simForm.hasBattery,
-        batteryModel: simForm.batteryModel,
       });
       // ① 정합성 검증 + 조회 URL 취득 (실패 시 alert 후 중단)
       const res = await fetch("/api/musbi/sim-check", {
@@ -587,8 +584,7 @@ export default function Home() {
     panelCount > 0 &&
     installAreas.length > 0 &&
     simForm.azimuth !== "" &&
-    simForm.monthlyElecCost !== "" &&
-    (!simForm.hasBattery || simForm.batteryModel !== "");
+    simForm.monthlyElecCost !== "";
 
   return (
     <APIProvider

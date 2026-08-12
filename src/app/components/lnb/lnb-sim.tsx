@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Button, Radio, SelectBox, InputBox } from "@/components/common";
 import { ChevronRight, Section } from "./section";
@@ -37,37 +36,7 @@ export function LnbSim({
   onSubmit,
   canSubmit,
 }: LnbSimProps) {
-  const { azimuth, hasBattery, batteryModel, monthlyElecCost } = formState;
-
-  const [batteryOptions, setBatteryOptions] = useState<{ value: string; label: string }[]>([]);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/qsp/btc-items?schItemTp=B")
-      .then((res) => res.json())
-      .then((json) => {
-        if (cancelled) return;
-        if (json.success && Array.isArray(json.data)) {
-          const items = json.data as Array<{
-            matlCd: string;
-            qcastCustPrdNm: string;
-            matlGbnCd: string;
-          }>;
-          const batteries = items
-            .filter((item) => item.matlGbnCd === "B")
-            .map((item) => ({ value: item.matlCd, label: item.qcastCustPrdNm }));
-          if (batteries.length > 0) {
-            setBatteryOptions(batteries);
-          }
-        }
-      })
-      .catch((err) => {
-        console.error("Failed to fetch battery items:", err);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const { azimuth, hasBattery, monthlyElecCost } = formState;
 
   function update(patch: Partial<SimulationFormState>) {
     onFormChange({ ...formState, ...patch });
@@ -139,22 +108,9 @@ export function LnbSim({
                 label={t("batteryNo", lang)}
               />
             </div>
-            <p className="text-[12px] leading-[1.5] text-[#999]">
+            <p className="text-[12px] leading-[1.5] text-[#999] [word-break:auto-phrase]">
               {t("batterySelfConsumptionNote", lang)}
             </p>
-            {hasBattery && (
-              <SelectBox
-                value={batteryModel}
-                onChange={(e) =>
-                  // value=matlCd — QSP 카탈로그 로드 성공 시에만 옵션이 채워지므로 항상 실 ID
-                  update({ batteryModel: e.target.value })
-                }
-                options={[
-                  { value: "", label: t("selectPlaceholder", lang) },
-                  ...batteryOptions,
-                ]}
-              />
-            )}
           </Section>
 
           {/* Section 3: 月平均電気料金 */}

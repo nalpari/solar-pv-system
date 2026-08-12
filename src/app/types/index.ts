@@ -65,6 +65,5 @@ export interface PixelPanel {
 export interface SimulationFormState {
   azimuth: string;
   hasBattery: boolean;
-  batteryModel: string;
   monthlyElecCost: string;
 }
