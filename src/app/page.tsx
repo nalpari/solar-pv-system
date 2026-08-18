@@ -274,6 +274,7 @@ export default function Home() {
       // 재분석 시 경사/모듈/배치 방향도 기본값으로 초기화
       setSlope(DEFAULT_SLOPE);
       setPanelSize(DEFAULT_PANEL_SIZE);
+      setModuleId(""); // panelSize 와 항상 함께 초기화 — 셀렉트 표시값의 진실이 moduleId 이므로
       setIsPlacementDone(false); // 배치 완료(편집 잠금) 상태 해제
     }
 
@@ -617,6 +618,7 @@ export default function Home() {
             areaCount: installAreas.length,
             panelSize,
             onPanelSizeChange: setPanelSize,
+            moduleId,
             onModuleSelect: setModuleId,
             panelCount,
             canPlace,
