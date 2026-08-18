@@ -39,6 +39,8 @@ export interface LnbDesignProps {
   // Panel config — null이면 모듈 미선택 상태
   panelSize: PanelSize | null;
   onPanelSizeChange: (size: PanelSize) => void;
+  /** 선택된 matlCd — 치수가 같은 모듈(MS290/AG270)이 있어 panelSize 역매칭 불가, 이 값이 셀렉트의 진실 */
+  moduleId: string;
   /** 모듈 선택 시 matlCd(SimulationInput.moduleItemId) 전달 — 시뮬 API 입력용 */
   onModuleSelect?: (moduleId: string) => void;
   // Results
@@ -69,6 +71,7 @@ export function LnbDesign({
   areaCount,
   panelSize,
   onPanelSizeChange,
+  moduleId,
   onModuleSelect,
   panelCount,
   canPlace,
@@ -130,13 +133,6 @@ export function LnbDesign({
       cancelled = true;
     };
   }, []);
-
-  // 선택된 panelSize를 카탈로그와 매칭 — 미선택(null)이면 placeholder("") 노출
-  const currentModule = panelSize
-    ? moduleOptions.find(
-        (p) => p.size.width === panelSize.width && p.size.height === panelSize.height,
-      )?.value ?? ""
-    : "";
 
   function handleModuleChange(value: string) {
     const preset = moduleOptions.find((p) => p.value === value);
@@ -273,7 +269,7 @@ export function LnbDesign({
           >
             <div className="flex flex-col gap-2">
               <SelectBox
-                value={currentModule}
+                value={moduleId}
                 onChange={(e) => handleModuleChange(e.target.value)}
                 disabled={detecting || modulesLoading || slope === null || isPlacementDone}
                 disabledTitle={moduleDisabledTitle}
