@@ -366,6 +366,15 @@ export function LnbDesign({
         >
           {t("simulationCalcInput", lang)}
         </Button>
+        {/* ⑤ 매뉴얼 다운로드 — 외부 링크라 Button(button 전용) 대신 a 태그에 orange variant 스타일 복사 */}
+        <a
+          href="https://drive.google.com/drive/folders/1Bk0ADPiNRvBVRnkMWJsJ6MwznrI-1dlD?usp=sharing"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center justify-center h-[42px] w-full rounded-[4px] text-[13px] font-medium leading-[1.5] transition-colors gap-2 px-[18px] bg-[#e74] border border-[#e74] text-white hover:bg-[#d36739] hover:border-[#d36739]"
+        >
+          {t("manualDownload", lang)}
+        </a>
       </div>}
     </>
   );
