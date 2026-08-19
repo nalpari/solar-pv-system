@@ -59,7 +59,7 @@ export default function AiDetectControls({
           padding: "10px 20px",
           borderRadius: "var(--radius-md)",
           border: "none",
-          background: "var(--accent-blue)",
+          background: "var(--accent-orange)",
           color: "#fff",
           fontSize: 13,
           fontWeight: 600,
