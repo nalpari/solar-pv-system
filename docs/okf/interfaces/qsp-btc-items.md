@@ -43,7 +43,7 @@ GET /api/qsp/btc-items?schItemTp=M
 | `wpOut` | `string` (출력 W) | `string \| null` |
 | `longAxis` / `shortAxis` / `thickness` | `number` | `string \| null` |
 | `matlCd` | 모듈 코드 (`moduleItemId` 로 사용) | 축전지 코드 (`batteryItemId` 로 사용) |
-| `qcastCustPrdNm` | 표시명 | 표시명 |
+| `basicMatl` | 표시명 (셀렉트 라벨) | 표시명 |
 
 업스트림 `data` 가 `null` 일 수 있어 `?? []` 로 정규화한다 — **빈 배열은 정상 응답이다**.
 사양에 없는 root 필드(`code`, `data2`)는 zod strip 으로 자동 무시된다.

@@ -98,7 +98,7 @@ export function LnbDesign({
         if (json.success && Array.isArray(json.data)) {
           const items = json.data as Array<{
             matlCd: string;
-            qcastCustPrdNm: string;
+            basicMatl: string;
             matlGbnCd: string;
             wpOut: string;
             shortAxis: number;
@@ -109,9 +109,9 @@ export function LnbDesign({
             .filter((item) => item.matlGbnCd === "M" && Number(item.wpOut) > 0)
             .map((item) => ({
               value: item.matlCd,
-              label: item.qcastCustPrdNm,
+              label: item.basicMatl,
               size: {
-                label: item.qcastCustPrdNm,
+                label: item.basicMatl,
                 width: item.shortAxis,
                 height: item.longAxis,
                 watt: Number(item.wpOut) || 0,
