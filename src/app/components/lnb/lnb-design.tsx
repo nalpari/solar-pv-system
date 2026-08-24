@@ -339,34 +339,36 @@ export function LnbDesign({
         </div>
       </div>
 
-      {cropPopupOpen && <div className="flex flex-col gap-2 shrink-0 pb-4">
-        {/* ③ 토글: 모듈 배치 완료 ↔ 모듈 편집으로 돌아가기 (모듈 1개+ 배치 시 활성화) */}
-        <Button
-          variant="orange"
-          iconPosition="right"
-          className="w-full"
-          onClick={onPlacementDone}
-          disabled={detecting || panelCount === 0}
-          disabledTitle={placementDoneDisabledTitle}
-          tooltipPlacement="top"
-          icon={<ChevronRight />}
-        >
-          {t(isPlacementDone ? "moduleEditReturn" : "modulePlacementDone", lang)}
-        </Button>
-        {/* ④ 발전 시뮬레이션 입력 — ③이 '편집으로 돌아가기' 상태(isPlacementDone)일 때만 활성 */}
-        <Button
-          variant="orange"
-          iconPosition="right"
-          className="w-full"
-          onClick={onSwitchToSimulation}
-          disabled={detecting || !isPlacementDone}
-          disabledTitle={simInputDisabledTitle}
-          tooltipPlacement="top"
-          icon={<ChevronRight />}
-        >
-          {t("simulationCalcInput", lang)}
-        </Button>
-        {/* ⑤ 매뉴얼 다운로드 — 외부 링크라 Button(button 전용) 대신 a 태그에 Button 기본 스타일 복사 */}
+      <div className="flex flex-col gap-2 shrink-0 pb-4">
+        {cropPopupOpen && <>
+          {/* ③ 토글: 모듈 배치 완료 ↔ 모듈 편집으로 돌아가기 (모듈 1개+ 배치 시 활성화) */}
+          <Button
+            variant="orange"
+            iconPosition="right"
+            className="w-full"
+            onClick={onPlacementDone}
+            disabled={detecting || panelCount === 0}
+            disabledTitle={placementDoneDisabledTitle}
+            tooltipPlacement="top"
+            icon={<ChevronRight />}
+          >
+            {t(isPlacementDone ? "moduleEditReturn" : "modulePlacementDone", lang)}
+          </Button>
+          {/* ④ 발전 시뮬레이션 입력 — ③이 '편집으로 돌아가기' 상태(isPlacementDone)일 때만 활성 */}
+          <Button
+            variant="orange"
+            iconPosition="right"
+            className="w-full"
+            onClick={onSwitchToSimulation}
+            disabled={detecting || !isPlacementDone}
+            disabledTitle={simInputDisabledTitle}
+            tooltipPlacement="top"
+            icon={<ChevronRight />}
+          >
+            {t("simulationCalcInput", lang)}
+          </Button>
+        </>}
+        {/* ⑤ 매뉴얼 다운로드 — 외부 링크라 Button(button 전용) 대신 a 태그에 Button 기본 스타일 복사. 크롭 전 화면에도 노출 */}
         <a
           href="https://drive.google.com/drive/folders/1Bk0ADPiNRvBVRnkMWJsJ6MwznrI-1dlD?usp=sharing"
           target="_blank"
@@ -375,7 +377,7 @@ export function LnbDesign({
         >
           {t("manualDownload", lang)}
         </a>
-      </div>}
+      </div>
     </>
   );
 }
