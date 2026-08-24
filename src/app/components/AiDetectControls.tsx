@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { t, type Lang } from "../utils/i18n";
 
 interface AiDetectControlsProps {
@@ -22,6 +23,20 @@ export default function AiDetectControls({
   const isDetecting = detectStatus === "detecting";
   // 분석 중이거나 배치 완료(편집 잠금) 상태면 "AI 분석 시작" 비활성
   const isStartDisabled = isDetecting || isPlacementDone;
+
+  // 기본 숨김 — Ctrl+Alt+A (macOS: Ctrl+Cmd+A) 로 토글
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key.toLowerCase() !== "a") return;
+      // Ctrl + (Alt | Cmd) 한 식으로 두 플랫폼 커버 — navigator.platform 스니핑 불필요
+      if (e.ctrlKey && (e.altKey || e.metaKey)) setVisible((v) => !v);
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  if (!visible) return null;
 
   return (
     <div
