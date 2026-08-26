@@ -14,6 +14,7 @@ import { extractPostalCode } from "./utils/postalCode";
 import type { Lang } from "./utils/i18n";
 import CropPopup, { type CropPopupHandle } from "./components/CropPopup";
 import AiDetectControls from "./components/AiDetectControls";
+import NoticePopup from "./components/NoticePopup";
 import { detectRoofs } from "./utils/aiDetect";
 import type { NormalizedPolygon } from "./utils/aiDetect";
 import type {
@@ -860,6 +861,8 @@ export default function Home() {
           />
         </div>
       )}
+      {/* 최초 로딩 공지 — 2주 숨김 체크는 localStorage 에 만료시각으로 저장 */}
+      <NoticePopup />
     </APIProvider>
   );
 }
