@@ -177,3 +177,23 @@ button:active {
 @keyframes spin {
   to { transform: translateY(-50%) rotate(360deg); }
 }
+
+/* 최초 로딩 공지 팝업 */
+@keyframes noticeFade {
+  from { opacity: 0; }
+}
+
+@keyframes noticeRise {
+  from { opacity: 0; transform: translateY(8px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-notice] { animation: none !important; }
+}
+
+/* 파란 버튼 위에서도 보이도록 포커스 링을 바깥으로 띄운다 */
+[data-notice] button:focus-visible,
+[data-notice] input:focus-visible {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: 2px;
+}
