@@ -97,6 +97,7 @@ pipeline {
             --target builder \\
             --build-arg NEXT_PUBLIC_GOOGLE_MAPS_API_KEY="$NEXT_PUBLIC_GOOGLE_MAPS_API_KEY" \\
             --build-arg NEXT_PUBLIC_AWS_S3_BASE_URL="$NEXT_PUBLIC_AWS_S3_BASE_URL" \\
+            --build-arg NEXT_PUBLIC_APP_PROFILE="$PROFILE" \\
             -t "solar-pv-system:verify-${BUILD_NUMBER}" \\
             .
           docker rmi "solar-pv-system:verify-${BUILD_NUMBER}" 2>/dev/null || true

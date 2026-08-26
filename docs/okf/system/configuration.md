@@ -32,12 +32,13 @@ compose 는 `env_file: .env` 로 통째로 마운트한다.
 
 # 빌드타임 vs 런타임
 
-`NEXT_PUBLIC_*` 두 개만 빌드타임이다. 클라이언트 번들에 **문자열로 인라인**되므로 컨테이너 재시작으로는 바뀌지 않는다 — 이미지를 다시 빌드해야 한다.
+`NEXT_PUBLIC_*` 세 개만 빌드타임이다. 클라이언트 번들에 **문자열로 인라인**되므로 컨테이너 재시작으로는 바뀌지 않는다 — 이미지를 다시 빌드해야 한다.
 
 | Variable | 파일 | 시점 | 용도 |
 |----------|------|------|------|
 | `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | 공통 | 빌드 ARG | Maps JS / Places / Geometry / Geocoder |
 | `NEXT_PUBLIC_AWS_S3_BASE_URL` | 공통 | 빌드 ARG | 업로드 이미지 공개 URL 조립 기준 |
+| `NEXT_PUBLIC_APP_PROFILE` | — (Jenkins `PROFILE` 파라미터 → build ARG) | 빌드 ARG | `local`\|`dev`\|`prod`. `prod` 일 때만 AI 분석 트리거 버튼을 숨긴다. **env 파일에 두지 않는다** — compose 가 `${PROFILE:-local}` 로 주입하므로 credential/Validate 추가가 불필요하다 |
 | `OPENROUTER_API_KEY` | 공통 | 런타임 | [detect-roof](/interfaces/detect-roof.md) 추론 호출. 미설정 시 500 |
 | `OPENROUTER_MODEL` | 공통 | 런타임 | 모델 슬러그(현행 `openai/gpt-5.6-sol`). 미설정 시 detect-roof 가 500. **기본값 없음**. 값이 `.env`(gitignore 대상)에만 있어 문서와 벌어지기 쉽다 — 바꾸면 이 표와 [ai-roof-detection](/modules/ai-roof-detection.md) 을 같이 고친다 |
 | `GEMINI_API_KEY` · `GEMINI_MODEL` | 공통 | — | **미사용.** OpenRouter 전환 후 코드가 읽지 않는다. 안정화 관측 기간 롤백 대비로 잔존 |

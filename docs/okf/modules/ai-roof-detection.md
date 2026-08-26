@@ -135,7 +135,7 @@ normalizedToPixelPolygons(polygons, canvasW, canvasH)
 # 사용자 흐름 상의 특징
 
 - **수동 트리거**다. 크롭이 바뀌어도 자동 분석하지 않고 "AI 분석 시작" 버튼을 눌러야 한다.
-- ⚠️ 그 버튼은 **기본 숨김**이다(임시 조치). `AiDetectControls` 가 크롭 팝업이 열린 상태에서 `Ctrl+Alt+A`(macOS `Ctrl+Cmd+A`) 를 받아야 렌더된다 — UI 만 가린 것이고 `/api/detect-roof` 는 그대로 살아 있다.
+- ⚠️ 그 버튼은 **prod 프로파일에서 렌더되지 않는다**. `AiDetectControls` 가 빌드타임 `NEXT_PUBLIC_APP_PROFILE === "prod"` 이면 `null` 을 반환한다(local·dev 는 노출) — UI 만 가린 것이고 `/api/detect-roof` 는 prod 에서도 그대로 살아 있다.
 - 이미 지붕면이 있으면 재분석 확인 창을 띄우고, 승인 시 `handleDeleteAll` + 경사/모듈/배치잠금까지 초기화한다.
 - 실패는 **`alert` 하나**로만 알린다(배너 없음 — 기획 명시).
 - 진행 중 요청은 `AbortController` 로 취소하며, 응답 도착 시 `abortControllerRef.current !== controller` 로 stale 응답을 버린다.
