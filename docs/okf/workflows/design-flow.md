@@ -27,7 +27,7 @@ sources:
    (기본 위치: 마운트 시 geolocation 1회 시도, 거부되면 도쿄 마루노우치)
 ② 건물 확정        "건물확정" 1차 클릭 → 크롭모드 / 드래그로 영역 지정 / 2차 클릭 → 확정
                    html2canvas 캡처 → CropData → 크롭 팝업 오픈, 지도 잠금
-③ 지붕면 작성      직접 그리기 (AI 자동 감지는 기본 숨김 — Ctrl+Alt+A 로 트리거 노출, 임시 조치)
+③ 지붕면 작성      AI 자동 감지(수동 트리거, local·dev 만 노출) 또는 직접 그리기
                    drawRoof / drawOpening / flowSetting / mergeSelected / editRoof / undo / delete
 ④ 경사 선택        1·3·4·6·8寸 중 하나 (필수)
 ⑤ 모듈 선택        QSP 모듈 마스터에서 선택 (필수)

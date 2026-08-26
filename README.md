@@ -7,7 +7,7 @@
 - **주소 검색** — Google Places Autocomplete로 건물 위치 탐색
 - **위성 지도** — 위성/일반 보기 토글, 줌 컨트롤, 중심 복귀 버튼
 - **건물 확정 (Crop)** — 지도 위에서 드래그해 대상 영역을 캡처(`html2canvas`) → 크롭 팝업 진입
-- **AI 지붕 감지** (기본 숨김 — 크롭 팝업에서 `Ctrl+Alt+A`, macOS `Ctrl+Cmd+A` 로 트리거 노출) — 크롭 팝업의 **AI 分析開始 / Start AI Analysis** 버튼을 클릭하면 AI 비전 모델(OpenRouter 경유)이 위성 이미지에서 지붕면 폴리곤을 추출. 사용자가 수동으로 편집·추가 가능
+- **AI 지붕 감지** (prod 프로파일에서는 트리거 숨김 — local·dev 만 노출) — 크롭 팝업의 **AI 分析開始 / Start AI Analysis** 버튼을 클릭하면 AI 비전 모델(OpenRouter 경유)이 위성 이미지에서 지붕면 폴리곤을 추출. 사용자가 수동으로 편집·추가 가능
 - **지붕 편집 툴바** — 크롭 이미지 위에서 폴리곤 편집
   - `select` 선택/이동, `drawRoof` 지붕면, `drawOpening` 개구부(제외 영역), `flowSetting` 처마(흐름방향), `mergeSelected` 지붕면 병합, `editRoof` 꼭짓점 편집, `deleteSelected`, `deleteAll`, `undo`
 - **지붕면 병합** — 인접한(변을 공유하거나 근접한) 지붕면을 2개 이상 선택해 하나로 결합. AI가 하나의 지붕을 여러 조각으로 나눠 인식했을 때 사용. 병합 시 해당 면 위의 개구부와 모듈은 함께 제거되며, 병합된 면은 선택 상태로 남는다
@@ -113,7 +113,7 @@ docker run -p 3000:3000 \
 ```
 src/app/
 ├── components/
-│   ├── AiDetectControls.tsx   # AI 지붕 분석 트리거 (분석 시작/취소, 기본 숨김 — Ctrl+Alt+A 토글)
+│   ├── AiDetectControls.tsx   # AI 지붕 분석 트리거 (분석 시작/취소, prod 프로파일에서는 미렌더)
 │   ├── CropPopup.tsx          # 크롭 이미지 위 캔버스 폴리곤 에디터 + 패널 렌더링
 │   ├── MapView.tsx            # Google Maps + 크롭 영역 선택 오버레이 (html2canvas 캡처)
 │   ├── RoofEditToolbar.tsx    # 지붕 편집 툴바 (지도 위 플로팅)
@@ -186,7 +186,7 @@ src/app/
 
 1. 사이드바 상단의 **주소 검색**으로 대상 건물로 이동합니다.
 2. **建物確定 / Confirm Building**을 누르고 지도 위에서 드래그하여 옥상이 잘 보이는 범위를 크롭합니다 → 크롭 팝업이 열립니다.
-3. 크롭 팝업이 열리면 `Ctrl+Alt+A`(macOS `Ctrl+Cmd+A`) 로 AI 트리거를 노출한 뒤, 하단의 **AI 分析開始 / Start AI Analysis** 버튼을 클릭하여 지붕면 자동 감지를 시작합니다 (~15~30초, 진행 중에는 **AI 分析キャンセル / Cancel** 버튼으로 취소 가능). 감지 완료 후 플로팅 툴바에서 결과를 추가 편집할 수 있습니다:
+3. 크롭 팝업이 열리면 하단의 **AI 分析開始 / Start AI Analysis** 버튼을 클릭하여 지붕면 자동 감지를 시작합니다 (~15~30초, 진행 중에는 **AI 分析キャンセル / Cancel** 버튼으로 취소 가능). 감지 완료 후 플로팅 툴바에서 결과를 추가 편집할 수 있습니다:
    - `drawRoof`로 지붕면 폴리곤을 그립니다 (3점 이상 → 시작점 클릭으로 닫기)
    - `drawOpening`으로 환기구 등 개구부(제외 영역)를 그립니다
    - `flowSetting`으로 각 지붕면의 처마(흐름방향) 변을 지정하면 모듈이 그 변과 평행하게 배치됩니다

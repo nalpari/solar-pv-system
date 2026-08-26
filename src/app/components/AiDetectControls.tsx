@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { t, type Lang } from "../utils/i18n";
 
 interface AiDetectControlsProps {
@@ -11,6 +10,9 @@ interface AiDetectControlsProps {
   isPlacementDone?: boolean;
   lang: Lang;
 }
+
+/** prod 프로파일에서는 트리거 영역 자체를 렌더하지 않는다 (local·dev 만 노출). 빌드타임 인라인 값. */
+const HIDDEN = process.env.NEXT_PUBLIC_APP_PROFILE === "prod";
 
 /** AI 지붕 자동 감지 시작/취소 컨트롤. 크롭 팝업 영역 외부 하단에 배치된다. */
 export default function AiDetectControls({
@@ -24,19 +26,7 @@ export default function AiDetectControls({
   // 분석 중이거나 배치 완료(편집 잠금) 상태면 "AI 분석 시작" 비활성
   const isStartDisabled = isDetecting || isPlacementDone;
 
-  // 기본 숨김 — Ctrl+Alt+A (macOS: Ctrl+Cmd+A) 로 토글
-  const [visible, setVisible] = useState(false);
-  useEffect(() => {
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key.toLowerCase() !== "a") return;
-      // Ctrl + (Alt | Cmd) 한 식으로 두 플랫폼 커버 — navigator.platform 스니핑 불필요
-      if (e.ctrlKey && (e.altKey || e.metaKey)) setVisible((v) => !v);
-    }
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
-
-  if (!visible) return null;
+  if (HIDDEN) return null;
 
   return (
     <div
