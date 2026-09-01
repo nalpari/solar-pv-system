@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Figtree, Noto_Sans_JP, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -34,6 +35,16 @@ export default function RootLayout({
         className={`${figtree.variable} ${notoSansJP.variable} ${geistMono.variable} antialiased`}
       >
         {children}
+        <Script
+          async
+          src="https://www.googletagmanager.com/gtag/js?id=G-KSC4F7SMFF"
+        />
+        <Script id="ga4">{`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-KSC4F7SMFF');
+        `}</Script>
       </body>
     </html>
   );
