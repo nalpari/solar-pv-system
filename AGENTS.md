@@ -98,6 +98,8 @@ src/
 | `docs/okf/` | **OKF v0.2 지식 번들** (30개 개념). 진입점 `docs/okf/index.md` — 위 표가 그 색인이다 |
 | `docs/architecture.md` / `.html` | 시스템 전체 아키텍처 — 레이어·상태 소유·BFF 계약·배치 알고리즘·좌표계·구조적 한계. `.html` 은 SVG 도식 강화판 |
 | `docs/solar-pv-architecture.html` | 한 장짜리 아키텍처 다이어그램 (브라우저 열람용) — 클라이언트 / `proxy.ts` 보안 경계 / BFF 4개 라우트 / 외부 5개 서비스를 하나의 SVG 로. 텍스트 설명은 위 `architecture.md` 가 원본 |
+| `docs/solar-pv-detect-sequence.html` | 시퀀스 다이어그램 — AI 지붕면 자동 감지. `aiDetect` → `proxy.ts` → `detect-roof` → Replicate SAM → OpenRouter 순서와 `abortControllerRef` 레이스 가드 분기. 원본은 `docs/okf/modules/ai-roof-detection.md` |
+| `docs/solar-pv-sim-submit-flowchart.html` | 플로우차트 — `handleSimSubmit` 3단계 게이트(우편번호 · 파라미터 검증 · 이미지 업로드)와 공통 중단 경로. 원본은 `docs/okf/workflows/simulation-flow.md` |
 | `docs/ci-cd-pipeline.md` / `.html` | Jenkins 파이프라인 스테이지별 상세 · Docker 멀티스테이지 · 환경변수 주입 경로 · 운영/롤백 절차 |
 | `docs/sequence-diagrams.md` | App init / i18n toggle / area calc 시퀀스 다이어그램 |
 | `docs/context-manage.md` | 에이전트 컨텍스트 관리 — 세션 상시 로딩 vs Skill/훅 지연 로딩의 실제 동작 |
