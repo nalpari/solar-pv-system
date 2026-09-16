@@ -9,11 +9,12 @@ import { AddressInputLnb } from "./address-input-lnb";
 import { t, type Lang } from "../../utils/i18n";
 import type { PanelSize } from "../../types";
 
-// 5단계 경사 옵션 — value는 寸 숫자, label은 풍부 텍스트(명세)
-const SLOPE_OPTIONS: { value: number; labelKey: "slopeLabel1" | "slopeLabel3" | "slopeLabel4" | "slopeLabel6" | "slopeLabel8" }[] = [
+// 6단계 경사 옵션 — value는 寸 숫자, label은 풍부 텍스트(명세)
+const SLOPE_OPTIONS: { value: number; labelKey: "slopeLabel1" | "slopeLabel3" | "slopeLabel4" | "slopeLabel5" | "slopeLabel6" | "slopeLabel8" }[] = [
   { value: 1, labelKey: "slopeLabel1" },
   { value: 3, labelKey: "slopeLabel3" },
   { value: 4, labelKey: "slopeLabel4" },
+  { value: 5, labelKey: "slopeLabel5" },
   { value: 6, labelKey: "slopeLabel6" },
   { value: 8, labelKey: "slopeLabel8" },
 ];
