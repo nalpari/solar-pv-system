@@ -44,9 +44,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# graphify
-graphify-out/
-
 # understand-anything (knowledge graph — 로컬 재생성)
 .understand-anything/
 
@@ -55,3 +52,6 @@ graphify-out/
 
 # git worktrees (격리 작업 공간)
 .worktrees/
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/

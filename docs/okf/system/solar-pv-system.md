@@ -69,4 +69,3 @@ const [lang] = useState<Lang>("ja");
 - 보안 리뷰: `docs/security-review-2026-06-02.md`
 - 지연 진단: `docs/investigations/2026-06-04-detect-roof-latency-analysis.md` (맨 앞 **정정 블록** 먼저 읽을 것)
 - OpenRouter 전환 설계: `docs/plans/2026-07-27-gemini-to-openrouter-migration.md`
-- 지식 그래프: `graphify-out/` (git 미추적 — `graphify update .` 로 재생성)

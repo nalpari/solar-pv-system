@@ -45,7 +45,7 @@ while IFS= read -r doc; do
   while IFS= read -r src; do
     [ -n "$src" ] || continue
     case "$src" in http*) continue ;; esac
-    # git 추적 대상이 아닌 경로(graphify-out 등)는 판정하지 않는다 — 클린 체크아웃에서 오탐이 된다.
+    # git 추적 대상이 아닌 경로는 판정하지 않는다 — 클린 체크아웃에서 오탐이 된다.
     git check-ignore -q "$src" 2>/dev/null && continue
 
     if [ ! -e "$src" ]; then

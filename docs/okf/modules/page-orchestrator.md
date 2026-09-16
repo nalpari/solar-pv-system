@@ -10,9 +10,6 @@ sources:
   - id: page
     resource: src/app/page.tsx
     title: Home 컴포넌트
-  - id: graph
-    resource: graphify-out/GRAPH_REPORT.md
-    title: 지식 그래프 — Home 이 20 edge 로 최다 연결
 ---
 
 # 책임
