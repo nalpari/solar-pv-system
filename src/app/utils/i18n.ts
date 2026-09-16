@@ -13,6 +13,7 @@ const translations = {
   slopeLabel1: { ja: "緩やかな屋根（約1寸）", en: "Gentle roof (~1寸)" },
   slopeLabel3: { ja: "やや緩やかな屋根（約3寸）", en: "Slightly gentle roof (~3寸)" },
   slopeLabel4: { ja: "標準屋根（約4寸）", en: "Standard roof (~4寸)" },
+  slopeLabel5: { ja: "やや緩やかな屋根（約5寸）", en: "Slightly gentle roof (~5寸)" },
   slopeLabel6: { ja: "やや急な屋根（約6寸）", en: "Slightly steep roof (~6寸)" },
   slopeLabel8: { ja: "急な屋根（約8寸）", en: "Steep roof (~8寸)" },
   moduleSelectPlaceholder: { ja: "太陽電池モジュール選択", en: "Select solar module" },
