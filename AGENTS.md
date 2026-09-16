@@ -100,6 +100,7 @@ src/
 | `docs/solar-pv-architecture.html` | 한 장짜리 아키텍처 다이어그램 (브라우저 열람용) — 클라이언트 / `proxy.ts` 보안 경계 / BFF 4개 라우트 / 외부 5개 서비스를 하나의 SVG 로. 텍스트 설명은 위 `architecture.md` 가 원본 |
 | `docs/solar-pv-detect-sequence.html` | 시퀀스 다이어그램 — AI 지붕면 자동 감지. `aiDetect` → `proxy.ts` → `detect-roof` → Replicate SAM → OpenRouter 순서와 `abortControllerRef` 레이스 가드 분기. 원본은 `docs/okf/modules/ai-roof-detection.md` |
 | `docs/solar-pv-sim-submit-flowchart.html` | 플로우차트 — `handleSimSubmit` 3단계 게이트(우편번호 · 파라미터 검증 · 이미지 업로드)와 공통 중단 경로. 원본은 `docs/okf/workflows/simulation-flow.md` |
+| `docs/solar-pv-module-dependencies.html` | 의존 그래프 — `src/**` 내부 import 를 9개 모듈로 접어 rank·팬인으로 표현. 순환 의존 0건, 싱크는 `app/types` 와 `lib/qsp`. 구조 변경 후에는 `grep -rn 'from "@/' src` 로 재확인할 것 |
 | `docs/ci-cd-pipeline.md` / `.html` | Jenkins 파이프라인 스테이지별 상세 · Docker 멀티스테이지 · 환경변수 주입 경로 · 운영/롤백 절차 |
 | `docs/sequence-diagrams.md` | App init / i18n toggle / area calc 시퀀스 다이어그램 |
 | `docs/context-manage.md` | 에이전트 컨텍스트 관리 — 세션 상시 로딩 vs Skill/훅 지연 로딩의 실제 동작 |

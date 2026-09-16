@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Module Dependency Graph</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&family=Noto+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:#f5f5f5; --color-ink:#2d3142; --color-muted:#4f5d75; --color-soft:#7a8399;
+      --color-rule:rgba(45,49,66,0.12); --color-accent:#eb6c36; --color-link:#2e5aa8;
+      --font-sans:'Geist','Noto Sans KR',system-ui,sans-serif;
+      --font-serif:'Instrument Serif','Times New Roman',serif;
+      --font-mono:'Geist Mono',ui-monospace,Menlo,monospace;
+    }
+    body { font-family:var(--font-sans); background:var(--color-paper); min-height:100vh; padding:3rem 2rem; color:var(--color-ink); }
+    .container { max-width:1200px; margin:0 auto; }
+    .header { margin-bottom:2.5rem; }
+    .header-eyebrow { font-family:var(--font-mono); font-size:0.66rem; font-weight:500; letter-spacing:0.18em; text-transform:uppercase; color:var(--color-muted); margin-bottom:0.75rem; }
+    h1 { font-family:var(--font-serif); font-size:clamp(1.75rem,3vw + 1rem,2.5rem); font-weight:400; letter-spacing:-0.02em; line-height:1.1; margin-bottom:0.5rem; }
+    .subtitle { font-size:1rem; line-height:1.6; color:var(--color-muted); max-width:62ch; }
+    .diagram-container { background:transparent; border:none; padding:0; overflow-x:auto; }
+    svg { width:100%; min-width:960px; display:block; }
+    .cards { display:grid; grid-template-columns:1.1fr 1fr 0.9fr; gap:1rem; margin-top:1.5rem; }
+    @media (max-width:820px){ .cards{grid-template-columns:1fr;} }
+    .card { background:#ffffff; border-radius:6px; border:1px solid var(--color-rule); padding:1.25rem; }
+    .card .eyebrow { font-family:var(--font-mono); font-size:0.62rem; letter-spacing:0.16em; text-transform:uppercase; color:var(--color-soft); margin-bottom:0.6rem; }
+    .card-header { display:flex; align-items:center; gap:0.6rem; margin-bottom:0.875rem; padding-bottom:0.875rem; border-bottom:1px solid rgba(45,49,66,0.08); }
+    .card-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+    .card-dot.ink{background:var(--color-ink);} .card-dot.coral{background:var(--color-accent);} .card-dot.soft{background:var(--color-soft);}
+    .card h3 { font-size:0.875rem; font-weight:600; letter-spacing:-0.005em; }
+    .card ul { list-style:none; color:var(--color-muted); font-size:0.8125rem; line-height:1.6; }
+    .card li { margin-bottom:0.35rem; padding-left:0.875rem; position:relative; }
+    .card li::before { content:'\2014'; position:absolute; left:0; color:rgba(45,49,66,0.25); font-size:0.75rem; }
+    .card code { font-family:var(--font-mono); font-size:0.75rem; color:var(--color-ink); }
+    .footer { margin-top:2rem; padding-top:1.5rem; border-top:1px solid rgba(45,49,66,0.10); font-family:var(--font-mono); font-size:0.72rem; letter-spacing:0.06em; color:var(--color-soft); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <div class="header">
+      <p class="header-eyebrow">Dependency Graph · Internal Imports</p>
+      <h1>모듈 의존 관계</h1>
+      <p class="subtitle">
+        저장소의 <code style="font-family:var(--font-mono);font-size:0.9em">@/</code> · 상대경로 import 를 전부 모아 모듈 단위로 접은 그래프다.
+        진입점은 둘, 최종 싱크도 둘 — 클라이언트 쪽 <code style="font-family:var(--font-mono);font-size:0.9em">app/types</code> 와
+        서버 쪽 <code style="font-family:var(--font-mono);font-size:0.9em">lib/qsp</code> 가 각각 세 모듈의 의존을 받는다.
+        순환 의존은 하나도 없다.
+      </p>
+    </div>
+
+    <div class="diagram-container">
+      <svg viewBox="0 0 1280 600" role="img" aria-labelledby="dep-graph-title dep-graph-desc" xmlns="http://www.w3.org/2000/svg">
+        <title id="dep-graph-title">Solar PV System Module Dependencies</title>
+        <desc id="dep-graph-desc">저장소의 내부 import 관계를 모듈 단위로 모은 의존 그래프. page.tsx 와 API 라우트가 진입점이고, 아래로 내려갈수록 의존이 모인다. 도메인 타입과 QSP 클라이언트가 각각 세 모듈의 의존을 받는 최종 싱크이며 순환 의존은 없다.</desc>
+
+        <defs>
+          <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/>
+          </marker>
+          <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/>
+          </marker>
+          <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/>
+          </marker>
+        </defs>
+
+        <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+        <!-- rank guides -->
+        <text x="1200" y="120" fill="rgba(45,49,66,0.30)" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">RANK 0</text>
+        <text x="1200" y="240" fill="rgba(45,49,66,0.30)" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">RANK 1</text>
+        <text x="1200" y="360" fill="rgba(45,49,66,0.30)" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">RANK 2</text>
+        <text x="1200" y="480" fill="rgba(45,49,66,0.30)" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">RANK 3</text>
+
+        <!-- ── edges (before nodes) ───────────────────────────── -->
+        <line x1="128" y1="144" x2="128" y2="208" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <line x1="72" y1="264" x2="72" y2="328" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <line x1="320" y1="384" x2="320" y2="448" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <path d="M 224,144 V 296 Q 224,304 232,304 H 280 Q 288,304 288,328" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <path d="M 248,144 V 168 Q 248,176 256,176 H 432 Q 440,176 440,184 V 408 Q 440,416 432,416 H 352 Q 344,416 344,424 V 448" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <path d="M 200,144 V 184 Q 200,192 208,192 H 216 a 8,8 0 0,1 16,0 H 432 a 8,8 0 0,1 16,0 H 1032 Q 1040,192 1040,200 V 328" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <path d="M 960,104 H 1096 Q 1104,104 1104,112 V 328" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <path d="M 816,144 V 152 Q 816,160 808,160 H 728 Q 720,160 720,168 V 184 a 8,8 0 0,0 0,16 V 304 Q 720,312 728,312 H 768 Q 776,312 776,328" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <path d="M 880,144 V 184 a 8,8 0 0,0 0,16 V 208" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <path d="M 168,264 V 312 Q 168,320 176,320 H 256 Q 264,320 264,328" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <path d="M 184,264 V 280 Q 184,288 192,288 H 200 Q 208,288 208,296 V 408 Q 208,416 216,416 H 288 Q 296,416 296,424 V 448" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <path d="M 944,264 V 296 Q 944,304 952,304 H 1096 a 8,8 0 0,1 16,0 H 1128 Q 1136,304 1136,328" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <path d="M 848,264 V 312 Q 848,320 856,320 H 872 Q 880,320 880,328" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+        <!-- the one client→server coupling -->
+        <rect x="984" y="248" width="48" height="12" rx="2" fill="#f5f5f5"/>
+        <text x="1008" y="257" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">SCHEMA</text>
+
+        <!-- ── nodes ──────────────────────────────────────────── -->
+        <rect x="104" y="88" width="160" height="56" rx="6" fill="#f5f5f5"/>
+        <rect x="104" y="88" width="160" height="56" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <rect x="224" y="94" width="32" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+        <text x="240" y="103" fill="rgba(45,49,66,0.80)" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">0 in</text>
+        <text x="184" y="122" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'Noto Sans KR', sans-serif" text-anchor="middle">Home</text>
+        <text x="184" y="136" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">src/app/page.tsx</text>
+        <rect x="800" y="88" width="160" height="56" rx="6" fill="#f5f5f5"/>
+        <rect x="800" y="88" width="160" height="56" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <rect x="920" y="94" width="32" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+        <text x="936" y="103" fill="rgba(45,49,66,0.80)" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">0 in</text>
+        <text x="880" y="122" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'Noto Sans KR', sans-serif" text-anchor="middle">API 라우트</text>
+        <text x="880" y="136" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">src/app/api/** · 6 files</text>
+        <rect x="40" y="208" width="160" height="56" rx="6" fill="#f5f5f5"/>
+        <rect x="40" y="208" width="160" height="56" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <rect x="160" y="214" width="32" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+        <text x="176" y="223" fill="rgba(45,49,66,0.80)" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">1 in</text>
+        <text x="120" y="242" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'Noto Sans KR', sans-serif" text-anchor="middle">UI 컴포넌트</text>
+        <text x="120" y="256" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">src/app/components/** · 11</text>
+        <rect x="800" y="208" width="160" height="56" rx="6" fill="#f5f5f5"/>
+        <rect x="800" y="208" width="160" height="56" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <rect x="920" y="214" width="32" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+        <text x="936" y="223" fill="rgba(45,49,66,0.80)" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">1 in</text>
+        <text x="880" y="242" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'Noto Sans KR', sans-serif" text-anchor="middle">OpenAPI 빌더</text>
+        <text x="880" y="256" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">src/lib/openapi.ts</text>
+        <rect x="40" y="328" width="160" height="56" rx="6" fill="#f5f5f5"/>
+        <rect x="40" y="328" width="160" height="56" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+        <rect x="160" y="334" width="32" height="12" rx="2" fill="transparent" stroke="rgba(79,93,117,0.40)" stroke-width="0.8"/>
+        <text x="176" y="343" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">1 in</text>
+        <text x="120" y="362" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'Noto Sans KR', sans-serif" text-anchor="middle">공용 UI 프리미티브</text>
+        <text x="120" y="376" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">src/components/common/** · 8</text>
+        <rect x="248" y="328" width="160" height="56" rx="6" fill="#f5f5f5"/>
+        <rect x="248" y="328" width="160" height="56" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <rect x="368" y="334" width="32" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+        <text x="384" y="343" fill="rgba(45,49,66,0.80)" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">2 in</text>
+        <text x="328" y="362" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'Noto Sans KR', sans-serif" text-anchor="middle">클라이언트 유틸</text>
+        <text x="328" y="376" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">src/app/utils/** · 6</text>
+        <rect x="760" y="328" width="160" height="56" rx="6" fill="#f5f5f5"/>
+        <rect x="760" y="328" width="160" height="56" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+        <rect x="880" y="334" width="32" height="12" rx="2" fill="transparent" stroke="rgba(79,93,117,0.40)" stroke-width="0.8"/>
+        <text x="896" y="343" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">2 in</text>
+        <text x="840" y="362" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'Noto Sans KR', sans-serif" text-anchor="middle">BFF 도메인 모듈</text>
+        <text x="840" y="376" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">lib/{detect,image,sam}</text>
+        <rect x="1000" y="328" width="160" height="56" rx="6" fill="#f5f5f5"/>
+        <rect x="1000" y="328" width="160" height="56" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+        <rect x="1120" y="334" width="32" height="12" rx="2" fill="transparent" stroke="rgba(79,93,117,0.40)" stroke-width="0.8"/>
+        <text x="1136" y="343" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">3 in</text>
+        <text x="1080" y="362" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'Noto Sans KR', sans-serif" text-anchor="middle">QSP 클라이언트</text>
+        <text x="1080" y="376" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">src/lib/qsp/**</text>
+        <rect x="248" y="448" width="160" height="56" rx="6" fill="#f5f5f5"/>
+        <rect x="248" y="448" width="160" height="56" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+        <rect x="368" y="454" width="32" height="12" rx="2" fill="transparent" stroke="rgba(79,93,117,0.40)" stroke-width="0.8"/>
+        <text x="384" y="463" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">3 in</text>
+        <text x="328" y="482" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'Noto Sans KR', sans-serif" text-anchor="middle">도메인 타입</text>
+        <text x="328" y="496" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">src/app/types/index.ts</text>
+
+        <!-- ── legend ─────────────────────────────────────────── -->
+        <line x1="40" y1="552" x2="1240" y2="552" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+        <text x="40" y="572" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">LEGEND</text>
+
+        <rect x="128" y="561" width="24" height="12" rx="2" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <text x="162" y="572" fill="#4f5d75" font-size="9" font-family="'Geist', 'Noto Sans KR', sans-serif">내부 모듈 (나가는 의존 있음)</text>
+
+        <rect x="384" y="561" width="24" height="12" rx="2" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+        <text x="418" y="572" fill="#4f5d75" font-size="9" font-family="'Geist', 'Noto Sans KR', sans-serif">싱크 모듈 (나가는 의존 없음)</text>
+
+        <rect x="656" y="561" width="32" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+        <text x="672" y="570" fill="rgba(45,49,66,0.80)" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">3 in</text>
+        <text x="698" y="572" fill="#4f5d75" font-size="9" font-family="'Geist', 'Noto Sans KR', sans-serif">팬인 — 이 모듈에 의존하는 모듈 수</text>
+
+        <line x1="984" y1="568" x2="1008" y2="568" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <text x="1018" y="572" fill="#4f5d75" font-size="9" font-family="'Geist', 'Noto Sans KR', sans-serif">import 방향</text>
+
+        <path d="M 1128,568 H 1136 a 8,8 0 0,1 16,0 H 1160" fill="none" stroke="#4f5d75" stroke-width="1.2"/>
+        <text x="1170" y="572" fill="#4f5d75" font-size="9" font-family="'Geist', 'Noto Sans KR', sans-serif">교차 (브리지)</text>
+      </svg>
+    </div>
+
+    <div class="cards">
+      <div class="card">
+        <p class="eyebrow">Structure</p>
+        <div class="card-header">
+          <span class="card-dot ink"></span>
+          <h3>싱크가 둘, 경계를 넘는 선은 하나</h3>
+        </div>
+        <ul>
+          <li><code>app/types/index.ts</code> — page · components · utils 가 모두 의존하는 도메인 SSOT</li>
+          <li><code>lib/qsp/**</code> — page · api · openapi 가 의존. <code>envelopeSuccess</code>/<code>envelopeError</code> 가 여기 있어서 라우트 전부가 붙는다</li>
+          <li>클라이언트가 <code>src/lib</code> 를 건드리는 유일한 지점이 <code>page.tsx → lib/qsp/schema</code> 다 (그림의 <code>SCHEMA</code> 선). 타입만 가져가므로 런타임 번들에는 영향이 없다</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <p class="eyebrow">Health</p>
+        <div class="card-header">
+          <span class="card-dot soft"></span>
+          <h3>순환 의존 0건</h3>
+        </div>
+        <ul>
+          <li>모든 forward edge 가 rank 를 따라 아래로만 흐른다 — 되돌아가는 선이 없다</li>
+          <li>그래서 이 그래프에는 accent(코랄) 요소가 없다. 이 타입에서 accent 는 순환 표시 전용이다</li>
+          <li>다만 트리는 아니다 — 부모가 둘 이상인 노드가 4개라 트리로는 그릴 수 없다</li>
+          <li><code>page.tsx</code> 자체는 855줄 god-node 지만, <strong>모듈 의존 구조</strong>는 건강하다는 게 이 그림의 결론이다</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <p class="eyebrow">Fidelity ledger</p>
+        <div class="card-header">
+          <span class="card-dot soft"></span>
+          <h3>접은 것 · 뺀 것</h3>
+        </div>
+        <ul>
+          <li>45개 파일을 9개 모듈로 접었다 — 모듈 내부 import(예: <code>lnb.tsx → lnb-design.tsx</code>)는 표시하지 않는다</li>
+          <li><code>lib/detect</code> · <code>lib/image</code> · <code>lib/sam</code> 은 의존 패턴이 같아 한 노드로 합쳤다</li>
+          <li>npm 외부 의존(react · zod · polygon-clipping · html2canvas · @aws-sdk 등)은 제외 — 내부 코드 관계도다</li>
+          <li>팬인 수치는 <strong>모듈</strong> 단위다. 파일 단위로 세면 <code>utils/i18n.ts</code> 가 12개 in-edge 로 최다</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer">
+      <span>SOLAR-PV-SYSTEM · DEPENDENCY · 9 MODULES / 13 EDGES / 4 RANKS</span>
+      <span>SOURCE: src/** internal imports @ main</span>
+    </div>
+
+  </div>
+</body>
+</html>
