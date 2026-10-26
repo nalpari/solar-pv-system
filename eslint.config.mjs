@@ -12,8 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
-    // Agent tooling (graft hooks/statusline — vendored CJS).
+    // Agent tooling (graft/trail hooks/statusline — vendored CJS).
     ".claude/**",
+    ".trail/**",
   ]),
 ]);
 
