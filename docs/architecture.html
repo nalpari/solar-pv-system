@@ -993,9 +993,9 @@ compose: env_file: .env 로 통째 마운트</pre>
 
   <h3 class="b">컨테이너</h3>
 <pre><b>Dockerfile</b> <i>(multi-stage)</i>
-├─ deps      node:20-alpine · pnpm install --frozen-lockfile
+├─ deps      node:24.22.1-alpine · pnpm install --frozen-lockfile
 ├─ builder   <u>NEXT_PUBLIC_* ARG 주입</u> · pnpm build → .next/standalone
-└─ runner    node:20-alpine · non-root nextjs · PORT=3000 · server.js</pre>
+└─ runner    node:24.22.1-alpine · non-root nextjs · PORT=3000 · server.js</pre>
   <p>파이프라인 스테이지·롤백 절차는 <a href="ci-cd-pipeline.html">CI/CD 파이프라인 문서</a>에 있다.</p>
 </div></section>
 

@@ -24,7 +24,7 @@ sources:
 
 # 이미지
 
-`Dockerfile` 은 4스테이지다 — `base`(node:20-alpine + pnpm 10) → `deps` → `builder` → `runner`.
+`Dockerfile` 은 4스테이지다 — `base`(node:24.22.1-alpine + pnpm 10) → `deps` → `builder` → `runner`.
 
 - **검증이 빌드 안에 있다.** `builder` 스테이지가 `pnpm lint`, `pnpm exec tsc --noEmit`, `pnpm build` 를 차례로 실행한다.
   Jenkins 에이전트에 Node 를 깔지 않기 위한 선택이다 — 린트/타입 실패는 이미지 빌드 실패로 나타난다.

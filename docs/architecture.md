@@ -409,9 +409,9 @@ lat/lng ──(첫 정점 원점, 평면 근사)──▶ 로컬 미터 ──(m
 
 ```
 Dockerfile (multi-stage)
-├ deps     node:20-alpine · pnpm install --frozen-lockfile
+├ deps     node:24.22.1-alpine · pnpm install --frozen-lockfile
 ├ builder  NEXT_PUBLIC_* ARG 주입 · pnpm build → .next/standalone
-└ runner   node:20-alpine · non-root nextjs · PORT=3000 · server.js
+└ runner   node:24.22.1-alpine · non-root nextjs · PORT=3000 · server.js
 ```
 
 파이프라인 스테이지·롤백 절차 → [`ci-cd-pipeline.md`](ci-cd-pipeline.md) · [`okf/system/deployment.md`](okf/system/deployment.md)

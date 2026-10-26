@@ -1,4 +1,4 @@
-FROM node:20-alpine AS base
+FROM node:24.22.1-alpine AS base
 
 # pnpm 설치
 RUN corepack enable && corepack prepare pnpm@10 --activate
@@ -29,7 +29,7 @@ RUN pnpm exec tsc --noEmit
 RUN pnpm build
 
 # --- 프로덕션 ---
-FROM node:20-alpine AS runner
+FROM node:24.22.1-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production

@@ -181,14 +181,14 @@ docker images --format '{{.Repository}}:{{.Tag}}' \
 ## 4. 이미지 — `Dockerfile` 4스테이지
 
 ```
-base    node:20-alpine + corepack pnpm@10
+base    node:24.22.1-alpine + corepack pnpm@10
   ├─ deps     package.json + pnpm-lock.yaml → pnpm install --frozen-lockfile
   └─ builder  deps 의 node_modules + 소스 전체
                 ARG/ENV NEXT_PUBLIC_GOOGLE_MAPS_API_KEY, NEXT_PUBLIC_AWS_S3_BASE_URL
                 RUN pnpm lint
                 RUN pnpm exec tsc --noEmit
                 RUN pnpm build            → .next/standalone
-runner  node:20-alpine (builder 와 별개 베이스)
+runner  node:24.22.1-alpine (builder 와 별개 베이스)
           NODE_ENV=production, 비루트 nextjs(uid 1001)/nodejs(gid 1001)
           COPY public, .next/standalone, .next/static
           EXPOSE 3000 · PORT=3000 · HOSTNAME=0.0.0.0
